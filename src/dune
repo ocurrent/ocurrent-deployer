@@ -1,0 +1,13 @@
+(executable
+ (public_name example)
+ (name main)
+ (libraries
+   current
+   current.cache
+   current_git
+   current_web
+   cmdliner
+   fmt.tty
+   logs.fmt
+   lwt
+   lwt.unix))
