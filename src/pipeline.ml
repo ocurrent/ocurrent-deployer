@@ -8,6 +8,7 @@ let timeout = Duration.of_min 50    (* Max build time *)
 
 let ocaml_ci = { Github.Repo_id.owner = "ocurrent"; name = "ocaml-ci" }
 let deployer = { Github.Repo_id.owner = "ocurrent"; name = "ocurrent-deployer" }
+let base_images = { Github.Repo_id.owner = "ocurrent"; name = "docker-base-images " }
 
 let notify ~channel ~service ~commit x =
   let s =
@@ -42,4 +43,5 @@ let v ~github ~notify () =
     deploy (branch ocaml_ci "live-www")    ~dockerfile:"Dockerfile.web" ~tag:"ocaml-ci-web:latest" ~service:"ocaml-ci_web";
     deploy (branch ocaml_ci "staging-www") ~dockerfile:"Dockerfile.web" ~tag:"ocaml-ci-web:staging" ~service:"test-www";
     deploy (branch deployer "live")        ~dockerfile:"Dockerfile"     ~tag:"ci.ocamllabs.io-deployer:latest" ~service:"infra_deployer";
+    deploy (branch base_images "live")     ~dockerfile:"Dockerfile"     ~tag:"base-images:latest" ~service:"base-images_builder";
   ]
