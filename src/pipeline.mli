@@ -1,2 +1,2 @@
-val v : repo:Current_git.Local.t -> unit -> unit Current.t
-(** [v ~repo ()] is a pipeline that monitors Git repository [repo]. *)
+val v : github:Current_github.Api.t -> notify:Current_slack.channel -> unit -> unit Current.t
+(** [v ~github ~notify ()] is a pipeline that keeps the services up-to-date. *)

@@ -1,16 +1,18 @@
 (lang dune 1.11)
-(name example)
+(name deployer)
 
 (generate_opam_files true)
 
 (package
- (name example)
- (synopsis "An OCurrent pipeline")
- (description "A longer description")
+ (name deployer)
+ (synopsis "Deploy other pipelines")
  (depends
   current
   current_web
   current_git
+  current_github
+  current_docker
+  current_slack
   fmt
   lwt
   cmdliner

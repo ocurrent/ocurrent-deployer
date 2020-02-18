@@ -1,10 +1,13 @@
 (executable
- (public_name example)
+ (public_name ocurrent-deployer)
  (name main)
  (libraries
    current
    current.cache
    current_git
+   current_github
+   current_docker
+   current_slack
    current_web
    cmdliner
    fmt.tty
