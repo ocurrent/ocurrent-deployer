@@ -40,6 +40,7 @@ let v ~github ~notify () =
   let branch repo name = Github.Api.head_of github repo (`Ref ("refs/heads/" ^ name)) in
   let deploy = deploy ~notify in
   Current.all [
+    deploy (branch ocaml_ci "live-engine") ~dockerfile:"Dockerfile"     ~tag:"ocaml-ci-service:latest" ~service:"ocaml-ci_ci";
     deploy (branch ocaml_ci "live-www")    ~dockerfile:"Dockerfile.web" ~tag:"ocaml-ci-web:latest" ~service:"ocaml-ci_web";
     deploy (branch ocaml_ci "staging-www") ~dockerfile:"Dockerfile.web" ~tag:"ocaml-ci-web:staging" ~service:"test-www";
     deploy (branch deployer "live")        ~dockerfile:"Dockerfile"     ~tag:"ci.ocamllabs.io-deployer:latest" ~service:"infra_deployer";
