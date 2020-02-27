@@ -12,5 +12,6 @@
    cmdliner
    fmt.tty
    logs.fmt
+   str
    lwt
    lwt.unix))
