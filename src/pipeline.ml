@@ -22,7 +22,7 @@ let notify ~channel ~service ~commit x =
   let s =
     let+ state = Current.state x
     and+ commit = commit in
-    Fmt.strf "Deploy @[<h>%a as %s: %a@]"
+    Fmt.strf "@[<h>Deploy %a as %s: %a@]"
       Github.Api.Commit.pp commit
       service
       (Current_term.Output.pp Current.Unit.pp)
