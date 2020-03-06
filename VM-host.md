@@ -96,6 +96,6 @@ WantedBy=multi-user.target
 2. Replace `--host` in this example with whatever options the unikernel requires.
 3. Change the `--mem=` option to however much RAM the unikernel should have.
 
-Then: `systemctl daemon-reload`
+Then: `systemctl daemon-reload` and `systemctl enable mirage-www`
 
 Finally, edit `src/pipeline.ml` so that the deployer will deploy the unikernel automatically.
