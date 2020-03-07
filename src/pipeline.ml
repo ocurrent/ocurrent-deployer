@@ -22,11 +22,11 @@ let notify ~channel ~service ~commit x =
   let s =
     let+ state = Current.state x
     and+ commit = commit in
-    Fmt.strf "@[<h>Deploy %a as %s: %a@]"
-      Github.Api.Commit.pp commit
+    let uri = Github.Api.Commit.uri commit in
+    Fmt.strf "@[<h>Deploy <%a|%a> as %s: <%s|%a>@]"
+      Uri.pp uri Github.Api.Commit.pp commit
       service
-      (Current_term.Output.pp Current.Unit.pp)
-      state
+      "https://deploy.ocamllabs.io" (Current_term.Output.pp Current.Unit.pp) state
   in
   Current.all [
     Current_slack.post channel ~key:("deploy-" ^ service) s;
