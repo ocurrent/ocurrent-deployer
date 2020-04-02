@@ -1,9 +1,7 @@
 (* This is the main entry-point for the executable.
    Edit [cmd] to set the text for "--help" and modify the command-line interface. *)
 
-let () =
-  Unix.putenv "DOCKER_BUILDKIT" "1";
-  Logging.init ()
+let () = Logging.init ()
 
 let webhooks = [
   "github", Current_github.input_webhook

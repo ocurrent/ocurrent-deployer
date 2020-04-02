@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:experimental@sha256:787107d7f7953cb2d95ee81cc7332d79aca9328129318e08fc7ffbd252a20656
 FROM ocurrent/opam:debian-10-ocaml-4.08 AS build
 RUN sudo apt-get update && sudo apt-get install libev-dev m4 pkg-config libsqlite3-dev libgmp-dev -y --no-install-recommends
 COPY --chown=opam \
@@ -24,7 +23,7 @@ RUN opam pin add -yn current_ansi.dev "./ocurrent" && \
     opam pin add -yn current_web.dev "./ocurrent"
 COPY --chown=opam deployer.opam /src/
 RUN opam pin -yn add .
-RUN --mount=type=cache,target=/home/opam/.opam/download-cache,uid=1000 opam install -y --deps-only .
+RUN opam install -y --deps-only .
 ADD --chown=opam . .
 RUN opam config exec -- dune build ./_build/install/default/bin/ocurrent-deployer
 
