@@ -1,9 +1,7 @@
 (* This is the main entry-point for the executable.
    Edit [cmd] to set the text for "--help" and modify the command-line interface. *)
 
-let () =
-  Unix.putenv "DOCKER_BUILDKIT" "1";
-  Logging.init ()
+let () = Logging.init ()
 
 let webhooks = [
   "github", Current_github.input_webhook
@@ -19,10 +17,8 @@ let read_channel_uri path =
     Fmt.failwith "Failed to read slack URI from %S: %a" path Fmt.exn ex
 
 let main config mode app slack =
-  let installation = Current_github.App.installation app ~account:"ocurrent" 6853813 in
-  let github = Current_github.Installation.api installation in
   let channel = read_channel_uri slack in
-  let engine = Current.Engine.create ~config (Pipeline.v ~github ~notify:channel) in
+  let engine = Current.Engine.create ~config (Pipeline.v ~app ~notify:channel) in
   Logging.run begin
     Lwt.choose [
       Current.Engine.thread engine;  (* The main thread evaluating the pipeline. *)
