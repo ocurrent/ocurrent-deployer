@@ -126,13 +126,12 @@ let repo ~github ~channel (repo_name, builds) =
 let docker ~service ~tag = `Docker { service; tag }
 let unikernel ~service = `Unikernel service
 
-(* This is a list of GitHub repositories to monitor.
-   For each one, it lists the Dockerfiles in it from which binaries can be built.
-   For each binary, it says which branch gives the desired live version of the service,
-   and where to deloy it. *)
-let v ~github ~notify:channel () =
+let api ~app ~account id =
+  Current_github.App.installation app ~account id
+  |> Current_github.Installation.api
+
+let ocurrent_services ~github ~channel () =
   Current.all @@ List.map (repo ~github ~channel) [
-    (* Docker services *)
     "ocurrent/ocaml-ci", [
       "Dockerfile",     "live-engine", docker ~tag:"ocaml-ci-service:latest" ~service:"ocaml-ci_ci";
       "Dockerfile.web", "live-www",    docker ~tag:"ocaml-ci-web:latest"     ~service:"ocaml-ci_web";
@@ -144,8 +143,23 @@ let v ~github ~notify:channel () =
     "ocurrent/docker-base-images", [
       "Dockerfile", "live", docker ~tag:"base-images:latest" ~service:"base-images_builder";
     ];
-    (* Unikernels *)
+  ]
+
+let mirage_services ~github ~channel () =
+  Current.all @@ List.map (repo ~github ~channel) [
     "mirage/mirage-www", [
       "Dockerfile", "live", unikernel ~service:"mirage-www";
     ];
+  ]
+
+(* This is a list of GitHub repositories to monitor.
+   For each one, it lists the Dockerfiles in it from which binaries can be built.
+   For each binary, it says which branch gives the desired live version of the service,
+   and where to deloy it. *)
+let v ~app ~notify:channel () =
+  let ocurrent = api ~app ~account:"ocurrent" 6853813 in
+  let mirage = api ~app ~account:"mirage" 7175142 in
+  Current.all [
+    ocurrent_services ~github:ocurrent ~channel ();
+    mirage_services ~github:mirage ~channel ();
   ]
