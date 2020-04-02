@@ -33,9 +33,11 @@ let notify ~channel ~service ~commit ~repo x =
   ]
 
 let docker ~dockerfile src =
-  let label = Printf.sprintf "build %s" dockerfile in
-  let dockerfile = Current.return (`File (Fpath.v dockerfile)) in
-  Docker.build ~label ~dockerfile ~pull:true ~timeout (`Git src)
+  Docker.build (`Git src)
+    ~label:dockerfile
+    ~dockerfile:(Current.return (`File (Fpath.v dockerfile)))
+    ~pull:true
+    ~timeout
 
 (* Build [commit] and deploy as unikernel [service]. *)
 let mirage ~dockerfile src =
