@@ -35,13 +35,10 @@ end
 module Packet_unikernel = struct
   (* Mirage unikernels running on packet.net *)
 
-  let mirage_host_context = "m1-a"
   let mirage_host_ssh = "root@147.75.33.203"
 
-  module Docker = Current_docker.Make(struct let docker_context = Some mirage_host_context end)
+  module Docker = Current_docker.Default
   module Mirage_m1_a = Mirage.Make(Docker)
-
-  let config = Mirage_m1_a.config ~ssh_host:mirage_host_ssh ()
 
   (* Build [src/dockerfile] as an HVT unikernel. *)
   let build ~dockerfile src =
@@ -53,7 +50,7 @@ module Packet_unikernel = struct
       ~timeout
 
   let deploy service =
-    Mirage_m1_a.deploy config ~name:service
+    Mirage_m1_a.deploy ~name:service ~ssh_host:mirage_host_ssh
 end
 
 (* [web_ui collapse_value] is a URL back to the deployment service, for links
