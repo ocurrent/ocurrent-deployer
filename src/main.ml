@@ -30,6 +30,10 @@ let main config mode app slack auth =
   let channel = read_channel_uri slack in
   let engine = Current.Engine.create ~config (Pipeline.v ~app ~notify:channel) in
   let authn = Option.map Current_github.Auth.make_login_uri auth in
+  let has_role =
+    if auth = None then Current_web.Site.allow_all
+    else has_role
+  in
   let site = Current_web.Site.v ?authn ~has_role ~name:"OCurrent Deployer" () in
   let routes =
     Routes.(s "login" /? nil @--> Current_github.Auth.login auth) ::
