@@ -35,7 +35,7 @@ end
 module Packet_unikernel = struct
   (* Mirage unikernels running on packet.net *)
 
-  let mirage_host_ssh = "root@147.75.33.203"
+  let mirage_host_ssh = "root@147.75.204.215"
 
   module Docker = Current_docker.Default
   module Mirage_m1_a = Mirage.Make(Docker)
@@ -122,6 +122,6 @@ let v ~app ~notify:channel () =
     ];
     (* Mirage repositories *)
     mirage, "mirage-www", [
-      "Dockerfile", "live", unikernel ~service:"mirage-www";
+      "Dockerfile", "live", unikernel ~service:"www-test";
     ];
   ]
