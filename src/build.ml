@@ -19,7 +19,7 @@ let ignore_branch items =
   items
   |> List.map (function
       | (d, _, `Docker _) -> d, `Docker
-      | (d, _, `Unikernel _) -> d, `Unikernel
+      | (d, _, `Unikernel (_, flags)) -> d, `Unikernel flags
     )
   |> List.sort_uniq compare
 

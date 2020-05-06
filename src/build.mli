@@ -9,13 +9,13 @@ val repo :
   web_ui:(string -> Uri.t) ->
   build:(dockerfile:string ->
          src:Current_git.Commit.t Current.t ->
-         [`Docker | `Unikernel] ->
+         [`Docker | `Unikernel of string list] ->
          unit Current.t) ->
   deploy:(dockerfile:string ->
           src:Current_git.Commit.t Current.t ->
           commit:Current_github.Api.Commit.t Current.t ->
           collapse_value:string ->
-          ([`Docker of _ | `Unikernel of _ ] as 'a) -> unit Current.t) ->
+          ([`Docker of _ | `Unikernel of (_ * string list)] as 'a) -> unit Current.t) ->
   org:org ->
   name:string ->
   (string * string * 'a) list ->
