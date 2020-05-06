@@ -41,10 +41,11 @@ module Packet_unikernel = struct
   module Mirage_m1_a = Mirage.Make(Docker)
 
   (* Build [src/dockerfile] as an HVT unikernel. *)
-  let build ~dockerfile src =
+  let build ~dockerfile src args =
+    let build_args = List.map (fun x -> ["--build-arg"; x]) args |> List.concat in
     let dockerfile = Current.return (`File (Fpath.v dockerfile)) in
     Docker.build (`Git src)
-      ~build_args:["--build-arg"; "TARGET=hvt"]
+      ~build_args
       ~dockerfile
       ~pull:true
       ~timeout
@@ -79,7 +80,7 @@ let notify ~channel ~service ~commit ~repo x =
 (* Build [src/dockerfile]. *)
 let build ~dockerfile ~src = function
   | `Docker -> Current.ignore_value (Toxis_service.build src ~dockerfile)
-  | `Unikernel -> Current.ignore_value (Packet_unikernel.build src ~dockerfile)
+  | `Unikernel flags -> Current.ignore_value (Packet_unikernel.build src ~dockerfile flags)
 
 (* Build and deploy [src/dockerfile]. *)
 let deploy ~channel ~dockerfile ~src ~commit ~collapse_value = function
@@ -87,13 +88,13 @@ let deploy ~channel ~dockerfile ~src ~commit ~collapse_value = function
     Toxis_service.build src ~dockerfile
     |> Toxis_service.deploy ~service ~tag
     |> notify ~channel ~service ~commit ~repo:collapse_value
-  | `Unikernel service ->
-    Packet_unikernel.build src ~dockerfile
+  | `Unikernel (service, flags) ->
+    Packet_unikernel.build src ~dockerfile flags
     |> Packet_unikernel.deploy service
     |> notify ~channel ~service ~commit ~repo:collapse_value
 
 let docker ~service ~tag = `Docker { Toxis_service.service; tag }
-let unikernel ~service = `Unikernel service
+let unikernel ~service args = `Unikernel (service, args)
 
 (* This is a list of GitHub repositories to monitor.
    For each one, it lists the deployments that are made from that repository.
@@ -122,6 +123,6 @@ let v ~app ~notify:channel () =
     ];
     (* Mirage repositories *)
     mirage, "mirage-www", [
-      "Dockerfile", "live", unikernel ~service:"www-test";
+      "Dockerfile", "live", unikernel ~service:"www" ["TARGET=hvt"; "EXTRA_FLAGS=--tls=true"];
     ];
   ]
