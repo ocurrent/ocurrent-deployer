@@ -1,4 +1,4 @@
-val init : ?level:Logs.level -> unit -> unit
+val init : unit -> unit
 (** Initialise the Logs library with some sensible defaults. *)
 
 val run : unit Current.or_error Lwt.t -> unit Current.or_error
