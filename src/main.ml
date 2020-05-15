@@ -34,15 +34,15 @@ let main config mode app slack auth =
     if auth = None then Current_web.Site.allow_all
     else has_role
   in
-  let site = Current_web.Site.v ?authn ~has_role ~name:"OCurrent Deployer" () in
   let routes =
     Routes.(s "login" /? nil @--> Current_github.Auth.login auth) ::
     Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook) ::
     Current_web.routes engine in
+  let site = Current_web.Site.v ?authn ~has_role ~name:"OCurrent Deployer" routes in
   Logging.run begin
     Lwt.choose [
       Current.Engine.thread engine;  (* The main thread evaluating the pipeline. *)
-      Current_web.run ~mode ~site routes;
+      Current_web.run ~mode site;
     ]
   end
 
