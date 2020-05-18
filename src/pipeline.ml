@@ -123,6 +123,6 @@ let v ~app ~notify:channel () =
     ];
     (* Mirage repositories *)
     mirage, "mirage-www", [
-      "Dockerfile", "live", unikernel ~service:"www" ["TARGET=hvt"; "EXTRA_FLAGS=--tls=true"];
+      "Dockerfile", "master", unikernel ~service:"www" ["TARGET=hvt"; "EXTRA_FLAGS=--tls=true"];
     ];
   ]
