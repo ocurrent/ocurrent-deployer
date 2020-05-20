@@ -49,6 +49,7 @@ module Packet_unikernel = struct
 
   type build_info = {
     dockerfile : string;
+    target : string;
     args : string list;
   }
 
@@ -59,12 +60,14 @@ module Packet_unikernel = struct
   }
 
   (* Build [src/dockerfile] as an HVT unikernel. *)
-  let build  { dockerfile; args } src =
+  let build  { dockerfile; target; args } src =
+    let args = ("TARGET=" ^ target) :: args in
     let build_args = List.map (fun x -> ["--build-arg"; x]) args |> List.concat in
     let dockerfile = Current.return (`File (Fpath.v dockerfile)) in
     Docker.build (`Git src)
       ~build_args
       ~dockerfile
+      ~label:target
       ~pull:true
       ~timeout
 
@@ -88,8 +91,8 @@ let docker dockerfile services =
     |> List.map (fun (branch, tag, service) -> branch, { Toxis_service.tag; service }) in
   (build_info, deploys)
 
-let unikernel dockerfile args services =
-  let build_info = { Packet_unikernel.dockerfile; args } in
+let unikernel dockerfile ~target args services =
+  let build_info = { Packet_unikernel.dockerfile; target; args } in
   let deploys =
     services
     |> List.map (fun (branch, service) -> branch, { Packet_unikernel.service }) in
@@ -124,7 +127,8 @@ let v ~app ~notify:channel () =
     let build (org, name, builds) = Build_unikernel.repo ~channel ~web_ui ~org ~name builds in
     Current.all @@ List.map build [
       mirage, "mirage-www", [
-        unikernel "Dockerfile" ["TARGET=hvt"; "EXTRA_FLAGS=--tls=true"] ["master", "www"];
+        unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true"] ["master", "www"];
+        unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
       ];
     ]
   in
