@@ -76,7 +76,14 @@ module Packet_unikernel = struct
   let mirage_host_ssh = "root@147.75.204.215"
 
   let deploy { service } image =
-    Mirage_m1_a.deploy ~name:service ~ssh_host:mirage_host_ssh image
+    (* We tag the image to prevent docker prune from removing it.
+       Otherwise, if we later deploy a new (bad) version and need to roll back quickly,
+       we may find the old version isn't around any longer. *)
+    let tag = "mirage-" ^ service in
+    Current.all [
+      Docker.tag ~tag image;
+      Mirage_m1_a.deploy ~name:service ~ssh_host:mirage_host_ssh image;
+    ]
 end
 module Build_unikernel = Build.Make(Packet_unikernel)
 
