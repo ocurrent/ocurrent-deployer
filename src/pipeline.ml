@@ -42,10 +42,7 @@ module Build_toxis = Build.Make(Toxis_service)
 module Packet_unikernel = struct
   (* Mirage unikernels running on packet.net *)
 
-  let mirage_host_ssh = "root@147.75.204.215"
-
   module Docker = Current_docker.Default
-  module Mirage_m1_a = Mirage.Make(Docker)
 
   type build_info = {
     dockerfile : string;
@@ -59,7 +56,6 @@ module Packet_unikernel = struct
     service : string;
   }
 
-  (* Build [src/dockerfile] as an HVT unikernel. *)
   let build  { dockerfile; target; args } src =
     let args = ("TARGET=" ^ target) :: args in
     let build_args = List.map (fun x -> ["--build-arg"; x]) args |> List.concat in
@@ -72,6 +68,12 @@ module Packet_unikernel = struct
       ~timeout
 
   let name { service } = service
+
+  (* Deployment *)
+
+  module Mirage_m1_a = Mirage.Make(Docker)
+
+  let mirage_host_ssh = "root@147.75.204.215"
 
   let deploy { service } image =
     Mirage_m1_a.deploy ~name:service ~ssh_host:mirage_host_ssh image
