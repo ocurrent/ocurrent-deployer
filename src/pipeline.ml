@@ -108,11 +108,9 @@ let unikernel dockerfile ~target args services =
   (build_info, deploys)
 
 (* This is a list of GitHub repositories to monitor.
-   For each one, it lists the deployments that are made from that repository.
-   For each deployment, it says which Dockerfile to build, which branch gives
-   the desired live version of the service, and where to deloy it.
-   For each specified branch, we will call [deploy] on that branch to build and deploy it.
-   For all branches and PRs, we will call [build] to test that it could be deployed. *)
+   For each one, it lists the builds that are made from that repository.
+   For each build, it says which which branch gives the desired live version of
+   the service, and where to deloy it. *)
 let v ~app ~notify:channel () =
   let ocurrent = Build.org ~app ~account:"ocurrent" 6853813 in
   let mirage = Build.org ~app ~account:"mirage" 7175142 in
