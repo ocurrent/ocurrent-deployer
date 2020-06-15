@@ -128,7 +128,11 @@ let v ~app ~notify:channel () =
       ];
       ocurrent, "docker-base-images", [
         docker "Dockerfile"     ["live", "base-images:latest", "base-images_builder"];
-      ]
+      ];
+      ocurrent, "opam-repo-ci", [
+        docker "Dockerfile"     [];     (* No deployments for now *)
+        docker "Dockerfile.web" [];
+      ];
     ]
   and mirage_unikernels =
     let build (org, name, builds) = Build_unikernel.repo ~channel ~web_ui ~org ~name builds in
