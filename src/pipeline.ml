@@ -133,6 +133,10 @@ let v ~app ~notify:channel () =
         docker "Dockerfile"     [];     (* No deployments for now *)
         docker "Dockerfile.web" [];
       ];
+      ocurrent, "build-scheduler", [
+        docker "Dockerfile"        [];     (* No deployments for now *)
+        docker "Dockerfile.worker" [];
+      ]
     ]
   and mirage_unikernels =
     let build (org, name, builds) = Build_unikernel.repo ~channel ~web_ui ~org ~name builds in
