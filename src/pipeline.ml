@@ -134,8 +134,8 @@ let v ~app ~notify:channel () =
         docker "Dockerfile.web" [];
       ];
       ocurrent, "build-scheduler", [
-        docker "Dockerfile"        [];     (* No deployments for now *)
-        docker "Dockerfile.worker" [];
+        docker "Dockerfile"        ["live", "ocurrent/build-scheduler", "build-scheduler_scheduler"];
+        docker "Dockerfile.worker" ["live", "ocurrent/build-worker", "build-agent"];
       ]
     ]
   and mirage_unikernels =
