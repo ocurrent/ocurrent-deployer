@@ -2,6 +2,20 @@ module Github = Current_github
 
 let timeout = Duration.of_min 50    (* Max build time *)
 
+let password_path = "/run/secrets/ocurrent-hub"
+
+let auth =
+  if Sys.file_exists password_path then (
+    let ch = open_in_bin password_path in
+    let len = in_channel_length ch in
+    let password = really_input_string ch len |> String.trim in
+    close_in ch;
+    Some ("ocurrent", password)
+  ) else (
+    Fmt.pr "Password file %S not found; images will not be pushed to hub@." password_path;
+    None
+  )
+
 module Toxis_service = struct
   (* Docker services running on toxis. *)
 
@@ -30,10 +44,18 @@ module Toxis_service = struct
 
   (* Update Docker service [service] to [image].
      We also tag it, so that if someone redeploys the stack.yml then it will
-     still use this version. *)
+     still use this version. If the tag contains a '/' then we push it to
+     Docker hub too.*)
   let deploy { tag; service } image =
+    let publish =
+      match auth with
+      | Some auth when String.contains tag '/' ->
+        Docker.push ~auth ~tag image |> Current.ignore_value
+      | _ ->
+        Docker.tag ~tag image
+    in
     Current.all [
-      Docker.tag ~tag image;
+      publish;
       Docker.service ~name:service ~image ()
     ]
 end
