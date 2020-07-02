@@ -1,8 +1,12 @@
+open Current.Syntax
+
 module Github = Current_github
 
 let timeout = Duration.of_min 50    (* Max build time *)
 
 let password_path = "/run/secrets/ocurrent-hub"
+
+let push_repo = "ocurrentbuilder/staging"
 
 let auth =
   if Sys.file_exists password_path then (
@@ -16,51 +20,18 @@ let auth =
     None
   )
 
-module Toxis_service = struct
-  (* Docker services running on toxis. *)
+let or_fail = function
+  | Ok x -> x
+  | Error (`Msg m) -> failwith m
 
-  module Docker = Current_docker.Default
+type arch = [
+  | `Linux_arm64
+  | `Linux_x86_64
+]
 
-  type build_info = {
-    dockerfile : string;
-  }
-
-  type deploy_info = {
-    service : string;
-    tag : string;
-  }
-
-  (* Build [src/dockerfile] as a Docker service. *)
-  let build_image { dockerfile } src =
-    Docker.build (`Git src)
-      ~label:dockerfile
-      ~dockerfile:(Current.return (`File (Fpath.v dockerfile)))
-      ~pull:true
-      ~timeout
-
-  let build info src = Current.ignore_value (build_image info src)
-
-  let name info = info.service
-
-  (* Update Docker service [service] to [image].
-     We also tag it, so that if someone redeploys the stack.yml then it will
-     still use this version. If the tag contains a '/' then we push it to
-     Docker hub too.*)
-  let deploy build_info { tag; service } src =
-    let image = build_image build_info src in
-    let publish =
-      match auth with
-      | Some auth when String.contains tag '/' ->
-        Docker.push ~auth ~tag image |> Current.ignore_value
-      | _ ->
-        Docker.tag ~tag image
-    in
-    Current.all [
-      publish;
-      Docker.service ~name:service ~image ()
-    ]
-end
-module Build_toxis = Build.Make(Toxis_service)
+let pool_id : arch -> string = function
+  | `Linux_arm64 -> "linux-arm64"
+  | `Linux_x86_64 -> "linux-x86_64"
 
 module Packet_unikernel = struct
   (* Mirage unikernels running on packet.net *)
@@ -78,6 +49,7 @@ module Packet_unikernel = struct
   }
 
   let build_image { dockerfile; target; args } src =
+    let src = Current_git.fetch src in
     let args = ("TARGET=" ^ target) :: args in
     let build_args = List.map (fun x -> ["--build-arg"; x]) args |> List.concat in
     let dockerfile = Current.return (`File (Fpath.v dockerfile)) in
@@ -111,17 +83,81 @@ module Packet_unikernel = struct
 end
 module Build_unikernel = Build.Make(Packet_unikernel)
 
+module Cluster = struct
+  module Toxis_docker = Current_docker.Default
+
+  type build_info = {
+    sched : Current_ocluster.t;
+    dockerfile : [`Contents of string Current.t | `Path of string];
+    archs : arch list;
+  }
+
+  type deploy_info = {
+    hub_id : Cluster_api.Docker.Image_id.t;
+    services : ([`Toxis] * string) list;
+  }
+
+  (* Build [src/dockerfile] as a Docker service. *)
+  let build { sched; dockerfile; archs } src =
+    let src = Current.map (fun x -> [x]) src in
+    let build_arch arch = Current_ocluster.build sched ~pool:(pool_id arch) ~src dockerfile in
+    Current.all (List.map build_arch archs)
+
+  let name info = Cluster_api.Docker.Image_id.to_string info.hub_id
+
+  let no_schedule = Current_cache.Schedule.v ()
+
+  let pull repo_id =
+    Current.component "pull" |>
+    let> repo_id = repo_id in
+    Current_docker.Raw.pull repo_id
+      ~docker_context:Toxis_docker.docker_context
+      ~schedule:no_schedule
+    |> Current.Primitive.map_result (Result.map (fun raw_image ->
+        Toxis_docker.Image.of_hash (Current_docker.Raw.Image.hash raw_image)
+      ))
+
+  let deploy { sched; dockerfile; archs } { hub_id; services } src =
+    let src = Current.map (fun x -> [x]) src in
+    let target_label = Cluster_api.Docker.Image_id.repo hub_id |> String.map (function '/' | ':' -> '-' | c -> c) in
+    let build_arch arch =
+      let pool = pool_id arch in
+      let tag = Printf.sprintf "live-%s-%s" target_label pool in
+      let push_target = Cluster_api.Docker.Image_id.v ~repo:push_repo ~tag in
+      Current_ocluster.build_and_push sched ~push_target ~pool ~src dockerfile
+    in
+    let images = List.map build_arch archs in
+    match auth with
+    | None -> Current.fail "No auth configured; can't push final image"
+    | Some auth ->
+      let multi_hash = Current_docker.push_manifest ~auth images ~tag:(Cluster_api.Docker.Image_id.to_string hub_id) in
+      match services with
+      | [] -> Current.ignore_value multi_hash
+      | services ->
+        let image = pull multi_hash in
+        services
+        |> List.map (function `Toxis, name -> Toxis_docker.service ~name ~image ())
+        |> Current.all
+end
+module Cluster_build = Build.Make(Cluster)
+
 (* [web_ui collapse_value] is a URL back to the deployment service, for links
    in status messages. *)
 let web_ui =
   let base = Uri.of_string "https://deploy.ocamllabs.io/" in
   fun repo -> Uri.with_query' base ["repo", repo]
 
-let docker dockerfile services =
-  let build_info = { Toxis_service.dockerfile } in
+let docker ?(archs=[`Linux_x86_64]) ~sched dockerfile targets =
+  let build_info = { Cluster.sched; dockerfile = `Path dockerfile; archs } in
   let deploys =
-    services
-    |> List.map (fun (branch, tag, service) -> branch, { Toxis_service.tag; service }) in
+    targets
+    |> List.map (fun (branch, target, services) ->
+        branch, { Cluster.
+                  hub_id = Cluster_api.Docker.Image_id.of_string target |> or_fail;
+                  services
+                }
+      )
+  in
   (build_info, deploys)
 
 let unikernel dockerfile ~target args services =
@@ -135,32 +171,33 @@ let unikernel dockerfile ~target args services =
    For each one, it lists the builds that are made from that repository.
    For each build, it says which which branch gives the desired live version of
    the service, and where to deloy it. *)
-let v ~app ~notify:channel () =
+let v ~app ~notify:channel ~sched ~staging_auth () =
   let ocurrent = Build.org ~app ~account:"ocurrent" 6853813 in
   let mirage = Build.org ~app ~account:"mirage" 7175142 in
-  let docker_services = 
-    let build (org, name, builds) = Build_toxis.repo ~channel ~web_ui ~org ~name builds in
+  let docker_services =
+    let build (org, name, builds) = Cluster_build.repo ~channel ~web_ui ~org ~name builds in
+    let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
+    let docker = docker ~sched in
     Current.all @@ List.map build [
-      (* OCurrent repositories *)
       ocurrent, "ocaml-ci", [
-        docker "Dockerfile"     ["live-engine", "ocaml-ci-service:latest", "ocaml-ci_ci"];
-        docker "Dockerfile.web" ["live-www",    "ocaml-ci-web:latest",     "ocaml-ci_web";
-                                 "staging-www", "ocaml-ci-web:staging",    "test-www"];
+        docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Toxis, "ocaml-ci_ci"]];
+        docker "Dockerfile.web" ["live-www",    "ocurrent/ocaml-ci-web:live",     [`Toxis, "ocaml-ci_web"];
+                                 "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Toxis, "test-www"]];
       ];
       ocurrent, "ocurrent-deployer", [
-        docker "Dockerfile"     ["live", "ci.ocamllabs.io-deployer:latest", "infra_deployer"];
+        docker "Dockerfile"     ["live", "ocurrent/ci.ocamllabs.io-deployer:live", [`Toxis, "infra_deployer"]];
       ];
       ocurrent, "docker-base-images", [
-        docker "Dockerfile"     ["live", "base-images:latest", "base-images_builder"];
+        docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Toxis, "base-images_builder"]];
       ];
       ocurrent, "opam-repo-ci", [
         docker "Dockerfile"     [];     (* No deployments for now *)
         docker "Dockerfile.web" [];
       ];
-      ocurrent, "build-scheduler", [
-        docker "Dockerfile"        ["live", "ocurrent/build-scheduler", "build-scheduler_scheduler"];
-        docker "Dockerfile.worker" ["live", "ocurrent/build-worker", "build-agent"];
-      ]
+      ocurrent, "ocluster", [
+        docker "Dockerfile"        ["live", "ocurrent/ocluster-scheduler:live", []];
+        docker "Dockerfile.worker" ["live", "ocurrent/ocluster-worker:live", [`Toxis, "build-agent"]] ~archs:[`Linux_x86_64; `Linux_arm64];
+      ];
     ]
   and mirage_unikernels =
     let build (org, name, builds) = Build_unikernel.repo ~channel ~web_ui ~org ~name builds in

@@ -1,6 +1,5 @@
 open Current.Syntax
 
-module Git = Current_git
 module Github = Current_github
 
 type org = string * Current_github.Api.t
@@ -56,7 +55,7 @@ module Make(T : S.T) = struct
       let pipeline =
         refs
         |> Current.list_iter (module Github.Api.Commit) @@ fun commit ->
-        let src = Git.fetch (Current.map Github.Api.Commit.id commit) in
+        let src = Current.map Github.Api.Commit.id commit in
         Current.all (
           build_specs |> List.map (fun (build_info, _deploys) -> T.build build_info src |> Current.ignore_value)
         )
@@ -75,7 +74,7 @@ module Make(T : S.T) = struct
               deploys |> List.map (fun (branch, deploy_info) ->
                   let service = T.name deploy_info in
                   let commit = head_of ~github repo branch in
-                  let src = Git.fetch (Current.map Github.Api.Commit.id commit) in
+                  let src = Current.map Github.Api.Commit.id commit in
                   let notify_repo = Printf.sprintf "%s-%s-%s" repo_name service branch in
                   T.deploy build_info deploy_info src
                   |> notify ~channel ~web_ui ~service ~commit ~repo:notify_repo
