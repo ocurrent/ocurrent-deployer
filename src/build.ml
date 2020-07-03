@@ -70,8 +70,7 @@ module Make(T : S.T) = struct
                   let collapse_value = Printf.sprintf "%s-%s-%s" repo_name service branch in
                   let commit = head_of ~github repo branch in
                   let src = Git.fetch (Current.map Github.Api.Commit.id commit) in
-                  let binary = T.build build_info src in
-                  T.deploy deploy_info binary
+                  T.deploy build_info deploy_info src
                   |> notify ~channel ~web_ui ~service ~commit ~repo:collapse_value
                   |> Current.collapse
                     ~key:"repo" ~value:collapse_value
