@@ -25,20 +25,20 @@ module Toxis_service = struct
     dockerfile : string;
   }
 
-  type binary = Docker.Image.t
-
   type deploy_info = {
     service : string;
     tag : string;
   }
 
   (* Build [src/dockerfile] as a Docker service. *)
-  let build { dockerfile } src =
+  let build_image { dockerfile } src =
     Docker.build (`Git src)
       ~label:dockerfile
       ~dockerfile:(Current.return (`File (Fpath.v dockerfile)))
       ~pull:true
       ~timeout
+
+  let build info src = Current.ignore_value (build_image info src)
 
   let name info = info.service
 
@@ -46,7 +46,8 @@ module Toxis_service = struct
      We also tag it, so that if someone redeploys the stack.yml then it will
      still use this version. If the tag contains a '/' then we push it to
      Docker hub too.*)
-  let deploy { tag; service } image =
+  let deploy build_info { tag; service } src =
+    let image = build_image build_info src in
     let publish =
       match auth with
       | Some auth when String.contains tag '/' ->
@@ -72,13 +73,11 @@ module Packet_unikernel = struct
     args : string list;
   }
 
-  type binary = Docker.Image.t
-
   type deploy_info = {
     service : string;
   }
 
-  let build  { dockerfile; target; args } src =
+  let build_image { dockerfile; target; args } src =
     let args = ("TARGET=" ^ target) :: args in
     let build_args = List.map (fun x -> ["--build-arg"; x]) args |> List.concat in
     let dockerfile = Current.return (`File (Fpath.v dockerfile)) in
@@ -89,6 +88,8 @@ module Packet_unikernel = struct
       ~pull:true
       ~timeout
 
+  let build info src = Current.ignore_value (build_image info src)
+
   let name { service } = service
 
   (* Deployment *)
@@ -97,7 +98,8 @@ module Packet_unikernel = struct
 
   let mirage_host_ssh = "root@147.75.204.215"
 
-  let deploy { service } image =
+  let deploy build_info { service } src =
+    let image = build_image build_info src in
     (* We tag the image to prevent docker prune from removing it.
        Otherwise, if we later deploy a new (bad) version and need to roll back quickly,
        we may find the old version isn't around any longer. *)

@@ -3,11 +3,14 @@
 
 let () = Logging.init ()
 
+let read_first_line path =
+  let ch = open_in path in
+  Fun.protect (fun () -> input_line ch)
+    ~finally:(fun () -> close_in ch)
+
 let read_channel_uri path =
   try
-    let ch = open_in path in
-    let uri = input_line ch in
-    close_in ch;
+    let uri = read_first_line path in
     Current_slack.channel (Uri.of_string (String.trim uri))
   with ex ->
     Fmt.failwith "Failed to read slack URI from %S: %a" path Fmt.exn ex
