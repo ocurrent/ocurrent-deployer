@@ -31,6 +31,11 @@ let notify ~channel ~web_ui ~service ~commit ~repo x =
     x   (* If [x] fails, the whole pipeline should fail too. *)
   ]
 
+let label l x =
+  Current.component "%s" l |>
+  let> x = x in
+  Current.Primitive.const x
+
 module Make(T : S.T) = struct
   let status_of_build ~url b =
     let+ state = Current.state b in
@@ -62,23 +67,25 @@ module Make(T : S.T) = struct
         ~key:"repo" ~value:collapse_value
         ~input:refs pipeline
     and deployments =
+      let root = label "deployments" root in
+      Current.with_context root @@ fun () ->
       Current.all (
         build_specs |> List.map (fun (build_info, deploys) ->
             Current.all (
               deploys |> List.map (fun (branch, deploy_info) ->
                   let service = T.name deploy_info in
-                  let collapse_value = Printf.sprintf "%s-%s-%s" repo_name service branch in
                   let commit = head_of ~github repo branch in
                   let src = Git.fetch (Current.map Github.Api.Commit.id commit) in
+                  let notify_repo = Printf.sprintf "%s-%s-%s" repo_name service branch in
                   T.deploy build_info deploy_info src
-                  |> notify ~channel ~web_ui ~service ~commit ~repo:collapse_value
-                  |> Current.collapse
-                    ~key:"repo" ~value:collapse_value
-                    ~input:commit
+                  |> notify ~channel ~web_ui ~service ~commit ~repo:notify_repo
                 )
             )
           )
       )
+      |> Current.collapse
+        ~key:"repo" ~value:repo_name
+        ~input:root
     in
     Current.all [builds; deployments]
 end
