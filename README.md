@@ -9,21 +9,21 @@ The main configuration is in [pipeline.ml][]. For example, one entry is:
 
 ```ocaml
 ocurrent, "docker-base-images", [
-  docker "Dockerfile"     ["live", "base-images:latest", "base-images_builder"];
-]
+  docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Toxis, "base-images_builder"]];
+];
 ```
 
 This says that for the <https://github.com/ocurrent/docker-base-images> repository:
 
 - We should use Docker to build the project's `Dockerfile` (and report the status on GitHub for each branch and PR).
-- For the `live` branch, we should also tag the image as `base-images:latest`
-  and deploy it as the image for the `base-images_builder` Docker service.
+- For the `live` branch, we should also publish the image on Docker Hub as `ocurrent/base-images:live`
+  and deploy it as the image for the `base-images_builder` Docker service on `toxis`.
 
 The pipeline also deploys some [MirageOS][] unikernels, e.g.
 
 ```ocaml
 mirage, "mirage-www", [
-  unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --interface=service"] ["master", "www"];
+  unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true"] ["master", "www"];
   unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
 ];
 ```

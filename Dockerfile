@@ -1,5 +1,5 @@
 FROM ocurrent/opam:debian-10-ocaml-4.10@sha256:b8683f4ddd6ec3fc979637e9e8140b0f6fc67e48f6913e73bbc4311dfb8dd130 AS build
-RUN sudo apt-get update && sudo apt-get install libev-dev m4 pkg-config libsqlite3-dev libgmp-dev libssl-dev -y --no-install-recommends
+RUN sudo apt-get update && sudo apt-get install libev-dev m4 pkg-config libsqlite3-dev libgmp-dev libssl-dev capnproto -y --no-install-recommends
 RUN cd ~/opam-repository && git pull origin master && git reset --hard 61ad206ca8f10c093296755461adafe6871c9049 && opam update
 COPY --chown=opam \
 	ocurrent/current_ansi.opam \
@@ -12,6 +12,9 @@ COPY --chown=opam \
 	ocurrent/current_slack.opam \
 	ocurrent/current_web.opam \
 	/src/ocurrent/
+COPY --chown=opam \
+        ocluster/*.opam \
+        /src/ocluster/
 WORKDIR /src
 RUN opam pin add -yn current_ansi.dev "./ocurrent" && \
     opam pin add -yn current_docker.dev "./ocurrent" && \
@@ -21,7 +24,8 @@ RUN opam pin add -yn current_ansi.dev "./ocurrent" && \
     opam pin add -yn current.dev "./ocurrent" && \
     opam pin add -yn current_rpc.dev "./ocurrent" && \
     opam pin add -yn current_slack.dev "./ocurrent" && \
-    opam pin add -yn current_web.dev "./ocurrent"
+    opam pin add -yn current_web.dev "./ocurrent" && \
+    opam pin add -yn ocluster-api.dev "./ocluster"
 COPY --chown=opam deployer.opam /src/
 RUN opam pin -yn add .
 RUN opam install -y --deps-only .

@@ -1,2 +1,2 @@
 (dirs :standard \ var)
-(vendored_dirs ocurrent)
+(vendored_dirs ocurrent ocluster)

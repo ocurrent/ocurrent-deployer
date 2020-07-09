@@ -13,6 +13,8 @@
   current_github
   current_docker
   current_slack
+  ocluster-api
+  capnp-rpc-unix
   fmt
   lwt
   cmdliner

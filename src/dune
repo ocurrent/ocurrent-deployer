@@ -2,11 +2,13 @@
  (public_name ocurrent-deployer)
  (name main)
  (libraries
+   capnp-rpc-unix
    current
    current.cache
    current_git
    current_github
    current_docker
+   current_ocluster
    current_slack
    current_web
    cmdliner
