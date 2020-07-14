@@ -196,7 +196,7 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
       ];
       ocurrent, "ocluster", [
         docker "Dockerfile"        ["live", "ocurrent/ocluster-scheduler:live", []];
-        docker "Dockerfile.worker" ["live", "ocurrent/ocluster-worker:live", [`Toxis, "build-agent"]] ~archs:[`Linux_x86_64; `Linux_arm64];
+        docker "Dockerfile.worker" ["live", "ocurrent/ocluster-worker:live", []] ~archs:[`Linux_x86_64; `Linux_arm64];
       ];
     ]
   and mirage_unikernels =
