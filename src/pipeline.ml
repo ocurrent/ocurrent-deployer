@@ -100,7 +100,8 @@ module Cluster = struct
   (* Build [src/dockerfile] as a Docker service. *)
   let build { sched; dockerfile; archs } src =
     let src = Current.map (fun x -> [x]) src in
-    let build_arch arch = Current_ocluster.build sched ~pool:(pool_id arch) ~src dockerfile in
+    let options = Cluster_api.Docker.Spec.defaults in
+    let build_arch arch = Current_ocluster.build sched ~options ~pool:(pool_id arch) ~src dockerfile in
     Current.all (List.map build_arch archs)
 
   let name info = Cluster_api.Docker.Image_id.to_string info.hub_id
@@ -124,7 +125,8 @@ module Cluster = struct
       let pool = pool_id arch in
       let tag = Printf.sprintf "live-%s-%s" target_label pool in
       let push_target = Cluster_api.Docker.Image_id.v ~repo:push_repo ~tag in
-      Current_ocluster.build_and_push sched ~push_target ~pool ~src dockerfile
+      let options = Cluster_api.Docker.Spec.defaults in
+      Current_ocluster.build_and_push sched ~options ~push_target ~pool ~src dockerfile
     in
     let images = List.map build_arch archs in
     match auth with
