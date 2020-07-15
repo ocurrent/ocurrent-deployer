@@ -27,11 +27,13 @@ let or_fail = function
 type arch = [
   | `Linux_arm64
   | `Linux_x86_64
+  | `Linux_ppc64
 ]
 
 let pool_id : arch -> string = function
   | `Linux_arm64 -> "linux-arm64"
   | `Linux_x86_64 -> "linux-x86_64"
+  | `Linux_ppc64 -> "linux-ppc64"
 
 module Packet_unikernel = struct
   (* Mirage unikernels running on packet.net *)
@@ -198,7 +200,8 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
       ];
       ocurrent, "ocluster", [
         docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []];
-        docker "Dockerfile.worker" ["live-worker", "ocurrent/ocluster-worker:live", []] ~archs:[`Linux_x86_64; `Linux_arm64];
+        docker "Dockerfile.worker" ["live-worker", "ocurrent/ocluster-worker:live", []]
+          ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64];
       ];
     ]
   and mirage_unikernels =
