@@ -90,6 +90,7 @@ module Cluster = struct
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4" end)
   module Ci5_docker = Current_docker.Make(struct let docker_context = Some "ci5" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "toxis" end)
+  module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
 
   type build_info = {
     sched : Current_ocluster.t;
@@ -99,7 +100,7 @@ module Cluster = struct
 
   type deploy_info = {
     hub_id : Cluster_api.Docker.Image_id.t;
-    services : ([`Toxis | `Ci3 | `Ci4 | `Ci5] * string) list;
+    services : ([`Toxis | `Ocamlorg_sw | `Ci3 | `Ci4 | `Ci5] * string) list;
   }
 
   (* Build [src/dockerfile] as a Docker service. *)
@@ -150,6 +151,7 @@ module Cluster = struct
             | `Ci4, name -> pull_and_serve (module Ci4_docker) ~name multi_hash
             | `Ci5, name -> pull_and_serve (module Ci5_docker) ~name multi_hash
             | `Toxis, name -> pull_and_serve (module Toxis_docker) ~name multi_hash
+            | `Ocamlorg_sw, name -> pull_and_serve (module Ocamlorg_docker) ~name multi_hash
           )
         |> Current.all
 end
@@ -187,6 +189,7 @@ let _unikernel dockerfile ~target args services =
    the service, and where to deloy it. *)
 let v ~app ~notify:channel ~sched ~staging_auth () =
   let ocurrent = Build.org ~app ~account:"ocurrent" 12497518 in
+  let ocaml = Build.org ~app ~account:"ocaml" 12075891 in (* XXX *)
   let docker_services =
     let build (org, name, builds) = Cluster_build.repo ~channel ~web_ui ~org ~name builds in
     let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
@@ -219,6 +222,10 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
       ocurrent, "ocaml-docs-ci", [
         docker "Dockerfile"     ["live", "ocurrent/docs-ci:live", [`Ci5, "infra_docs-ci"]];
         docker "Dockerfile.web" ["live-web", "ocurrent/docs-ci-web:live", [`Ci5, "infra_docs-ci-web"]];
+      ];
+      ocaml, "ocaml.org", [
+        docker "Dockerfile.deploy" ["master", "ocurrent/ocaml.org:live", [`Ocamlorg_sw, "ocamlwww_ocamlorg-live"]];
+        docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw, "ocamlwww_ocamlorg-staging"]]
       ];
     ]
   and mirage_unikernels =
