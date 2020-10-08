@@ -3,6 +3,10 @@
 
 (generate_opam_files true)
 
+(source (github ocurrent/ocurrent-deployer))
+(authors "talex5@gmail.com")
+(maintainers "talex5@gmail.com")
+
 (package
  (name deployer)
  (synopsis "Deploy other pipelines")
