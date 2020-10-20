@@ -132,7 +132,7 @@ module Cluster = struct
     in
     let images = List.map build_arch archs in
     match auth with
-    | None -> Current.fail "No auth configured; can't push final image"
+    | None -> Current.all (Current.fail "No auth configured; can't push final image" :: List.map Current.ignore_value images)
     | Some auth ->
       let multi_hash = Current_docker.push_manifest ~auth images ~tag:(Cluster_api.Docker.Image_id.to_string hub_id) in
       match services with
