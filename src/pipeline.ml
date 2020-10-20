@@ -86,7 +86,7 @@ end
 module Build_unikernel = Build.Make(Packet_unikernel)
 
 module Cluster = struct
-  module Toxis_docker = Current_docker.Default
+  module Ci3_docker = Current_docker.Default
 
   type build_info = {
     sched : Current_ocluster.t;
@@ -96,7 +96,7 @@ module Cluster = struct
 
   type deploy_info = {
     hub_id : Cluster_api.Docker.Image_id.t;
-    services : ([`Toxis] * string) list;
+    services : ([`Ci3] * string) list;
   }
 
   (* Build [src/dockerfile] as a Docker service. *)
@@ -114,10 +114,10 @@ module Cluster = struct
     Current.component "pull" |>
     let> repo_id = repo_id in
     Current_docker.Raw.pull repo_id
-      ~docker_context:Toxis_docker.docker_context
+      ~docker_context:Ci3_docker.docker_context
       ~schedule:no_schedule
     |> Current.Primitive.map_result (Result.map (fun raw_image ->
-        Toxis_docker.Image.of_hash (Current_docker.Raw.Image.hash raw_image)
+        Ci3_docker.Image.of_hash (Current_docker.Raw.Image.hash raw_image)
       ))
 
   let deploy { sched; dockerfile; archs } { hub_id; services } src =
@@ -140,7 +140,7 @@ module Cluster = struct
       | services ->
         let image = pull multi_hash in
         services
-        |> List.map (function `Toxis, name -> Toxis_docker.service ~name ~image ())
+        |> List.map (function `Ci3, name -> Ci3_docker.service ~name ~image ())
         |> Current.all
 end
 module Cluster_build = Build.Make(Cluster)
@@ -148,7 +148,7 @@ module Cluster_build = Build.Make(Cluster)
 (* [web_ui collapse_value] is a URL back to the deployment service, for links
    in status messages. *)
 let web_ui =
-  let base = Uri.of_string "https://deploy.ocamllabs.io/" in
+  let base = Uri.of_string "https://deploy.ci3.ocamllabs.io/" in
   fun repo -> Uri.with_query' base ["repo", repo]
 
 let docker ?(archs=[`Linux_x86_64]) ~sched dockerfile targets =
@@ -164,7 +164,7 @@ let docker ?(archs=[`Linux_x86_64]) ~sched dockerfile targets =
   in
   (build_info, deploys)
 
-let unikernel dockerfile ~target args services =
+let _unikernel dockerfile ~target args services =
   let build_info = { Packet_unikernel.dockerfile; target; args } in
   let deploys =
     services
@@ -176,41 +176,19 @@ let unikernel dockerfile ~target args services =
    For each build, it says which which branch gives the desired live version of
    the service, and where to deloy it. *)
 let v ~app ~notify:channel ~sched ~staging_auth () =
-  let ocurrent = Build.org ~app ~account:"ocurrent" 6853813 in
-  let mirage = Build.org ~app ~account:"mirage" 7175142 in
+  let ocurrent = Build.org ~app ~account:"ocurrent" 12497518 in
   let docker_services =
     let build (org, name, builds) = Cluster_build.repo ~channel ~web_ui ~org ~name builds in
     let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
     let docker = docker ~sched in
     Current.all @@ List.map build [
-      ocurrent, "ocaml-ci", [
-        docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Toxis, "ocaml-ci_ci"]];
-        docker "Dockerfile.web" ["live-www",    "ocurrent/ocaml-ci-web:live",     [`Toxis, "ocaml-ci_web"];
-                                 "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Toxis, "test-www"]];
-      ];
       ocurrent, "ocurrent-deployer", [
-        docker "Dockerfile"     ["live", "ocurrent/ci.ocamllabs.io-deployer:live", [`Toxis, "infra_deployer"]];
-      ];
-      ocurrent, "docker-base-images", [
-        docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Toxis, "base-images_builder"]];
-      ];
-      ocurrent, "opam-repo-ci", [
-        docker "Dockerfile"     [];     (* No deployments for now *)
-        docker "Dockerfile.web" [];
-      ];
-      ocurrent, "ocluster", [
-        docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []];
-        docker "Dockerfile.worker" ["live-worker", "ocurrent/ocluster-worker:live", []]
-          ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64];
+        docker "Dockerfile"     ["live-ci3", "ocurrent/ci.ocamllabs.io-deployer:live-ci3", [`Ci3, "infra_deployer"]];
       ];
     ]
   and mirage_unikernels =
     let build (org, name, builds) = Build_unikernel.repo ~channel ~web_ui ~org ~name builds in
     Current.all @@ List.map build [
-      mirage, "mirage-www", [
-        unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true"] ["master", "www"];
-        unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
-      ];
     ]
   in
   Current.all [ docker_services; mirage_unikernels ]
