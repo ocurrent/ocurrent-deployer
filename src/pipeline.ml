@@ -198,10 +198,6 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
       ocurrent, "docker-base-images", [
         docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Toxis, "base-images_builder"]];
       ];
-      ocurrent, "opam-repo-ci", [
-        docker "Dockerfile"     [];     (* No deployments for now *)
-        docker "Dockerfile.web" [];
-      ];
       ocurrent, "ocluster", [
         docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []];
         docker "Dockerfile.worker" ["live-worker", "ocurrent/ocluster-worker:live", []]
