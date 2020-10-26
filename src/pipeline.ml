@@ -87,6 +87,7 @@ module Build_unikernel = Build.Make(Packet_unikernel)
 
 module Cluster = struct
   module Toxis_docker = Current_docker.Default
+  module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
 
   type build_info = {
     sched : Current_ocluster.t;
@@ -96,7 +97,7 @@ module Cluster = struct
 
   type deploy_info = {
     hub_id : Cluster_api.Docker.Image_id.t;
-    services : ([`Toxis] * string) list;
+    services : ([`Toxis | `Ocamlorg_sw] * string) list;
   }
 
   (* Build [src/dockerfile] as a Docker service. *)
@@ -110,15 +111,17 @@ module Cluster = struct
 
   let no_schedule = Current_cache.Schedule.v ()
 
-  let pull repo_id =
-    Current.component "pull" |>
-    let> repo_id = repo_id in
-    Current_docker.Raw.pull repo_id
-      ~docker_context:Toxis_docker.docker_context
+  let pull_and_serve (module D : Current_docker.S.DOCKER) ~name repo_id =
+    let image =
+      Current.component "pull" |>
+      let> repo_id = repo_id in
+      Current_docker.Raw.pull repo_id
+      ~docker_context:D.docker_context
       ~schedule:no_schedule
     |> Current.Primitive.map_result (Result.map (fun raw_image ->
-        Toxis_docker.Image.of_hash (Current_docker.Raw.Image.hash raw_image)
-      ))
+        D.Image.of_hash (Current_docker.Raw.Image.hash raw_image)
+      )) in
+      D.service ~name ~image ()
 
   let deploy { sched; dockerfile; archs } { hub_id; services } src =
     let src = Current.map (fun x -> [x]) src in
@@ -138,9 +141,9 @@ module Cluster = struct
       match services with
       | [] -> Current.ignore_value multi_hash
       | services ->
-        let image = pull multi_hash in
         services
-        |> List.map (function `Toxis, name -> Toxis_docker.service ~name ~image ())
+        |> List.map (function `Toxis, name ->  pull_and_serve (module Toxis_docker) ~name multi_hash
+                             |`Ocamlorg_sw, name -> pull_and_serve (module Ocamlorg_docker) ~name multi_hash)
         |> Current.all
 end
 module Cluster_build = Build.Make(Cluster)
@@ -178,6 +181,7 @@ let unikernel dockerfile ~target args services =
 let v ~app ~notify:channel ~sched ~staging_auth () =
   let ocurrent = Build.org ~app ~account:"ocurrent" 6853813 in
   let mirage = Build.org ~app ~account:"mirage" 7175142 in
+  let ocaml = Build.org ~app ~account:"ocaml" 12075891 in
   let docker_services =
     let build (org, name, builds) = Cluster_build.repo ~channel ~web_ui ~org ~name builds in
     let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
@@ -202,6 +206,10 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
         docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []];
         docker "Dockerfile.worker" ["live-worker", "ocurrent/ocluster-worker:live", []]
           ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64];
+      ];
+      ocaml, "ocaml.org", [
+        docker "Dockerfile.deploy" ["master", "ocurrent/ocaml.org:live", [`Ocamlorg_sw, "ocamlwww_ocamlorg-live"]];
+        docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw, "ocamlwww_ocamlorg-staging"]]
       ];
     ]
   and mirage_unikernels =
