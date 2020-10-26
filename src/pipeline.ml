@@ -185,6 +185,9 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
       ocurrent, "ocurrent-deployer", [
         docker "Dockerfile"     ["live-ci3", "ocurrent/ci.ocamllabs.io-deployer:live-ci3", [`Ci3, "infra_deployer"]];
       ];
+      ocurrent, "opam-repo-ci", [
+        docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Ci3, "opam-repo-ci_opam-repo-ci"]];
+      ];
     ]
   and mirage_unikernels =
     let build (org, name, builds) = Build_unikernel.repo ~channel ~web_ui ~org ~name builds in
