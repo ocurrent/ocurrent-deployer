@@ -49,9 +49,18 @@ module Cluster = struct
     archs : arch list;
   }
 
+  type service = [
+    | `Toxis of string
+    | `Ci3 of string
+    | `Ci4 of string
+    | `Ci6 of string
+    | `Autumn of string
+    | `Ocamlorg_sw of (string * string) list
+  ]
+
   type deploy_info = {
     hub_id : Cluster_api.Docker.Image_id.t;
-    services : ([`Toxis | `Ocamlorg_sw | `Ci3 | `Ci4 | `Ci6 | `Autumn] * string) list;
+    services : service list;
   }
 
   (* Build [src/dockerfile] as a Docker service. *)
@@ -65,7 +74,7 @@ module Cluster = struct
 
   let no_schedule = Current_cache.Schedule.v ()
 
-  let pull_and_serve (module D : Current_docker.S.DOCKER) ~name repo_id =
+  let pull_and_serve (module D : Current_docker.S.DOCKER) ~name op repo_id =
     let image =
       Current.component "pull" |>
       let> repo_id = repo_id in
@@ -76,7 +85,12 @@ module Cluster = struct
           D.Image.of_hash (Current_docker.Raw.Image.hash raw_image)
         ))
     in
-    D.service ~name ~image ()
+    match op with
+    | `Service -> D.service ~name ~image ()
+    | `Compose contents ->
+        let contents = Current.map (fun image ->
+          Caddy.replace_hash_var ~hash:(D.Image.hash image) contents) image in
+        D.compose ~name ~contents ()
 
   let deploy { sched; dockerfile; archs } { hub_id; services } src =
     let src = Current.map (fun x -> [x]) src in
@@ -98,12 +112,15 @@ module Cluster = struct
       | services ->
         services
         |> List.map (function
-            | `Ci3, name -> pull_and_serve (module Ci3_docker) ~name multi_hash
-            | `Ci4, name -> pull_and_serve (module Ci4_docker) ~name multi_hash
-            | `Ci6, name -> pull_and_serve (module Ci6_docker) ~name multi_hash
-            | `Toxis, name -> pull_and_serve (module Toxis_docker) ~name multi_hash
-            | `Autumn, name -> pull_and_serve (module Autumn_docker) ~name multi_hash
-            | `Ocamlorg_sw, name -> pull_and_serve (module Ocamlorg_docker) ~name multi_hash
+            | `Ci3 name -> pull_and_serve (module Ci3_docker) ~name `Service multi_hash
+            | `Ci4 name -> pull_and_serve (module Ci4_docker) ~name `Service multi_hash
+            | `Ci6 name -> pull_and_serve (module Ci6_docker) ~name `Service multi_hash
+            | `Toxis name -> pull_and_serve (module Toxis_docker) ~name `Service multi_hash
+            | `Autumn name -> pull_and_serve (module Autumn_docker) ~name `Service multi_hash
+            | `Ocamlorg_sw domains ->
+              let name = Cluster_api.Docker.Image_id.tag hub_id in
+              let contents = Caddy.compose {Caddy.name; domains} in
+              pull_and_serve (module Ocamlorg_docker) ~name (`Compose contents) multi_hash
           )
         |> Current.all
 end
@@ -151,16 +168,16 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let docker = docker ~sched in
   Current.all @@ List.map build @@ filter_list filter [
     ocurrent, "ocurrent-deployer", [
-      docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3, "deployer_deployer"]];
-      docker "Dockerfile"     ["live-toxis", "ocurrent/ci.ocamllabs.io-deployer:live-toxis", [`Toxis, "infra_deployer"]];
+      docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3 "deployer_deployer"]];
+      docker "Dockerfile"     ["live-toxis", "ocurrent/ci.ocamllabs.io-deployer:live-toxis", [`Toxis "infra_deployer"]];
     ];
     ocurrent, "ocaml-ci", [
-      docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Toxis, "ocaml-ci_ci"]];
-      docker "Dockerfile.web" ["live-www",    "ocurrent/ocaml-ci-web:live",     [`Toxis, "ocaml-ci_web"];
-                               "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Toxis, "test-www"]];
+      docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Toxis "ocaml-ci_ci"]];
+      docker "Dockerfile.web" ["live-www",    "ocurrent/ocaml-ci-web:live",     [`Toxis "ocaml-ci_web"];
+                               "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Toxis "test-www"]];
     ];
     ocurrent, "docker-base-images", [
-      docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Toxis, "base-images_builder"]];
+      docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Toxis "base-images_builder"]];
     ];      
     ocurrent, "ocluster", [
       docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []];
@@ -168,25 +185,25 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
         ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64];
     ];
     ocurrent, "opam-repo-ci", [
-      docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Ci3, "opam-repo-ci_opam-repo-ci"]];
-      docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Ci3, "opam-repo-ci_opam-repo-ci-web"]];
+      docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Ci3 "opam-repo-ci_opam-repo-ci"]];
+      docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Ci3 "opam-repo-ci_opam-repo-ci-web"]];
     ];
     ocurrent, "ocaml-multicore-ci", [
-      docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4, "infra_multicore-ci"]];
-      docker "Dockerfile.web" ["live-web", "ocurrent/multicore-ci-web:live", [`Ci4, "infra_multicore-ci-web"]];
+      docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4 "infra_multicore-ci"]];
+      docker "Dockerfile.web" ["live-web", "ocurrent/multicore-ci-web:live", [`Ci4 "infra_multicore-ci-web"]];
     ];
     ocurrent, "ocaml-docs-ci", [
-      docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Ci6, "infra_docs-ci"]];
-      docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Ci6, "infra_init"]];
-      docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6, "infra_storage-server"]];
-      docker "Dockerfile.web"             ["live-web", "ocurrent/docs-ci-web:live", [`Ci6, "infra_docs-ci-web"]];
+      docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Ci6 "infra_docs-ci"]];
+      docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Ci6 "infra_init"]];
+      docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6 "infra_storage-server"]];
+      docker "Dockerfile.web"             ["live-web", "ocurrent/docs-ci-web:live", [`Ci6 "infra_docs-ci-web"]];
     ];
     ocurrent, "current-bench", [
-      docker "pipeline/Dockerfile" ["live", "ocurrent/current-bench-pipeline:live", [`Autumn, "current-bench_pipeline"]];
-      docker "frontend/Dockerfile" ["live", "ocurrent/current-bench-frontend:live", [`Autumn, "current-bench_frontend"]];
+      docker "pipeline/Dockerfile" ["live", "ocurrent/current-bench-pipeline:live", [`Autumn "current-bench_pipeline"]];
+      docker "frontend/Dockerfile" ["live", "ocurrent/current-bench-frontend:live", [`Autumn "current-bench_frontend"]];
     ];
     ocaml, "ocaml.org", [
-      docker "Dockerfile.deploy" ["master", "ocurrent/ocaml.org:live", [`Ocamlorg_sw, "ocamlwww_ocamlorg-live"]];
-      docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw, "ocamlwww_ocamlorg-staging"]]
+      docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live",    [`Ocamlorg_sw ["www.ocaml.org", "51.159.79.75"; "ocaml.org", "51.159.78.124"]]];
+      docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw ["staging.ocaml.org", "51.159.79.64"]]]
     ];
   ]

@@ -35,8 +35,10 @@ RUN apt-get update && apt-get install libffi-dev libev4 openssh-client curl gnup
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 RUN echo 'deb [arch=amd64] https://download.docker.com/linux/debian buster stable' >> /etc/apt/sources.list
 RUN apt-get update && apt-get install docker-ce -y --no-install-recommends
+RUN apt-get update && apt-get install python3-pip -y && pip3 install docker-compose --no-cache-dir
 WORKDIR /var/lib/ocurrent
 ENTRYPOINT ["dumb-init", "/usr/local/bin/ocurrent-deployer"]
 COPY config/ssh /root/.ssh
 COPY config/docker /root/.docker
+RUN docker context use ocaml-www1 && docker context use default
 COPY --from=build /src/_build/install/default/bin/ocurrent-deployer /usr/local/bin/
