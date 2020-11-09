@@ -1,1 +1,1 @@
-{"Name":"ocaml-www1","Metadata":{},"Endpoints":{"docker":{"Host":"ssh://root@www2.ocaml.org","SkipTLSVerify":false}}}
+{"Name":"ocaml-www1","Metadata":{},"Endpoints":{"docker":{"Host":"ssh://root@staging.ocaml.org","SkipTLSVerify":false}}}
