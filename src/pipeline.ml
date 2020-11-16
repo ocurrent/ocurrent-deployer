@@ -183,7 +183,7 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
     let docker = docker ~sched in
     Current.all @@ List.map build [
       ocurrent, "ocurrent-deployer", [
-        docker "Dockerfile"     ["live-ci3", "ocurrent/ci.ocamllabs.io-deployer:live-ci3", [`Ci3, "infra_deployer"]];
+        docker "Dockerfile"     ["live-ci3", "ocurrent/ci.ocamllabs.io-deployer:live-ci3", [`Ci3, "deployer_deployer"]];
       ];
       ocurrent, "opam-repo-ci", [
         docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Ci3, "opam-repo-ci_opam-repo-ci"]];
