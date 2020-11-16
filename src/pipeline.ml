@@ -187,7 +187,7 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
       ];
       ocurrent, "opam-repo-ci", [
         docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Ci3, "opam-repo-ci_opam-repo-ci"]];
-        docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Ci3, "opam-repo-ci_web"]];
+        docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Ci3, "opam-repo-ci_opam-repo-ci-web"]];
       ];
     ]
   and mirage_unikernels =
