@@ -95,6 +95,7 @@ module Cluster = struct
   type build_info = {
     sched : Current_ocluster.t;
     dockerfile : [`Contents of string Current.t | `Path of string];
+    options : Cluster_api.Docker.Spec.options;
     archs : arch list;
   }
 
@@ -112,9 +113,8 @@ module Cluster = struct
   }
 
   (* Build [src/dockerfile] as a Docker service. *)
-  let build { sched; dockerfile; archs } src =
+  let build { sched; dockerfile; options; archs } src =
     let src = Current.map (fun x -> [x]) src in
-    let options = Cluster_api.Docker.Spec.defaults in
     let build_arch arch = Current_ocluster.build sched ~options ~pool:(pool_id arch) ~src dockerfile in
     Current.all (List.map build_arch archs)
 
@@ -140,14 +140,13 @@ module Cluster = struct
           Caddy.replace_hash_var ~hash:(D.Image.hash image) contents) image in
         D.compose ~name ~contents ()
 
-  let deploy { sched; dockerfile; archs } { hub_id; services } src =
+  let deploy { sched; dockerfile; options; archs } { hub_id; services } src =
     let src = Current.map (fun x -> [x]) src in
     let target_label = Cluster_api.Docker.Image_id.repo hub_id |> String.map (function '/' | ':' -> '-' | c -> c) in
     let build_arch arch =
       let pool = pool_id arch in
       let tag = Printf.sprintf "live-%s-%s" target_label pool in
       let push_target = Cluster_api.Docker.Image_id.v ~repo:push_repo ~tag in
-      let options = Cluster_api.Docker.Spec.defaults in
       Current_ocluster.build_and_push sched ~options ~push_target ~pool ~src dockerfile
     in
     let images = List.map build_arch archs in
@@ -179,8 +178,8 @@ let web_ui =
   let base = Uri.of_string "https://deploy.ci3.ocamllabs.io/" in
   fun repo -> Uri.with_query' base ["repo", repo]
 
-let docker ?(archs=[`Linux_x86_64]) ~sched dockerfile targets =
-  let build_info = { Cluster.sched; dockerfile = `Path dockerfile; archs } in
+let docker ?(archs=[`Linux_x86_64]) ?(options=Cluster_api.Docker.Spec.defaults) ~sched dockerfile targets =
+  let build_info = { Cluster.sched; dockerfile = `Path dockerfile; options; archs } in
   let deploys =
     targets
     |> List.map (fun (branch, target, services) ->
@@ -206,6 +205,7 @@ let _unikernel dockerfile ~target args services =
 let v ~app ~notify:channel ~sched ~staging_auth () =
   let ocurrent = Build.org ~app ~account:"ocurrent" 12497518 in
   let ocaml = Build.org ~app ~account:"ocaml" 12075891 in (* XXX *)
+  let include_git = { Cluster_api.Docker.Spec.defaults with include_git = true } in
   let docker_services =
     let build (org, name, builds) = Cluster_build.repo ~channel ~web_ui ~org ~name builds in
     let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
@@ -240,8 +240,10 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
         docker "Dockerfile.web" ["live-web", "ocurrent/docs-ci-web:live", [`Ci5 "infra_docs-ci-web"]];
       ];
       ocaml, "ocaml.org", [
-        docker "Dockerfile.deploy" ["master", "ocurrent/ocaml.org:live", [`Ocamlorg_sw ["www.ocaml.org", "51.159.79.75"; "ocaml.org", "51.159.78.124"]]];
+        docker "Dockerfile.deploy" ["master", "ocurrent/ocaml.org:live", [`Ocamlorg_sw ["www.ocaml.org", "51.159.79.75"; "ocaml.org", "51.159.78.124"]]]
+          ~options:include_git;
         docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw ["staging.ocaml.org", "51.159.79.64"]]]
+          ~options:include_git;
       ];
     ]
   and mirage_unikernels =
