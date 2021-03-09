@@ -7,6 +7,9 @@ homepage: "https://github.com/ocurrent/ocurrent-deployer"
 bug-reports: "https://github.com/ocurrent/ocurrent-deployer/issues"
 depends: [
   "dune" {>= "1.11"}
+  "ppx_deriving_yojson"
+  "ppx_deriving"
+  "logs"
   "current"
   "current_web"
   "current_git"
