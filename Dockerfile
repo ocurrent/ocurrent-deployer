@@ -1,6 +1,6 @@
-FROM ocurrent/opam:debian-10-ocaml-4.10@sha256:b8683f4ddd6ec3fc979637e9e8140b0f6fc67e48f6913e73bbc4311dfb8dd130 AS build
-RUN sudo apt-get update && sudo apt-get install libev-dev m4 pkg-config libsqlite3-dev libgmp-dev libssl-dev capnproto -y --no-install-recommends
-RUN cd ~/opam-repository && git pull origin -q master && git reset --hard a5e373ef1d13748cb092ede3c5b74ce6b6c03349 && opam update
+FROM ocaml/opam:debian-10-ocaml-4.12@sha256:e39cf5ddf42ceff246eee0402466a81e47a1c29567ab73f8919ac5ce3cd0f6e6 AS build
+RUN sudo apt-get update && sudo apt-get install libev-dev m4 pkg-config libsqlite3-dev libgmp-dev libssl-dev capnproto graphviz -y --no-install-recommends
+RUN cd ~/opam-repository && git pull origin -q master && git reset --hard aef3a514a986dce132791dd518f6c91cd0e993bf && opam update
 COPY --chown=opam \
 	ocurrent/current_ansi.opam \
 	ocurrent/current_docker.opam \
