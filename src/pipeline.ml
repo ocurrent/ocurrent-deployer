@@ -233,6 +233,7 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
       mirage, "mirage-www", [
         unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true"] ["master", "www"];
         unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
+        unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true"] ["next", "next"];
       ];
     ]
   in
