@@ -87,6 +87,7 @@ module Build_unikernel = Build.Make(Packet_unikernel)
 
 module Cluster = struct
   module Ci3_docker = Current_docker.Default
+  module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4" end)
 
   type build_info = {
     sched : Current_ocluster.t;
@@ -96,7 +97,7 @@ module Cluster = struct
 
   type deploy_info = {
     hub_id : Cluster_api.Docker.Image_id.t;
-    services : ([`Ci3] * string) list;
+    services : ([`Ci3 | `Ci4] * string) list;
   }
 
   (* Build [src/dockerfile] as a Docker service. *)
@@ -110,15 +111,18 @@ module Cluster = struct
 
   let no_schedule = Current_cache.Schedule.v ()
 
-  let pull repo_id =
-    Current.component "pull" |>
-    let> repo_id = repo_id in
-    Current_docker.Raw.pull repo_id
-      ~docker_context:Ci3_docker.docker_context
+  let pull_and_serve (module D : Current_docker.S.DOCKER) ~name repo_id =
+    let image =
+      Current.component "pull" |>
+      let> repo_id = repo_id in
+      Current_docker.Raw.pull repo_id
+      ~docker_context:D.docker_context
       ~schedule:no_schedule
-    |> Current.Primitive.map_result (Result.map (fun raw_image ->
-        Ci3_docker.Image.of_hash (Current_docker.Raw.Image.hash raw_image)
-      ))
+      |> Current.Primitive.map_result (Result.map (fun raw_image ->
+          D.Image.of_hash (Current_docker.Raw.Image.hash raw_image)
+        ))
+    in
+    D.service ~name ~image ()
 
   let deploy { sched; dockerfile; archs } { hub_id; services } src =
     let src = Current.map (fun x -> [x]) src in
@@ -138,9 +142,11 @@ module Cluster = struct
       match services with
       | [] -> Current.ignore_value multi_hash
       | services ->
-        let image = pull multi_hash in
         services
-        |> List.map (function `Ci3, name -> Ci3_docker.service ~name ~image ())
+        |> List.map (function
+            | `Ci3, name -> pull_and_serve (module Ci3_docker) ~name multi_hash
+            | `Ci4, name -> pull_and_serve (module Ci4_docker) ~name multi_hash
+          )
         |> Current.all
 end
 module Cluster_build = Build.Make(Cluster)
@@ -190,8 +196,8 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
         docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Ci3, "opam-repo-ci_opam-repo-ci-web"]];
       ];
       ocurrent, "ocaml-multicore-ci", [
-        docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", []];
-        docker "Dockerfile.web" ["live-web", "ocurrent/multicore-ci-web:live", []];
+        docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4, "infra_multicore-ci"]];
+        docker "Dockerfile.web" ["live-web", "ocurrent/multicore-ci-web:live", [`Ci4, "infra_multicore-ci-web"]];
       ];
     ]
   and mirage_unikernels =
