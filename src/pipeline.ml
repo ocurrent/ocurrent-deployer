@@ -88,6 +88,7 @@ module Build_unikernel = Build.Make(Packet_unikernel)
 module Cluster = struct
   module Ci3_docker = Current_docker.Default
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4" end)
+  module Ci5_docker = Current_docker.Make(struct let docker_context = Some "ci5" end)
 
   type build_info = {
     sched : Current_ocluster.t;
@@ -97,7 +98,7 @@ module Cluster = struct
 
   type deploy_info = {
     hub_id : Cluster_api.Docker.Image_id.t;
-    services : ([`Ci3 | `Ci4] * string) list;
+    services : ([`Ci3 | `Ci4 | `Ci5] * string) list;
   }
 
   (* Build [src/dockerfile] as a Docker service. *)
@@ -146,6 +147,7 @@ module Cluster = struct
         |> List.map (function
             | `Ci3, name -> pull_and_serve (module Ci3_docker) ~name multi_hash
             | `Ci4, name -> pull_and_serve (module Ci4_docker) ~name multi_hash
+            | `Ci5, name -> pull_and_serve (module Ci5_docker) ~name multi_hash
           )
         |> Current.all
 end
@@ -198,6 +200,10 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
       ocurrent, "ocaml-multicore-ci", [
         docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4, "infra_multicore-ci"]];
         docker "Dockerfile.web" ["live-web", "ocurrent/multicore-ci-web:live", [`Ci4, "infra_multicore-ci-web"]];
+      ];
+      ocurrent, "ocaml-docs-ci", [
+        docker "Dockerfile"     ["live", "ocurrent/docs-ci:live", [`Ci5, "infra_docs-ci"]];
+        docker "Dockerfile.web" ["live-web", "ocurrent/docs-ci-web:live", [`Ci5, "infra_docs-ci-web"]];
       ];
     ]
   and mirage_unikernels =
