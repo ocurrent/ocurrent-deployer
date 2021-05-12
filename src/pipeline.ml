@@ -204,21 +204,8 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
     let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
     let docker = docker ~sched in
     Current.all @@ List.map build [
-      ocurrent, "ocaml-ci", [
-        docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`S (`Toxis, "ocaml-ci_ci")]];
-        docker "Dockerfile.web" ["live-www",    "ocurrent/ocaml-ci-web:live",     [`S (`Toxis, "ocaml-ci_web")];
-                                 "staging-www", "ocurrent/ocaml-ci-web:staging",  [`S (`Toxis, "test-www")]];
-      ];
       ocurrent, "ocurrent-deployer", [
         docker "Dockerfile"     ["live", "ocurrent/ci.ocamllabs.io-deployer:live", [`S (`Toxis, "infra_deployer")]];
-      ];
-      ocurrent, "docker-base-images", [
-        docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`S (`Toxis, "base-images_builder")]];
-      ];
-      ocurrent, "ocluster", [
-        docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []];
-        docker "Dockerfile.worker" ["live-worker", "ocurrent/ocluster-worker:live", []]
-          ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64];
       ];
       ocaml, "ocaml.org", [
         docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live", [`C (`Ocamlorg_sw, ["www.ocaml.org", "51.159.79.75"; "ocaml.org", "51.159.78.124"])]]
