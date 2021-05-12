@@ -89,6 +89,7 @@ module Cluster = struct
   module Ci3_docker = Current_docker.Default
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4" end)
   module Ci5_docker = Current_docker.Make(struct let docker_context = Some "ci5" end)
+  module Toxis_docker = Current_docker.Make(struct let docker_context = Some "toxis" end)
 
   type build_info = {
     sched : Current_ocluster.t;
@@ -98,7 +99,7 @@ module Cluster = struct
 
   type deploy_info = {
     hub_id : Cluster_api.Docker.Image_id.t;
-    services : ([`Ci3 | `Ci4 | `Ci5] * string) list;
+    services : ([`Toxis | `Ci3 | `Ci4 | `Ci5] * string) list;
   }
 
   (* Build [src/dockerfile] as a Docker service. *)
@@ -148,6 +149,7 @@ module Cluster = struct
             | `Ci3, name -> pull_and_serve (module Ci3_docker) ~name multi_hash
             | `Ci4, name -> pull_and_serve (module Ci4_docker) ~name multi_hash
             | `Ci5, name -> pull_and_serve (module Ci5_docker) ~name multi_hash
+            | `Toxis, name -> pull_and_serve (module Toxis_docker) ~name multi_hash
           )
         |> Current.all
 end
@@ -192,6 +194,19 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
     Current.all @@ List.map build [
       ocurrent, "ocurrent-deployer", [
         docker "Dockerfile"     ["live-ci3", "ocurrent/ci.ocamllabs.io-deployer:live-ci3", [`Ci3, "deployer_deployer"]];
+      ];
+      ocurrent, "ocaml-ci", [
+        docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Toxis, "ocaml-ci_ci"]];
+        docker "Dockerfile.web" ["live-www",    "ocurrent/ocaml-ci-web:live",     [`Toxis, "ocaml-ci_web"];
+                                 "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Toxis, "test-www"]];
+      ];
+      ocurrent, "docker-base-images", [
+        docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Toxis, "base-images_builder"]];
+      ];      
+      ocurrent, "ocluster", [
+        docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []];
+        docker "Dockerfile.worker" ["live-worker",    "ocurrent/ocluster-worker:live", []]
+          ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64];
       ];
       ocurrent, "opam-repo-ci", [
         docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Ci3, "opam-repo-ci_opam-repo-ci"]];
