@@ -205,7 +205,7 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
     let docker = docker ~sched in
     Current.all @@ List.map build [
       ocurrent, "ocurrent-deployer", [
-        docker "Dockerfile"     ["live", "ocurrent/ci.ocamllabs.io-deployer:live", [`S (`Toxis, "infra_deployer")]];
+        docker "Dockerfile"     ["live-toxis", "ocurrent/ci.ocamllabs.io-deployer:live-toxis", [`S (`Toxis, "infra_deployer")]];
       ];
       ocaml, "ocaml.org", [
         docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live", [`C (`Ocamlorg_sw, ["www.ocaml.org", "51.159.79.75"; "ocaml.org", "51.159.78.124"])]]
