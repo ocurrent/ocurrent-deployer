@@ -2,7 +2,6 @@ FROM ocaml/opam:debian-10-ocaml-4.12@sha256:e39cf5ddf42ceff246eee0402466a81e47a1
 RUN sudo apt-get update && sudo apt-get install libev-dev m4 pkg-config libsqlite3-dev libgmp-dev libssl-dev capnproto graphviz -y --no-install-recommends
 RUN cd ~/opam-repository && git pull origin -q master && git reset --hard aef3a514a986dce132791dd518f6c91cd0e993bf && opam update
 COPY --chown=opam \
-	ocurrent/current_ansi.opam \
 	ocurrent/current_docker.opam \
 	ocurrent/current_github.opam \
 	ocurrent/current_git.opam \
@@ -16,8 +15,7 @@ COPY --chown=opam \
         ocluster/*.opam \
         /src/ocluster/
 WORKDIR /src
-RUN opam pin add -yn current_ansi.dev "./ocurrent" && \
-    opam pin add -yn current_docker.dev "./ocurrent" && \
+RUN opam pin add -yn current_docker.dev "./ocurrent" && \
     opam pin add -yn current_github.dev "./ocurrent" && \
     opam pin add -yn current_git.dev "./ocurrent" && \
     opam pin add -yn current_incr.dev "./ocurrent" && \
@@ -37,8 +35,10 @@ RUN apt-get update && apt-get install libev4 openssh-client curl gnupg2 dumb-ini
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 RUN echo 'deb [arch=amd64] https://download.docker.com/linux/debian buster stable' >> /etc/apt/sources.list
 RUN apt-get update && apt-get install docker-ce -y --no-install-recommends
+RUN apt-get update && apt-get install python3-pip -y && pip3 install docker-compose --no-cache-dir
 WORKDIR /var/lib/ocurrent
 ENTRYPOINT ["dumb-init", "/usr/local/bin/ocurrent-deployer"]
 COPY config/ssh /root/.ssh
 COPY config/docker /root/.docker
+RUN docker context use ocaml-www1 && docker context use default
 COPY --from=build /src/_build/install/default/bin/ocurrent-deployer /usr/local/bin/
