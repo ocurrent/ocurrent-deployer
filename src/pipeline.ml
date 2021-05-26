@@ -197,8 +197,6 @@ let unikernel dockerfile ~target args services =
 let v ~app ~notify:channel ~sched ~staging_auth () =
   let ocurrent = Build.org ~app ~account:"ocurrent" 6853813 in
   let mirage = Build.org ~app ~account:"mirage" 7175142 in
-  let ocaml = Build.org ~app ~account:"ocaml" 12075891 in
-  let include_git = { Cluster_api.Docker.Spec.defaults with include_git = true } in
   let docker_services =
     let build (org, name, builds) = Cluster_build.repo ~channel ~web_ui ~org ~name builds in
     let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
@@ -206,12 +204,6 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
     Current.all @@ List.map build [
       ocurrent, "ocurrent-deployer", [
         docker "Dockerfile"     ["live-toxis", "ocurrent/ci.ocamllabs.io-deployer:live-toxis", [`S (`Toxis, "infra_deployer")]];
-      ];
-      ocaml, "ocaml.org", [
-        docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live", [`C (`Ocamlorg_sw, ["www.ocaml.org", "51.159.79.75"; "ocaml.org", "51.159.78.124"])]]
-          ~options:include_git;
-        docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`C (`Ocamlorg_sw, ["staging.ocaml.org", "51.159.79.64"])]]
-          ~options:include_git;
       ];
     ]
   and mirage_unikernels =
