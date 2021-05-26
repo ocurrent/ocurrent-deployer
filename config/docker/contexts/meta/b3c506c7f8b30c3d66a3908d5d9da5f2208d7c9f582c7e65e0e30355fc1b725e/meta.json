@@ -1,1 +1,1 @@
-{"Name":"ci5","Metadata":{},"Endpoints":{"docker":{"Host":"ssh://root@ci5.ocamllabs.io","SkipTLSVerify":false}}}
+{"Name":"ci6","Metadata":{},"Endpoints":{"docker":{"Host":"ssh://root@ci6.ocamllabs.io","SkipTLSVerify":false}}}
