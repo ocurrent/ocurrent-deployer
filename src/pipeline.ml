@@ -89,6 +89,7 @@ module Cluster = struct
   module Ci3_docker = Current_docker.Default
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4" end)
   module Ci5_docker = Current_docker.Make(struct let docker_context = Some "ci5" end)
+  module Ci6_docker = Current_docker.Make(struct let docker_context = Some "ci6" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "toxis" end)
 
   type build_info = {
@@ -99,7 +100,7 @@ module Cluster = struct
 
   type deploy_info = {
     hub_id : Cluster_api.Docker.Image_id.t;
-    services : ([`Toxis | `Ci3 | `Ci4 | `Ci5] * string) list;
+    services : ([`Toxis | `Ci3 | `Ci4 | `Ci5 | `Ci6] * string) list;
   }
 
   (* Build [src/dockerfile] as a Docker service. *)
@@ -149,6 +150,7 @@ module Cluster = struct
             | `Ci3, name -> pull_and_serve (module Ci3_docker) ~name multi_hash
             | `Ci4, name -> pull_and_serve (module Ci4_docker) ~name multi_hash
             | `Ci5, name -> pull_and_serve (module Ci5_docker) ~name multi_hash
+            | `Ci6, name -> pull_and_serve (module Ci6_docker) ~name multi_hash
             | `Toxis, name -> pull_and_serve (module Toxis_docker) ~name multi_hash
           )
         |> Current.all
@@ -217,8 +219,11 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
         docker "Dockerfile.web" ["live-web", "ocurrent/multicore-ci-web:live", [`Ci4, "infra_multicore-ci-web"]];
       ];
       ocurrent, "ocaml-docs-ci", [
-        docker "Dockerfile"     ["live", "ocurrent/docs-ci:live", [`Ci5, "infra_docs-ci"]];
-        docker "Dockerfile.web" ["live-web", "ocurrent/docs-ci-web:live", [`Ci5, "infra_docs-ci-web"]];
+        docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Ci6, "infra_docs-ci"]];
+        docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Ci6, "infra_init"]];
+        docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6, "infra_storage-server"]];
+        docker "docker/git-http/Dockerfile" ["live", "ocurrent/docs-ci-git-http:live", [`Ci6, "infra_git-http"]];
+        docker "Dockerfile.web"             ["live-web", "ocurrent/docs-ci-web:live", [`Ci6, "infra_docs-ci-web"]];
       ];
     ]
   and mirage_unikernels =
