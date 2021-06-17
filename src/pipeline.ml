@@ -88,7 +88,7 @@ module Build_unikernel = Build.Make(Packet_unikernel)
 module Cluster = struct
   module Ci3_docker = Current_docker.Default
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4" end)
-  module Ci6_docker = Current_docker.Make(struct let docker_context = Some "ci6" end)
+  module Ci6_docker = Current_docker.Make(struct let docker_context = Some "docsci" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "toxis" end)
 
   type build_info = {
