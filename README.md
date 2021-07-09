@@ -33,6 +33,21 @@ For the `master` branch, the `hvt` unikernel is deployed as the `www` [Albatross
 
 See [VM-host.md](./VM-host.md) for instructions about setting up a host for unikernels.
 
+
+## Suggested workflows
+
+To update a deployment that is managed by ocurrent-deployer (which could be ocurrent-deployer itself):
+
+1. Make a PR on that project's repository targetting its master branch as usual.
+2. Once it has passed CI/review, a project admin will `git push origin HEAD:live` to deploy it.
+3. If it works, the PR can be merged to master.
+
+To add new services:
+
+1. Deploy the service(s) manually using `docker stack deploy` first.
+2. Once that's working, make a PR against the ocurrent-deployer repository adding a rule to keep the services up-to-date.
+
+
 [OCurrent]: https://github.com/ocurrent/ocurrent
 [MirageOS]: https://mirage.io/
 [Albatross]: https://github.com/hannesm/albatross
