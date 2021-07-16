@@ -90,6 +90,7 @@ module Cluster = struct
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4" end)
   module Ci6_docker = Current_docker.Make(struct let docker_context = Some "docsci" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "toxis" end)
+  module Autumn_docker = Current_docker.Make(struct let docker_context = Some "autumn-current-bench" end)
 
   type build_info = {
     sched : Current_ocluster.t;
@@ -99,7 +100,7 @@ module Cluster = struct
 
   type deploy_info = {
     hub_id : Cluster_api.Docker.Image_id.t;
-    services : ([`Toxis | `Ci3 | `Ci4 | `Ci6] * string) list;
+    services : ([`Toxis | `Ci3 | `Ci4 | `Ci6 | `Autumn] * string) list;
   }
 
   (* Build [src/dockerfile] as a Docker service. *)
@@ -150,6 +151,7 @@ module Cluster = struct
             | `Ci4, name -> pull_and_serve (module Ci4_docker) ~name multi_hash
             | `Ci6, name -> pull_and_serve (module Ci6_docker) ~name multi_hash
             | `Toxis, name -> pull_and_serve (module Toxis_docker) ~name multi_hash
+            | `Autumn, name -> pull_and_serve (module Autumn_docker) ~name multi_hash
           )
         |> Current.all
 end
@@ -222,6 +224,10 @@ let v ~app ~notify:channel ~sched ~staging_auth () =
         docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6, "infra_storage-server"]];
         docker "Dockerfile.web"             ["live-web", "ocurrent/docs-ci-web:live", [`Ci6, "infra_docs-ci-web"]];
       ];
+      ocurrent, "current-bench", [
+        docker "pipeline/Dockerfile" ["live", "ocurrent/current-bench-pipeline:live", [`Autumn, "current-bench_pipeline"]];
+        docker "frontend/Dockerfile" ["live", "ocurrent/current-bench-frontend:live", [`Autumn, "current-bench_frontend"]];
+      ]
     ]
   and mirage_unikernels =
     let build (org, name, builds) = Build_unikernel.repo ~channel ~web_ui ~org ~name builds in
