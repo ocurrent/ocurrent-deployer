@@ -11,7 +11,7 @@
   ppx_deriving_yojson
   ppx_deriving
   logs
-  current
+  (current (>= 0.5))
   current_web
   current_git
   current_github
