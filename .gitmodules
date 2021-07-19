@@ -1,6 +1,6 @@
 [submodule "ocurrent"]
 	path = ocurrent
-	url = https://github.com/ocurrent/ocurrent.git
+	url = https://github.com/tmcgilchrist/ocurrent.git
 [submodule "ocluster"]
 	path = ocluster
 	url = https://github.com/ocurrent/ocluster.git
