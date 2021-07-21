@@ -39,9 +39,9 @@ module Make(T : S.T) = struct
   let status_of_build ~url b =
     let+ state = Current.state b in
     match state with
-    | Ok _              -> Github.Api.Status.v ~url `Success ~description:"Passed"
-    | Error (`Active _) -> Github.Api.Status.v ~url `Pending
-    | Error (`Msg m)    -> Github.Api.Status.v ~url `Failure ~description:m
+    | Ok _              -> Github.Api.CheckRunStatus.v ~url (`Completed `Success) ~description:"Passed"
+    | Error (`Active _) -> Github.Api.CheckRunStatus.v ~url `Queued
+    | Error (`Msg m)    -> Github.Api.CheckRunStatus.v ~url (`Completed (`Failure m)) ~description:m
 
   let repo ~channel ~web_ui ~org:(org, github) ~name build_specs =
     let repo_name = Printf.sprintf "%s/%s" org name in
@@ -60,7 +60,7 @@ module Make(T : S.T) = struct
           build_specs |> List.map (fun (build_info, _deploys) -> T.build build_info src |> Current.ignore_value)
         )
         |> status_of_build ~url
-        |> Github.Api.Commit.set_status commit "deployability"
+        |> Github.Api.CheckRun.set_status commit "deployability"
       in
       Current.collapse
         ~key:"repo" ~value:collapse_value
