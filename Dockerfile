@@ -23,7 +23,10 @@ RUN opam pin add -yn current_docker.dev "./ocurrent" && \
     opam pin add -yn current_rpc.dev "./ocurrent" && \
     opam pin add -yn current_slack.dev "./ocurrent" && \
     opam pin add -yn current_web.dev "./ocurrent" && \
-    opam pin add -yn ocluster-api.dev "./ocluster"
+    opam pin add -yn ocluster-api.dev "./ocluster" && \
+    opam pin add -yn github-data.dev "./ocurrent/ocaml-github" && \
+    opam pin add -yn github-unix.dev "./ocurrent/ocaml-github" && \
+    opam pin add -yn github.dev "./ocurrent/ocaml-github" 
 COPY --chown=opam deployer.opam /src/
 RUN opam pin -yn add .
 RUN opam install -y --deps-only .
