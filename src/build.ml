@@ -60,7 +60,7 @@ module Make(T : S.T) = struct
           build_specs |> List.map (fun (build_info, _deploys) -> T.build build_info src |> Current.ignore_value)
         )
         |> status_of_build ~url
-        |> Github.Api.Commit.set_status commit "deployability"
+        |> Github.Api.Commit.set_status commit "unikernel-deployability"
       in
       Current.collapse
         ~key:"repo" ~value:collapse_value
