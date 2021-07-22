@@ -20,10 +20,6 @@ let auth =
     None
   )
 
-let or_fail = function
-  | Ok x -> x
-  | Error (`Msg m) -> failwith m
-
 type arch = [
   | `Linux_arm64
   | `Linux_x86_64
@@ -170,19 +166,6 @@ let web_ui =
   let base = Uri.of_string "https://deploy.ocamllabs.io/" in
   fun repo -> Uri.with_query' base ["repo", repo]
 
-let docker ?(archs=[`Linux_x86_64]) ?(options=Cluster_api.Docker.Spec.defaults) ~sched dockerfile targets =
-  let build_info = { Cluster.sched; dockerfile = `Path dockerfile; options; archs } in
-  let deploys =
-    targets
-    |> List.map (fun (branch, target, services) ->
-        branch, { Cluster.
-                  hub_id = Cluster_api.Docker.Image_id.of_string target |> or_fail;
-                  services
-                }
-      )
-  in
-  (build_info, deploys)
-
 let unikernel dockerfile ~target args services =
   let build_info = { Packet_unikernel.dockerfile; target; args } in
   let deploys =
@@ -194,26 +177,13 @@ let unikernel dockerfile ~target args services =
    For each one, it lists the builds that are made from that repository.
    For each build, it says which which branch gives the desired live version of
    the service, and where to deloy it. *)
-let v ~app ~notify:channel ~sched ~staging_auth () =
-  let ocurrent = Build.org ~app ~account:"ocurrent" 6853813 in
+let v ~app ~notify:channel () =
   let mirage = Build.org ~app ~account:"mirage" 7175142 in
-  let docker_services =
-    let build (org, name, builds) = Cluster_build.repo ~channel ~web_ui ~org ~name builds in
-    let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
-    let docker = docker ~sched in
-    Current.all @@ List.map build [
-      ocurrent, "ocurrent-deployer", [
-        docker "Dockerfile"     ["live-toxis", "ocurrent/ci.ocamllabs.io-deployer:live-toxis", [`S (`Toxis, "infra_deployer")]];
-      ];
-    ]
-  and mirage_unikernels =
-    let build (org, name, builds) = Build_unikernel.repo ~channel ~web_ui ~org ~name builds in
-    Current.all @@ List.map build [
-      mirage, "mirage-www", [
-        unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true"] ["master", "www"];
-        unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
-        unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true"] ["next", "next"];
-      ];
-    ]
-  in
-  Current.all [ docker_services; mirage_unikernels ]
+  let build (org, name, builds) = Build_unikernel.repo ~channel ~web_ui ~org ~name builds in
+  Current.all @@ List.map build [
+    mirage, "mirage-www", [
+      unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true"] ["master", "www"];
+      unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
+      unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true"] ["next", "next"];
+    ];
+  ]
