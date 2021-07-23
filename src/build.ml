@@ -4,6 +4,8 @@ module Github = Current_github
 
 type org = string * Current_github.Api.t option
 
+let account = fst
+
 let org ?app ~account id =
   let api =
     app |> Option.map @@ fun app ->

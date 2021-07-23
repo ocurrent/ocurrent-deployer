@@ -7,6 +7,8 @@ val org :
     [installation] is ignored if [app] is [None].
     @param app is used to set the status, if present *)
 
+val account : org -> string
+
 module Make(T : S.T) : sig
   val repo :
     ?channel:Current_slack.channel ->

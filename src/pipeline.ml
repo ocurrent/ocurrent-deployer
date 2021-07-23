@@ -126,16 +126,27 @@ let docker ?(archs=[`Linux_x86_64]) ~sched dockerfile targets =
   in
   (build_info, deploys)
 
+let filter_list filter items =
+  match filter with
+  | None -> items
+  | Some filter ->
+    let items =
+      items |> List.filter @@ fun (org, name, _) ->
+      filter { Current_github.Repo_id.owner = Build.account org; name }
+    in
+    if items = [] then Fmt.failwith "No repository matches the filter!"
+    else items
+
 (* This is a list of GitHub repositories to monitor.
    For each one, it lists the builds that are made from that repository.
    For each build, it says which which branch gives the desired live version of
    the service, and where to deloy it. *)
-let v ?app ?notify:channel ~sched ~staging_auth () =
+let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
   let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
   let docker = docker ~sched in
-  Current.all @@ List.map build [
+  Current.all @@ List.map build @@ filter_list filter [
     ocurrent, "ocurrent-deployer", [
       docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3, "deployer_deployer"]];
       docker "Dockerfile"     ["live-toxis", "ocurrent/ci.ocamllabs.io-deployer:live-toxis", [`Toxis, "infra_deployer"]];

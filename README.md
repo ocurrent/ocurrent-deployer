@@ -38,11 +38,13 @@ See [VM-host.md](./VM-host.md) for instructions about setting up a host for unik
 To test changes to the pipeline, use:
 
 ```
-dune exec -- ocurrent-deployer-local --confirm=harmless --submission-service submission.cap
+dune exec -- ocurrent-deployer-local --confirm=harmless --submission-service submission.cap ocurrent/ocaml-ci
 ```
 
 You will need a `submission.cap` to access an [OCluster build cluster](https://github.com/ocurrent/ocluster)
 (you can run one locally fairly easily if needed).
+
+Replace `ocurrent/ocaml-ci` with the GitHub repository you want to check, or omit it to check all of them.
 
 Unlike the full pipeline, this:
 

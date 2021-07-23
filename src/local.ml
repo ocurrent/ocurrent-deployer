@@ -11,11 +11,12 @@ let read_first_line path =
   Fun.protect (fun () -> input_line ch)
     ~finally:(fun () -> close_in ch)
 
-let main config mode app sched staging_password_file =
+let main config mode app sched staging_password_file repo =
+  let filter = Option.map (=) repo in
   let vat = Capnp_rpc_unix.client_only_vat () in
   let sched = Capnp_rpc_unix.Vat.import_exn vat sched in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
-  let engine = Current.Engine.create ~config (Pipeline.v ?app ~sched ~staging_auth) in
+  let engine = Current.Engine.create ~config (Pipeline.v ?app ?filter ~sched ~staging_auth) in
   let routes =
     Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook) ::
     Current_web.routes engine in
@@ -47,10 +48,18 @@ let staging_password =
     ~docv:"FILE"
     ["staging-password-file"]
 
+let repo =
+  Arg.value @@
+  Arg.pos 0 Arg.(some Current_github.Repo_id.cmdliner) None @@
+  Arg.info
+    ~doc:"The owner/name of the repository to test"
+    ~docv:"REPO"
+    []
+
 let cmd =
   let doc = "build and deploy services from Git" in
   Term.(const main $ Current.Config.cmdliner $ Current_web.cmdliner $
-        Current_github.App.cmdliner_opt $ submission_service $ staging_password),
+        Current_github.App.cmdliner_opt $ submission_service $ staging_password $ repo),
   Term.info "deploy" ~doc
 
 let () = Term.(exit @@ eval cmd)
