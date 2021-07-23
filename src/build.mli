@@ -1,13 +1,15 @@
 type org
 
 val org :
-  app:Current_github.App.t ->
+  ?app:Current_github.App.t ->
   account:string -> int -> org
-(** Look up a GitHub organisation by ID. *)
+(** [org ~app account installation] look up a GitHub organisation by ID.
+    [installation] is ignored if [app] is [None].
+    @param app is used to set the status, if present *)
 
 module Make(T : S.T) : sig
   val repo :
-    channel:Current_slack.channel ->
+    ?channel:Current_slack.channel ->
     web_ui:(string -> Uri.t) ->
     org:org ->
     name:string ->
@@ -17,5 +19,7 @@ module Make(T : S.T) : sig
         handle all builds and deployments under [org/name]. Each build
         is a [(build_info, [branch, deploy_info])] pair.
         It builds every branch and PR using [T.build], and deploys the
-        given branches using [T.deploy], sending notifications to [channel]. *)
+        given branches using [T.deploy], sending notifications to [channel].
+        If [org] does not have an app then (for local testing) it only builds the deployment branches.
+    *)
 end

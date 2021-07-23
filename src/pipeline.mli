@@ -1,8 +1,8 @@
 open Capnp_rpc_lwt
 
 val v :
-  app:Current_github.App.t ->
-  notify:Current_slack.channel ->
+  ?app:Current_github.App.t ->
+  ?notify:Current_slack.channel ->
   sched:[`Submission_f4e8a768b32a7c42] Sturdy_ref.t ->
   staging_auth:(string * string) option ->
   unit -> unit Current.t

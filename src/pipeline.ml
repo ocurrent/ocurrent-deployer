@@ -35,56 +35,6 @@ let pool_id : arch -> string = function
   | `Linux_x86_64 -> "linux-x86_64"
   | `Linux_ppc64 -> "linux-ppc64"
 
-module Packet_unikernel = struct
-  (* Mirage unikernels running on packet.net *)
-
-  module Docker = Current_docker.Default
-
-  type build_info = {
-    dockerfile : string;
-    target : string;
-    args : string list;
-  }
-
-  type deploy_info = {
-    service : string;
-  }
-
-  let build_image { dockerfile; target; args } src =
-    let src = Current_git.fetch src in
-    let args = ("TARGET=" ^ target) :: args in
-    let build_args = List.map (fun x -> ["--build-arg"; x]) args |> List.concat in
-    let dockerfile = Current.return (`File (Fpath.v dockerfile)) in
-    Docker.build (`Git src)
-      ~build_args
-      ~dockerfile
-      ~label:target
-      ~pull:true
-      ~timeout
-
-  let build info src = Current.ignore_value (build_image info src)
-
-  let name { service } = service
-
-  (* Deployment *)
-
-  module Mirage_m1_a = Mirage.Make(Docker)
-
-  let mirage_host_ssh = "root@147.75.204.215"
-
-  let deploy build_info { service } src =
-    let image = build_image build_info src in
-    (* We tag the image to prevent docker prune from removing it.
-       Otherwise, if we later deploy a new (bad) version and need to roll back quickly,
-       we may find the old version isn't around any longer. *)
-    let tag = "mirage-" ^ service in
-    Current.all [
-      Docker.tag ~tag image;
-      Mirage_m1_a.deploy ~name:service ~ssh_host:mirage_host_ssh image;
-    ]
-end
-module Build_unikernel = Build.Make(Packet_unikernel)
-
 module Cluster = struct
   module Ci3_docker = Current_docker.Default
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4" end)
@@ -176,63 +126,49 @@ let docker ?(archs=[`Linux_x86_64]) ~sched dockerfile targets =
   in
   (build_info, deploys)
 
-let _unikernel dockerfile ~target args services =
-  let build_info = { Packet_unikernel.dockerfile; target; args } in
-  let deploys =
-    services
-    |> List.map (fun (branch, service) -> branch, { Packet_unikernel.service }) in
-  (build_info, deploys)
-
 (* This is a list of GitHub repositories to monitor.
    For each one, it lists the builds that are made from that repository.
    For each build, it says which which branch gives the desired live version of
    the service, and where to deloy it. *)
-let v ~app ~notify:channel ~sched ~staging_auth () =
-  let ocurrent = Build.org ~app ~account:"ocurrent" 12497518 in
-  let docker_services =
-    let build (org, name, builds) = Cluster_build.repo ~channel ~web_ui ~org ~name builds in
-    let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
-    let docker = docker ~sched in
-    Current.all @@ List.map build [
-      ocurrent, "ocurrent-deployer", [
-        docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3, "deployer_deployer"]];
-        docker "Dockerfile"     ["live-toxis", "ocurrent/ci.ocamllabs.io-deployer:live-toxis", [`Toxis, "infra_deployer"]];
-      ];
-      ocurrent, "ocaml-ci", [
-        docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Toxis, "ocaml-ci_ci"]];
-        docker "Dockerfile.web" ["live-www",    "ocurrent/ocaml-ci-web:live",     [`Toxis, "ocaml-ci_web"];
-                                 "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Toxis, "test-www"]];
-      ];
-      ocurrent, "docker-base-images", [
-        docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Toxis, "base-images_builder"]];
-      ];      
-      ocurrent, "ocluster", [
-        docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []];
-        docker "Dockerfile.worker" ["live-worker",    "ocurrent/ocluster-worker:live", []]
-          ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64];
-      ];
-      ocurrent, "opam-repo-ci", [
-        docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Ci3, "opam-repo-ci_opam-repo-ci"]];
-        docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Ci3, "opam-repo-ci_opam-repo-ci-web"]];
-      ];
-      ocurrent, "ocaml-multicore-ci", [
-        docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4, "infra_multicore-ci"]];
-        docker "Dockerfile.web" ["live-web", "ocurrent/multicore-ci-web:live", [`Ci4, "infra_multicore-ci-web"]];
-      ];
-      ocurrent, "ocaml-docs-ci", [
-        docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Ci6, "infra_docs-ci"]];
-        docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Ci6, "infra_init"]];
-        docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6, "infra_storage-server"]];
-        docker "Dockerfile.web"             ["live-web", "ocurrent/docs-ci-web:live", [`Ci6, "infra_docs-ci-web"]];
-      ];
-      ocurrent, "current-bench", [
-        docker "pipeline/Dockerfile" ["live", "ocurrent/current-bench-pipeline:live", [`Autumn, "current-bench_pipeline"]];
-        docker "frontend/Dockerfile" ["live", "ocurrent/current-bench-frontend:live", [`Autumn, "current-bench_frontend"]];
-      ]
+let v ?app ?notify:channel ~sched ~staging_auth () =
+  let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
+  let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
+  let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
+  let docker = docker ~sched in
+  Current.all @@ List.map build [
+    ocurrent, "ocurrent-deployer", [
+      docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3, "deployer_deployer"]];
+      docker "Dockerfile"     ["live-toxis", "ocurrent/ci.ocamllabs.io-deployer:live-toxis", [`Toxis, "infra_deployer"]];
+    ];
+    ocurrent, "ocaml-ci", [
+      docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Toxis, "ocaml-ci_ci"]];
+      docker "Dockerfile.web" ["live-www",    "ocurrent/ocaml-ci-web:live",     [`Toxis, "ocaml-ci_web"];
+                               "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Toxis, "test-www"]];
+    ];
+    ocurrent, "docker-base-images", [
+      docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Toxis, "base-images_builder"]];
+    ];      
+    ocurrent, "ocluster", [
+      docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []];
+      docker "Dockerfile.worker" ["live-worker",    "ocurrent/ocluster-worker:live", []]
+        ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64];
+    ];
+    ocurrent, "opam-repo-ci", [
+      docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Ci3, "opam-repo-ci_opam-repo-ci"]];
+      docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Ci3, "opam-repo-ci_opam-repo-ci-web"]];
+    ];
+    ocurrent, "ocaml-multicore-ci", [
+      docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4, "infra_multicore-ci"]];
+      docker "Dockerfile.web" ["live-web", "ocurrent/multicore-ci-web:live", [`Ci4, "infra_multicore-ci-web"]];
+    ];
+    ocurrent, "ocaml-docs-ci", [
+      docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Ci6, "infra_docs-ci"]];
+      docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Ci6, "infra_init"]];
+      docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6, "infra_storage-server"]];
+      docker "Dockerfile.web"             ["live-web", "ocurrent/docs-ci-web:live", [`Ci6, "infra_docs-ci-web"]];
+    ];
+    ocurrent, "current-bench", [
+      docker "pipeline/Dockerfile" ["live", "ocurrent/current-bench-pipeline:live", [`Autumn, "current-bench_pipeline"]];
+      docker "frontend/Dockerfile" ["live", "ocurrent/current-bench-frontend:live", [`Autumn, "current-bench_frontend"]];
     ]
-  and mirage_unikernels =
-    let build (org, name, builds) = Build_unikernel.repo ~channel ~web_ui ~org ~name builds in
-    Current.all @@ List.map build [
-    ]
-  in
-  Current.all [ docker_services; mirage_unikernels ]
+  ]
