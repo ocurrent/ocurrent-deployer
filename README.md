@@ -33,6 +33,27 @@ For the `master` branch, the `hvt` unikernel is deployed as the `www` [Albatross
 
 See [VM-host.md](./VM-host.md) for instructions about setting up a host for unikernels.
 
+## Testing locally
+
+To test changes to the pipeline, use:
+
+```
+dune exec -- ocurrent-deployer-local --confirm=harmless --submission-service submission.cap ocurrent/ocaml-ci
+```
+
+You will need a `submission.cap` to access an [OCluster build cluster](https://github.com/ocurrent/ocluster)
+(you can run one locally fairly easily if needed).
+
+Replace `ocurrent/ocaml-ci` with the GitHub repository you want to check, or omit it to check all of them.
+
+Unlike the full pipeline, this:
+
+- Only tries to build the deployment branches (not all PRs).
+- Doesn't post the result to Slack.
+- Uses anonymous access to get the branch heads.
+
+You can supply `--github-app-id` and related options if you want to access GitHub via an app
+(this gives a higher rate limit for queries and allows setting the result status).
 
 ## Suggested workflows
 

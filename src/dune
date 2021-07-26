@@ -1,6 +1,6 @@
-(executable
- (public_name ocurrent-deployer)
- (name main)
+(executables
+ (public_names ocurrent-deployer ocurrent-deployer-local)
+ (names main local)
  (libraries
    capnp-rpc-unix
    current
