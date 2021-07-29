@@ -209,4 +209,7 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw ["staging.ocaml.org", "51.159.79.64"]]]
         ~options:include_git;
     ];
+    ocaml, "v3.ocaml.org", [
+      docker "Dockerfile" ["master", "ocurrent/v3.ocaml.org:live", []]
+    ];
   ]
