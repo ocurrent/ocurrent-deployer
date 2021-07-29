@@ -212,4 +212,7 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ocaml, "v3.ocaml.org", [
       docker "Dockerfile" ["master", "ocurrent/v3.ocaml.org:live", []]
     ];
+    ocaml, "v3.ocaml.org-server", [
+      docker "Dockerfile" ["master", "ocurrent/v3.ocaml.org-server:live", []]
+    ];
   ]
