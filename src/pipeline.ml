@@ -210,6 +210,6 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
         ~options:include_git;
     ];
     ocaml, "v3.ocaml.org", [
-      docker "Dockerfile" ["master", "ocurrent/v3.ocaml.org:live", []]
+      docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org:live", []]
     ];
   ]
