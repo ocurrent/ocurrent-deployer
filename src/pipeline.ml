@@ -178,7 +178,7 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
                                "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Toxis "test-www"]];
     ];
     ocurrent, "docker-base-images", [
-      docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Toxis "base-images_builder"]];
+      docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Ci3 "base-images_builder"]];
     ];      
     ocurrent, "ocluster", [
       docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []];
