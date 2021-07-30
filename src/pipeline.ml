@@ -41,6 +41,7 @@ module Cluster = struct
   module Ci6_docker = Current_docker.Make(struct let docker_context = Some "docsci" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "toxis" end)
   module Autumn_docker = Current_docker.Make(struct let docker_context = Some "autumn-current-bench" end)
+  module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3ocamlorg-cl" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
 
   type build_info = {
@@ -57,6 +58,7 @@ module Cluster = struct
     | `Ci6 of string
     | `Autumn of string
     | `Ocamlorg_sw of (string * string) list
+    | `V3ocamlorg_cl of string
   ]
 
   type deploy_info = {
@@ -116,6 +118,7 @@ module Cluster = struct
             | `Ci6 name -> pull_and_serve (module Ci6_docker) ~name `Service multi_hash
             | `Toxis name -> pull_and_serve (module Toxis_docker) ~name `Service multi_hash
             | `Autumn name -> pull_and_serve (module Autumn_docker) ~name `Service multi_hash
+            | `V3ocamlorg_cl name -> pull_and_serve (module V3ocamlorg_docker) ~name `Service multi_hash
             | `Ocamlorg_sw domains ->
               let name = Cluster_api.Docker.Image_id.tag hub_id in
               let contents = Caddy.compose {Caddy.name; domains} in
@@ -213,6 +216,6 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile" ["master", "ocurrent/v3.ocaml.org:live", []]
     ];
     ocaml, "v3.ocaml.org-server", [
-      docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", []]
+      docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", [`V3ocamlorg_cl "infra_www"]]
     ];
   ]
