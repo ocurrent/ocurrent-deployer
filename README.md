@@ -66,8 +66,11 @@ To update a deployment that is managed by ocurrent-deployer (which could be ocur
 To add new services:
 
 1. Deploy the service(s) manually using `docker stack deploy` first.
-2. Once that's working, make a PR against the ocurrent-deployer repository adding a rule to keep the services up-to-date.
-
+2. Once that's working, make a PR against the ocurrent-deployer repository adding a rule to keep the services up-to-date. For the PR:
+	- Drop the id\_rsa.pub key in the ~/.ssh/authorized\_keys folder on the machine where you want the deployer to deploy the container.
+	- Add the machine where you want to have the deployments to the `context/meta` folder.
+	- The hash for the folder inside `context/meta` is generated with `docker context create <machine_name>`.
+	- Add to `known_hosts` with ssh-keyscan of the host where you are deploying the service.
 
 [OCurrent]: https://github.com/ocurrent/ocurrent
 [MirageOS]: https://mirage.io/
