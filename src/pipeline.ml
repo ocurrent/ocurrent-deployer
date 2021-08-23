@@ -197,7 +197,6 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Ci6 "infra_docs-ci"]];
       docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Ci6 "infra_init"]];
       docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6 "infra_storage-server"]];
-      docker "Dockerfile.web"             ["live-web", "ocurrent/docs-ci-web:live", [`Ci6 "infra_docs-ci-web"]];
     ];
     ocurrent, "current-bench", [
       docker "pipeline/Dockerfile" ["live", "ocurrent/current-bench-pipeline:live", [`Autumn "current-bench_pipeline"]];
