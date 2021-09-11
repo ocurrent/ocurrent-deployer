@@ -6,6 +6,9 @@ let () = Logging.init ()
    Low-security because we never rely on the tags in this repository, just the hashes. *)
 let staging_user = "ocurrentbuilder"
 
+(* Placeholder webhook_secret, when running in local mode. *)
+let webhook_secret = "local-secret"
+
 let read_first_line path =
   let ch = open_in path in
   Fun.protect (fun () -> input_line ch)
@@ -17,10 +20,12 @@ let main config mode app sched staging_password_file repo =
   let sched = Capnp_rpc_unix.Vat.import_exn vat sched in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let engine = Current.Engine.create ~config (Pipeline.v ?app ?filter ~sched ~staging_auth) in
+  let webhook_secret = Option.value ~default:webhook_secret @@ Option.map Current_github.App.webhook_secret app in
+  let has_role = Current_web.Site.allow_all in
   let routes =
-    Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook) ::
+    Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook ~engine ~webhook_secret ~has_role) ::
     Current_web.routes engine in
-  let site = Current_web.Site.v ~has_role:Current_web.Site.allow_all ~name:"OCurrent Deployer" routes in
+  let site = Current_web.Site.v ~has_role ~name:"OCurrent Deployer" routes in
   Logging.run begin
     Lwt.choose [
       Current.Engine.thread engine;  (* The main thread evaluating the pipeline. *)

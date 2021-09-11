@@ -52,9 +52,9 @@ module Make(T : S.T) = struct
   let status_of_build ~url b =
     let+ state = Current.state b in
     match state with
-    | Ok _              -> Github.Api.CheckRunStatus.v ~url (`Completed `Success) ~description:"Passed"
+    | Ok _              -> Github.Api.CheckRunStatus.v ~url (`Completed `Success) ~summary:"Passed"
     | Error (`Active _) -> Github.Api.CheckRunStatus.v ~url `Queued
-    | Error (`Msg m)    -> Github.Api.CheckRunStatus.v ~url (`Completed (`Failure m)) ~description:m
+    | Error (`Msg m)    -> Github.Api.CheckRunStatus.v ~url (`Completed (`Failure m)) ~summary:m
 
   let repo ?channel ~web_ui ~org:(org, github) ~name build_specs =
     let repo_name = Printf.sprintf "%s/%s" org name in
