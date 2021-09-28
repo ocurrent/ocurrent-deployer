@@ -40,13 +40,14 @@ let main config mode app slack auth sched staging_password_file =
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let engine = Current.Engine.create ~config (Pipeline.v ~app ~notify:channel ~sched ~staging_auth) in
   let authn = Option.map Current_github.Auth.make_login_uri auth in
+  let webhook_secret = Current_github.App.webhook_secret app in
   let has_role =
     if auth = None then Current_web.Site.allow_all
     else has_role
   in
   let routes =
     Routes.(s "login" /? nil @--> Current_github.Auth.login auth) ::
-    Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook) ::
+    Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook ~engine ~webhook_secret ~has_role) ::
     Current_web.routes engine in
   let site = Current_web.Site.v ?authn ~has_role ~name:"OCurrent Deployer" routes in
   Logging.run begin
