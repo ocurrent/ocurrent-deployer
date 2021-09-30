@@ -77,4 +77,4 @@ To add new services:
 [OCurrent]: https://github.com/ocurrent/ocurrent
 [MirageOS]: https://mirage.io/
 [Albatross]: https://github.com/hannesm/albatross
-[pipeline.ml]: ./src/pipeline.ml
+[pipeline.ml]: ./src/pipeline.m
