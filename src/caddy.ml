@@ -6,8 +6,8 @@ type t = {
 }
 
 let caddy_service name (domain, ip) =
-  let service_name = Fmt.strf "%s_%s" name (Re.Str.(global_replace (regexp_string ".") "_" domain)) in
-  let service = Fmt.strf {|
+  let service_name = Fmt.str "%s_%s" name (Re.Str.(global_replace (regexp_string ".") "_" domain)) in
+  let service = Fmt.str {|
   %s:
     image: $IMAGE_HASH
     command: --domain %s --root /usr/share/caddy
@@ -23,7 +23,7 @@ let caddy_service name (domain, ip) =
       protocol: tcp
 |} service_name domain service_name
   in
-  let network = Fmt.strf {|
+  let network = Fmt.str {|
   %s_network:
     driver_opts:
         com.docker.network.bridge.host_binding_ipv4: "%s"
@@ -36,7 +36,7 @@ let compose sites =
   List.map (caddy_service sites.name) |>
   List.fold_left (fun (s,n) (service, network) -> (s ^ service), (n ^ network)) ("","") |>
   fun (services, networks) ->
-  Fmt.strf {|
+  Fmt.str {|
 version: "3.7"
 services:%s
 networks:%s

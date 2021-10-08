@@ -33,7 +33,7 @@ let notify ?channel ~web_ui ~service ~commit ~repo x =
       let+ state = Current.state x
       and+ commit = commit in
       let uri = Github.Api.Commit.uri commit in
-      Fmt.strf "@[<h>Deploy <%a|%a> as %s: <%s|%a>@]"
+      Fmt.str "@[<h>Deploy <%a|%a> as %s: <%s|%a>@]"
         Uri.pp uri Github.Api.Commit.pp commit
         service
         (Uri.to_string (web_ui repo)) (Current_term.Output.pp Current.Unit.pp) state
