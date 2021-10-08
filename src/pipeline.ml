@@ -164,6 +164,7 @@ let include_git = { Cluster_api.Docker.Spec.defaults with include_git = true }
 let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
   let ocaml = Build.org ?app ~account:"ocaml" 18513252 in
+  let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
   let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
   let docker = docker ~sched in
@@ -179,7 +180,7 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ];
     ocurrent, "docker-base-images", [
       docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Ci3 "base-images_builder"]];
-    ];      
+    ];
     ocurrent, "ocluster", [
       docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []];
       docker "Dockerfile.worker" ["live-worker",    "ocurrent/ocluster-worker:live", []]
@@ -211,4 +212,7 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ocaml, "v3.ocaml.org", [
       docker "Dockerfile" ["master", "ocurrent/v3.ocaml.org:live", []]
     ];
+    ocaml_bench, "sandmark-nightly", [
+      docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]]
+    ]
   ]
