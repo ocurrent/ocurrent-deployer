@@ -1,0 +1,1 @@
+{"Name":"packet_current_bench","Metadata":{"StackOrchestrator":"swarm"},"Endpoints":{"docker":{"Host":"ssh://root@147.75.32.19","SkipTLSVerify":false}}}

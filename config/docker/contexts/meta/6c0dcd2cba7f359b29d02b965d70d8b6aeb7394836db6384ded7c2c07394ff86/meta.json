@@ -1,1 +1,0 @@
-{"Name":"autumn-current-bench","Metadata":{},"Endpoints":{"docker":{"Host":"ssh://root@autumn.ocamllabs.io","SkipTLSVerify":false}}}
