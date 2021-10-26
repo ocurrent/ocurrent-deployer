@@ -40,7 +40,7 @@ module Cluster = struct
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4" end)
   module Ci6_docker = Current_docker.Make(struct let docker_context = Some "docsci" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "toxis" end)
-  module Autumn_docker = Current_docker.Make(struct let docker_context = Some "autumn-current-bench" end)
+  module Cb_docker = Current_docker.Make(struct let docker_context = Some "packet-current-bench" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
 
   type build_info = {
@@ -55,7 +55,7 @@ module Cluster = struct
     | `Ci3 of string
     | `Ci4 of string
     | `Ci6 of string
-    | `Autumn of string
+    | `Cb of string
     | `Ocamlorg_sw of (string * string) list
   ]
 
@@ -115,7 +115,7 @@ module Cluster = struct
             | `Ci4 name -> pull_and_serve (module Ci4_docker) ~name `Service multi_hash
             | `Ci6 name -> pull_and_serve (module Ci6_docker) ~name `Service multi_hash
             | `Toxis name -> pull_and_serve (module Toxis_docker) ~name `Service multi_hash
-            | `Autumn name -> pull_and_serve (module Autumn_docker) ~name `Service multi_hash
+            | `Cb name -> pull_and_serve (module Cb_docker) ~name `Service multi_hash
             | `Ocamlorg_sw domains ->
               let name = Cluster_api.Docker.Image_id.tag hub_id in
               let contents = Caddy.compose {Caddy.name; domains} in
@@ -200,8 +200,8 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6 "infra_storage-server"]];
     ];
     ocurrent, "current-bench", [
-      docker "pipeline/Dockerfile" ["live", "ocurrent/current-bench-pipeline:live", [`Autumn "current-bench_pipeline"]];
-      docker "frontend/Dockerfile" ["live", "ocurrent/current-bench-frontend:live", [`Autumn "current-bench_frontend"]];
+      docker "pipeline/Dockerfile" ["live", "ocurrent/current-bench-pipeline:live", [`Cb "current-bench_pipeline"]];
+      docker "frontend/Dockerfile" ["live", "ocurrent/current-bench-frontend:live", [`Cb "current-bench_frontend"]];
     ];
     ocaml, "ocaml.org", [
       docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live",    [`Ocamlorg_sw ["www.ocaml.org", "51.159.79.75"; "ocaml.org", "51.159.78.124"]]]
