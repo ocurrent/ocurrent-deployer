@@ -1,7 +1,5 @@
 (* The ocurrent-deployer-local command, for testing changes locally. *)
 
-let () = Logging.init ()
-
 (* A low-security Docker Hub user used to push images to the staging area.
    Low-security because we never rely on the tags in this repository, just the hashes. *)
 let staging_user = "ocurrentbuilder"
@@ -14,7 +12,7 @@ let read_first_line path =
   Fun.protect (fun () -> input_line ch)
     ~finally:(fun () -> close_in ch)
 
-let main config mode app sched staging_password_file repo =
+let main () config mode app sched staging_password_file repo =
   let filter = Option.map (=) repo in
   let vat = Capnp_rpc_unix.client_only_vat () in
   let sched = Capnp_rpc_unix.Vat.import_exn vat sched in
@@ -63,7 +61,7 @@ let repo =
 
 let cmd =
   let doc = "build and deploy services from Git" in
-  Term.(const main $ Current.Config.cmdliner $ Current_web.cmdliner $
+  Term.(const main $ Logging.cmdliner $ Current.Config.cmdliner $ Current_web.cmdliner $
         Current_github.App.cmdliner_opt $ submission_service $ staging_password $ repo),
   Term.info "deploy" ~doc
 

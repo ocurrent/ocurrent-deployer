@@ -1,7 +1,5 @@
 (* This is the main entry-point for the service. *)
 
-let () = Logging.init ()
-
 (* A low-security Docker Hub user used to push images to the staging area.
    Low-security because we never rely on the tags in this repository, just the hashes. *)
 let staging_user = "ocurrentbuilder"
@@ -33,7 +31,7 @@ let has_role user role =
       ), _ -> true        (* These users have all roles *)
     | _ -> role = `Viewer
 
-let main config mode app slack auth sched staging_password_file =
+let main () config mode app slack auth sched staging_password_file =
   let vat = Capnp_rpc_unix.client_only_vat () in
   let sched = Capnp_rpc_unix.Vat.import_exn vat sched in
   let channel = read_channel_uri slack in
@@ -87,7 +85,7 @@ let staging_password =
 
 let cmd =
   let doc = "build and deploy services from Git" in
-  Term.(const main $ Current.Config.cmdliner $ Current_web.cmdliner $
+  Term.(const main $ Logging.cmdliner $ Current.Config.cmdliner $ Current_web.cmdliner $
         Current_github.App.cmdliner $ slack $ Current_github.Auth.cmdliner $
         submission_service $ staging_password),
   Term.info "deploy" ~doc
