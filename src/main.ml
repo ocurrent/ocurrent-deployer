@@ -35,7 +35,7 @@ let has_role user role =
 
 let main config mode app slack auth sched staging_password_file =
   let vat = Capnp_rpc_unix.client_only_vat () in
-  let sched = Capnp_rpc_unix.Vat.import_exn vat sched in
+  let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
   let channel = read_channel_uri slack in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let engine = Current.Engine.create ~config (Pipeline.v ~app ~notify:channel ~sched ~staging_auth) in

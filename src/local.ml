@@ -17,7 +17,7 @@ let read_first_line path =
 let main config mode app sched staging_password_file repo =
   let filter = Option.map (=) repo in
   let vat = Capnp_rpc_unix.client_only_vat () in
-  let sched = Capnp_rpc_unix.Vat.import_exn vat sched in
+  let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let engine = Current.Engine.create ~config (Pipeline.v ?app ?filter ~sched ~staging_auth) in
   let webhook_secret = Option.value ~default:webhook_secret @@ Option.map Current_github.App.webhook_secret app in
