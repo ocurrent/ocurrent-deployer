@@ -1,0 +1,1 @@
+{"Name":"tezos","Metadata":{"StackOrchestrator":"swarm"},"Endpoints":{"docker":{"Host":"ssh://root@tezos.ci.dev","SkipTLSVerify":false}}}
