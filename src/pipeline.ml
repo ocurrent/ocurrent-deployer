@@ -40,6 +40,7 @@ module Cluster = struct
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4" end)
   module Ci6_docker = Current_docker.Make(struct let docker_context = Some "docsci" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "toxis" end)
+  module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos" end)
   module Cb_docker = Current_docker.Make(struct let docker_context = Some "packet-current-bench" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
 
@@ -52,6 +53,7 @@ module Cluster = struct
 
   type service = [
     | `Toxis of string
+    | `Tezos of string
     | `Ci3 of string
     | `Ci4 of string
     | `Ci6 of string
@@ -115,6 +117,7 @@ module Cluster = struct
             | `Ci4 name -> pull_and_serve (module Ci4_docker) ~name `Service multi_hash
             | `Ci6 name -> pull_and_serve (module Ci6_docker) ~name `Service multi_hash
             | `Toxis name -> pull_and_serve (module Toxis_docker) ~name `Service multi_hash
+            | `Tezos name -> pull_and_serve (module Tezos_docker) ~name `Service multi_hash
             | `Cb name -> pull_and_serve (module Cb_docker) ~name `Service multi_hash
             | `Ocamlorg_sw domains ->
               let name = Cluster_api.Docker.Image_id.tag hub_id in
@@ -162,6 +165,7 @@ let include_git = { Cluster_api.Docker.Spec.defaults with include_git = true }
    For each build, it says which which branch gives the desired live version of
    the service, and where to deloy it. *)
 let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
+  let tarides = Build.org ?app ~account:"tarides" 32128555 in
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
   let ocaml = Build.org ?app ~account:"ocaml" 18513252 in
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
@@ -214,5 +218,9 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ];
     ocaml_bench, "sandmark-nightly", [
       docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]]
+    ];
+
+    tarides, "tezos-ci", [
+      docker "Dockerfile" ["live", "ocurrent/tezos-ci:live", [`Tezos "tezos-ci_ci"]]
     ]
   ]
