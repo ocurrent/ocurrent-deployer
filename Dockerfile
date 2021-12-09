@@ -1,6 +1,6 @@
-FROM ocaml/opam:debian-10-ocaml-4.12@sha256:a0d760f3df8b84db37317bbe6196e281f294a7a48cab16b7aa5aab50313cff7e AS build
+FROM ocaml/opam:debian-11-ocaml-4.13@sha256:94b834d15b0614d974de1317bcc181eaadc23f5c13f8d60be92a5c24ce3a7777 AS build
 RUN sudo apt-get update && sudo apt-get install libffi-dev libev-dev m4 pkg-config libsqlite3-dev libgmp-dev libssl-dev capnproto graphviz -y --no-install-recommends
-RUN cd ~/opam-repository && git pull origin -q master && git reset --hard 99f313f991f88598d290d30edd6d3eb0e0cc48e1 && opam update
+RUN cd ~/opam-repository && git pull origin -q master && git reset --hard 7b361ce572d98a700d2e0018cb6e9c72db9a3675 && opam update
 COPY --chown=opam \
 	ocurrent/current_docker.opam \
 	ocurrent/current_github.opam \
@@ -28,10 +28,10 @@ RUN opam install -y --deps-only .
 ADD --chown=opam . .
 RUN opam config exec -- dune build ./_build/install/default/bin/ocurrent-deployer
 
-FROM debian:10
+FROM debian:11
 RUN apt-get update && apt-get install libffi-dev libev4 openssh-client curl gnupg2 dumb-init git graphviz libsqlite3-dev ca-certificates netbase rsync -y --no-install-recommends
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
-RUN echo 'deb [arch=amd64] https://download.docker.com/linux/debian buster stable' >> /etc/apt/sources.list
+RUN echo 'deb [arch=amd64] https://download.docker.com/linux/debian bullseye stable' >> /etc/apt/sources.list
 RUN apt-get update && apt-get install docker-ce -y --no-install-recommends
 RUN apt-get update && apt-get install python3-pip -y && pip3 install docker-compose --no-cache-dir
 WORKDIR /var/lib/ocurrent
