@@ -165,7 +165,7 @@ let include_git = { Cluster_api.Docker.Spec.defaults with include_git = true }
    For each build, it says which which branch gives the desired live version of
    the service, and where to deloy it. *)
 let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
-  let tarides = Build.org ?app ~account:"tarides" 32128555 in
+  let tarides = Build.org ?app ~account:"tarides" 21197588 in
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
   let ocaml = Build.org ?app ~account:"ocaml" 18513252 in
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
