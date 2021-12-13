@@ -42,7 +42,7 @@ module Cluster = struct
   module Ci6_docker = Current_docker.Make(struct let docker_context = Some "docsci" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "toxis" end)
   module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos" end)
-  module Cb_docker = Current_docker.Make(struct let docker_context = Some "packet-current-bench" end)
+  module Cb_docker = Current_docker.Make(struct let docker_context = Some "packet_current_bench" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3-ocaml-org" end)
 
@@ -208,8 +208,8 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6 "infra_storage-server"]];
     ];
     ocurrent, "current-bench", [
-      docker "pipeline/Dockerfile" ["live", "ocurrent/current-bench-pipeline:live", [`Cb "current-bench_pipeline"]];
-      docker "frontend/Dockerfile" ["live", "ocurrent/current-bench-frontend:live", [`Cb "current-bench_frontend"]];
+      docker "pipeline/Dockerfile" ["main", "ocurrent/current-bench-pipeline:live", [`Cb "packet-current-bench_pipeline"]];
+      docker "frontend/Dockerfile" ["main", "ocurrent/current-bench-frontend:live", [`Cb "packet-current-bench_frontend"]];
     ];
     ocaml, "ocaml.org", [
       docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live",    [`Ocamlorg_sw ["www.ocaml.org", "51.159.79.75"; "ocaml.org", "51.159.78.124"]]]
