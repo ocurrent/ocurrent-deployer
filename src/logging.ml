@@ -35,10 +35,13 @@ let reporter =
   in
   { Logs.report = report }
 
-let init () =
-  Fmt_tty.setup_std_outputs ();
-  Logs.(set_level (Some Info));
+let init style_renderer level =
+  Fmt_tty.setup_std_outputs ?style_renderer ();
+  Logs.set_level level;
   Logs.set_reporter reporter
+
+let cmdliner =
+  Cmdliner.(Term.(const init $ Fmt_cli.style_renderer () $ Logs_cli.level ()))
 
 let run x =
   match Lwt_main.run x with

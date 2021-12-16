@@ -13,7 +13,9 @@
    current_web
    cmdliner
    fmt.tty
+   fmt.cli
    logs.fmt
+   logs.cli
    str
    lwt
    lwt.unix)
