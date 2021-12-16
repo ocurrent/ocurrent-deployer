@@ -28,6 +28,8 @@ let has_role user role =
       |"github:kit-ty-kate"
       |"github:samoht"
       |"github:tmcgilchrist"
+      |"github:mtelvers"
+      |"github:dra27"
       ), _ -> true        (* These users have all roles *)
     | _ -> role = `Viewer
 
