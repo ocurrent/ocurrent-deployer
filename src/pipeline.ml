@@ -43,6 +43,7 @@ module Cluster = struct
   module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos" end)
   module Cb_docker = Current_docker.Make(struct let docker_context = Some "packet-current-bench" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
+  module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3ocamlorg-cl" end)
 
   type build_info = {
     sched : Current_ocluster.t;
@@ -59,6 +60,7 @@ module Cluster = struct
     | `Ci6 of string
     | `Cb of string
     | `Ocamlorg_sw of (string * string) list
+    | `V3ocamlorg_cl of string
   ]
 
   type deploy_info = {
@@ -119,6 +121,7 @@ module Cluster = struct
             | `Toxis name -> pull_and_serve (module Toxis_docker) ~name `Service multi_hash
             | `Tezos name -> pull_and_serve (module Tezos_docker) ~name `Service multi_hash
             | `Cb name -> pull_and_serve (module Cb_docker) ~name `Service multi_hash
+            | `V3ocamlorg_cl name -> pull_and_serve (module V3ocamlorg_docker) ~name `Service multi_hash
             | `Ocamlorg_sw domains ->
               let name = Cluster_api.Docker.Image_id.tag hub_id in
               let contents = Caddy.compose {Caddy.name; domains} in
@@ -213,8 +216,8 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw ["staging.ocaml.org", "51.159.79.64"]]]
         ~options:include_git;
     ];
-    ocaml, "v3.ocaml.org", [
-      docker "Dockerfile" ["master", "ocurrent/v3.ocaml.org:live", []]
+    ocaml, "v3.ocaml.org-server", [
+        docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", [`V3ocamlorg_cl "infra_www"]]
     ];
     ocaml_bench, "sandmark-nightly", [
       docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]]
