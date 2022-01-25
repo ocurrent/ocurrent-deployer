@@ -33,6 +33,16 @@ For the `master` branch, the `hvt` unikernel is deployed as the `www` [Albatross
 
 See [VM-host.md](./VM-host.md) for instructions about setting up a host for unikernels.
 
+There are 3 different flavours of pipelines:
+ * Tarides - existing Tarides/OCamlLabs pipelines on deploy.ci3.ocamlabs.io.
+ * OCaml - pipelines for deploying ocaml.org services.
+ * Toxis - existing Mirage piplines on deploy.ocamllabs.io.
+
+Each pipeline flavour is connected to a different GitHub Application:
+ * [deploy.ci.ocaml.org]() @ https://github.com/apps/deploy-ci-ocaml-org on branch live-ocaml-org
+ * [deploy.ci3.ocamllabs.io]() @ https://github.com/apps/deploy-ci3-ocamllabs-io on branch live-ci3
+ * [ci.ocamllabs.io]() (toxis deployer) @ https://github.com/apps/deploy-ocamllabs-io on branch live-toxis
+
 ## Testing locally
 
 To test changes to the pipeline, use:
@@ -67,14 +77,24 @@ To update a deployment that is managed by ocurrent-deployer (which could be ocur
 2. Once it has passed CI/review, a project admin will `git push origin HEAD:live` to deploy it.
 3. If it works, the PR can be merged to master.
 
-To add new services:
+### Add a new service
 
 1. Deploy the service(s) manually using `docker stack deploy` first.
-2. Once that's working, make a PR against the ocurrent-deployer repository adding a rule to keep the services up-to-date. For the PR:
-	- Drop the id\_rsa.pub key in the ~/.ssh/authorized\_keys folder on the machine where you want the deployer to deploy the container.
-	- Add the machine where you want to have the deployments to the `context/meta` folder.
+2. Once that's working, make a PR against the ocurrent-deployer repository adding a rule to keep the services up-to-date. 
+   For the PR:
+	- Drop the id\_rsa.pub key in the ~/.ssh/authorized\_keys file on the machine where you want the deployer to deploy the container.
+	- Add the machine where you want to have the deployments to the `context/meta` folder. eg to add `awesome.ocaml.org`
+      ```
+      docker --config config/docker context create \
+        --docker host=ssh://awesome.ocaml.org \
+        --description="awesome.ocaml.org" \
+        awesome-ocaml-org
+      ```
 	- The hash for the folder inside `context/meta` is generated with `docker context create <machine_name>`.
-	- Add to `known_hosts` with ssh-keyscan of the host where you are deploying the service.
+	- Add to `known_hosts` with ssh-keyscan of the host where you are deploying the service. eg
+      ```
+      ssh-keyscan -H awesome.ocmal.org >> config/ssh/known_hosts
+      ```
 
 [OCurrent]: https://github.com/ocurrent/ocurrent
 [MirageOS]: https://mirage.io/

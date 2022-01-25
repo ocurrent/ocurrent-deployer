@@ -115,6 +115,7 @@ module Cluster = struct
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3-ocaml-org" end)
 
+  module Opamocamlorg_docker = Current_docker.Make(struct let docker_context = Some "opam3-ocaml-org" end)
   module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2-ocaml-org" end)
   module Deploycamlorg_docker = Current_docker.Default
 
@@ -139,6 +140,7 @@ module Cluster = struct
     (* Services on deploy.ci.ocaml.org. *)
     | `Ocamlorg_deployer of string           (* OCurrent deployer @ deploy.ci.ocaml.org *)
     | `OCamlorg_v2 of (string * string) list (* OCaml website @ v2.ocaml.org *)
+    | `Ocamlorg_opam of (string * string) list (* Opam website @ opam-3.ocaml.org *)
   ]
 
   type deploy_info = {
@@ -193,6 +195,7 @@ module Cluster = struct
       | services ->
         services
         |> List.map (function
+            (* ci3.ocamllabs.io *)
             | `Ci3 name -> pull_and_serve (module Ci3_docker) ~name `Service multi_hash
             | `Ci4 name -> pull_and_serve (module Ci4_docker) ~name `Service multi_hash
             | `Ci6 name -> pull_and_serve (module Ci6_docker) ~name `Service multi_hash
@@ -211,7 +214,10 @@ module Cluster = struct
               let name = Cluster_api.Docker.Image_id.tag hub_id in
               let contents = Caddy.compose {Caddy.name; domains} in
               pull_and_serve (module V2ocamlorg_docker) ~name (`Compose contents) multi_hash
-
+            | `Ocamlorg_opam domains ->
+              let name = Cluster_api.Docker.Image_id.tag hub_id in
+              let contents = Caddy.compose {Caddy.name; domains} in
+              pull_and_serve (module Opamocamlorg_docker) ~name (`Compose contents) multi_hash
           )
         |> Current.all
 end
@@ -246,6 +252,8 @@ let filter_list filter items =
 
 let include_git = { Cluster_api.Docker.Spec.defaults with include_git = true }
 
+let build_kit (v : Cluster_api.Docker.Spec.options) = { v with buildkit = true}
+
 (* This is a list of GitHub repositories to monitor.
    For each one, it lists the builds that are made from that repository.
    For each build, it says which which branch gives the desired live version of
@@ -261,9 +269,12 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
   let ocaml = Build.org ?app ~account:"ocaml" 18513252 in
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
+
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
-  let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
-  let docker = docker ~sched in
+  let sched_regular = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
+
+  let docker = docker ~sched:sched_regular in
+
   Current.all @@ List.map build @@ filter_list filter [
     ocurrent, "ocurrent-deployer", [
       docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3 "deployer_deployer"]];
@@ -312,6 +323,8 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]]
     ];
 
+
+
     tarides, "tezos-ci", [
       docker "Dockerfile" ["live", "ocurrent/tezos-ci:live", [`Tezos "tezos-ci_ci"]]
     ]
@@ -328,17 +341,37 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
     let base = Uri.of_string "https://deploy.ci.ocaml.org" in
     fun repo -> Uri.with_query' base ["repo", repo] in
   let ocurrent = Build.org ?app ~account:"ocurrent" 23342906 in
-  let ocaml = Build.org ?app ~account:"ocaml" 18513252 in (* TODO Change to new installation ID. *)
+  let ocaml = Build.org ?app ~account:"ocaml" 18513252 in
+  (* TODO Change to new installation ID. *)
+  (* let ocaml_opam = Build.org ?app ~account:"ocaml-opam" 22575677 in *)
+  let ocaml_opam_tmcgilchrist = Build.org ?app ~account:"tmcgilchrist" 23527376 in
+  (* TODO Install ocurrent-deployer app into this account and use the
+     installation id here!
+
+     https://github.com/organizations/ocurrent/settings/apps/ocaml-org-deployer
+  *)
+
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
+  let docker_with_timeout timeout =
+    docker ~sched:(Current_ocluster.v ~timeout ?push_auth:staging_auth sched)
+  in
   let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
   let docker = docker ~sched in
   Current.all @@ List.map build @@ filter_list filter [
     ocurrent, "ocurrent-deployer", [
       docker "Dockerfile"     ["live-ocaml-org", "ocurrent/ci.ocamllabs.io-deployer:live-ocaml-org", [`Ocamlorg_deployer "infra_deployer"]];
     ];
+
     ocaml, "v2.ocaml.org", [
       docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live", [`Ocamlorg_sw ["v2.ocaml.org", "51.159.152.205"]]] ~options:include_git;
-    ]
+    ];
+
+    ocaml_opam_tmcgilchrist, "opam2web", [
+      docker_with_timeout (Duration.of_min 180)
+        "Dockerfile" ["live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam ["opam-3.ocaml.org", "172.30.0.212"]]]
+        ~options:(include_git |> build_kit)
+        ~archs:[`Linux_arm64]
+    ];
   ]
 
 let unikernel dockerfile ~target args services =
