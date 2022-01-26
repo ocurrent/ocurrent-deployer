@@ -36,6 +36,7 @@ let pool_id : arch -> string = function
   | `Linux_ppc64 -> "linux-ppc64"
 
 module Cluster = struct
+  (* Strings here represent the docker context to use. *)
   module Ci3_docker = Current_docker.Default
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4" end)
   module Ci6_docker = Current_docker.Make(struct let docker_context = Some "docsci" end)
@@ -43,7 +44,7 @@ module Cluster = struct
   module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos" end)
   module Cb_docker = Current_docker.Make(struct let docker_context = Some "packet-current-bench" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
-  module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3ocamlorg-cl" end)
+  module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3-ocaml-org" end)
 
   type build_info = {
     sched : Current_ocluster.t;
