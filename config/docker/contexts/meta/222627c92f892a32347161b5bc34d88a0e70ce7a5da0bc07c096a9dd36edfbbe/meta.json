@@ -1,1 +1,1 @@
-{"Name":"v3-ocaml-org","Metadata":{"Description":"v3.ocaml.org"},"Endpoints":{"docker":{"Host":"ssh://root@v3a.ocaml.org","SkipTLSVerify":false}}}
+{"Name":"v3-ocaml-org","Metadata":{"Description":"v3.ocaml.org"},"Endpoints":{"docker":{"Host":"ssh://root@v3.ocaml.org","SkipTLSVerify":false}}}
