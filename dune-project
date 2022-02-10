@@ -21,5 +21,5 @@
   capnp-rpc-unix
   fmt
   lwt
-  (cmdliner (< 1.1))
+  (cmdliner (>= 1.1.0))
   (ocaml (>= 4.08.0))))
