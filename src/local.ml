@@ -24,12 +24,13 @@ let main () config mode app sched staging_password_file repo =
     Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook ~engine ~webhook_secret ~has_role) ::
     Current_web.routes engine in
   let site = Current_web.Site.v ~has_role ~name:"OCurrent Deployer" routes in
-  Logging.run begin
+  let result = Logging.run begin
     Lwt.choose [
       Current.Engine.thread engine;  (* The main thread evaluating the pipeline. *)
       Current_web.run ~mode site;
     ]
-  end
+  end in
+  Result.map_error (fun (`Msg x) -> x) result
 
 (* Command-line parsing *)
 
@@ -61,8 +62,9 @@ let repo =
 
 let cmd =
   let doc = "build and deploy services from Git" in
-  Term.(const main $ Logging.cmdliner $ Current.Config.cmdliner $ Current_web.cmdliner $
-        Current_github.App.cmdliner_opt $ submission_service $ staging_password $ repo),
-  Term.info "deploy" ~doc
+  let cmd_t = Term.(const main $ Logging.cmdliner $ Current.Config.cmdliner $ Current_web.cmdliner
+                    $ Current_github.App.cmdliner_opt $ submission_service $ staging_password $ repo) in
+  let info = Cmd.info "deploy" ~doc in
+  Cmd.v info cmd_t
 
-let () = Term.(exit @@ eval cmd)
+let () = exit (Cmd.eval_result cmd)
