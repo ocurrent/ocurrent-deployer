@@ -46,6 +46,7 @@ module Cluster = struct
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3-ocaml-org" end)
   module Opamocamlorg_docker = Current_docker.Make(struct let docker_context = Some "opam3-ocaml-org" end)
+  module Deploycamlorg_docker = Current_docker.Make(struct let docker_context = Some "deploy-ocaml-org" end)
 
   type build_info = {
     sched : Current_ocluster.t;
@@ -64,6 +65,7 @@ module Cluster = struct
     | `Ocamlorg_sw of (string * string) list
     | `Opamocamlorg_sw of (string * string) list
     | `V3ocamlorg_cl of string
+    | `Ocamlorg_deployer of string (* OCurrent deployer @ deploy.ci.ocaml.org *)
   ]
 
   type deploy_info = {
@@ -125,6 +127,7 @@ module Cluster = struct
             | `Tezos name -> pull_and_serve (module Tezos_docker) ~name `Service multi_hash
             | `Cb name -> pull_and_serve (module Cb_docker) ~name `Service multi_hash
             | `V3ocamlorg_cl name -> pull_and_serve (module V3ocamlorg_docker) ~name `Service multi_hash
+            | `Ocamlorg_deployer name -> pull_and_serve (module Deploycamlorg_docker) ~name `Service multi_hash
             | `Ocamlorg_sw domains ->
                let name = Cluster_api.Docker.Image_id.tag hub_id in
                let contents = Caddy.compose {Caddy.name; domains} in
@@ -200,6 +203,7 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ocurrent, "ocurrent-deployer", [
       docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3 "deployer_deployer"]];
       docker "Dockerfile"     ["live-toxis", "ocurrent/ci.ocamllabs.io-deployer:live-toxis", [`Toxis "infra_deployer"]];
+      docker "Dockerfile"     ["live-ocaml-org", "ocurrent/ci.ocamllabs.io-deployer:live-ocaml-org", [`Ocamlorg_deployer "infra_deployer"]];
     ];
     ocurrent, "ocaml-ci", [
       docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Toxis "ocaml-ci_ci"]];
