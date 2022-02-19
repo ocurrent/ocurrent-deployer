@@ -172,11 +172,16 @@ let filter_list filter items =
    the service, and where to deloy it. *)
 let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let ocurrent = Build.org ?app ~account:"ocurrent" 23342906 in
+  let ocaml = Build.org ?app ~account:"ocaml" 18513252 in
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
   let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
   let docker = docker ~sched in
   Current.all @@ List.map build @@ filter_list filter [
     ocurrent, "ocurrent-deployer", [
         docker "Dockerfile"     ["live-ocaml-org", "ocurrent/ci.ocamllabs.io-deployer:live-ocaml-org", [`Ocamlorg_deployer "infra_deployer"]];
+    ];
+    ocaml, "v2.ocaml.org", [
+      docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live", [`Ocamlorg_sw ["v2.ocaml.org", "51.159.152.205"]]]
+        ~options:include_git;
     ];
   ]
