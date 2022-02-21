@@ -33,12 +33,16 @@ let has_role user role =
       ), _ -> true        (* These users have all roles *)
     | _ -> role = `Viewer
 
-let main () config mode app slack auth sched staging_password_file =
+let main () config mode app slack auth sched staging_password_file flavour =
   let vat = Capnp_rpc_unix.client_only_vat () in
   let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
   let channel = read_channel_uri slack in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
-  let engine = Current.Engine.create ~config (Pipeline.v ~app ~notify:channel ~sched ~staging_auth) in
+  let engine = match flavour with
+    | `Tarides -> Current.Engine.create ~config (Pipeline.tarides ~app ~notify:channel ~sched ~staging_auth)
+    | `OCaml -> Current.Engine.create ~config (Pipeline.ocaml_org ~app ~notify:channel ~sched ~staging_auth)
+    | `Toxis -> Current.Engine.create ~config (Pipeline.toxis ~app ~notify:channel)
+  in
   let authn = Option.map Current_github.Auth.make_login_uri auth in
   let webhook_secret = Current_github.App.webhook_secret app in
   let has_role =
@@ -50,13 +54,12 @@ let main () config mode app slack auth sched staging_password_file =
     Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook ~engine ~webhook_secret ~has_role) ::
     Current_web.routes engine in
   let site = Current_web.Site.v ?authn ~has_role ~name:"OCurrent Deployer" routes in
- let result = Logging.run begin
+  Logging.run begin
     Lwt.choose [
       Current.Engine.thread engine;  (* The main thread evaluating the pipeline. *)
       Current_web.run ~mode site;
     ]
-  end in
-  Result.map_error (fun (`Msg x) -> x) result
+  end
 
 (* Command-line parsing *)
 
@@ -66,7 +69,7 @@ let slack =
   Arg.required @@
   Arg.opt Arg.(some file) None @@
   Arg.info
-    ~doc:"A file containing the URI of the endpoint for status updates"
+    ~doc:"A file containing the URI of the endpoint for status updates."
     ~docv:"URI-FILE"
     ["slack"]
 
@@ -74,7 +77,7 @@ let submission_service =
   Arg.required @@
   Arg.opt Arg.(some Capnp_rpc_unix.sturdy_uri) None @@
   Arg.info
-    ~doc:"The submission.cap file for the build scheduler service"
+    ~doc:"The submission.cap file for the build scheduler service."
     ~docv:"FILE"
     ["submission-service"]
 
@@ -82,16 +85,16 @@ let staging_password =
   Arg.value @@
   Arg.opt Arg.(some file) None @@
   Arg.info
-    ~doc:(Printf.sprintf "A file containing the password for the %S Docker Hub user" staging_user)
+    ~doc:(Printf.sprintf "A file containing the password for the %S Docker Hub user." staging_user)
     ~docv:"FILE"
     ["staging-password-file"]
 
 let cmd =
   let doc = "build and deploy services from Git" in
-  let cmd_t = Term.(const main $ Logging.cmdliner $ Current.Config.cmdliner $ Current_web.cmdliner $
+  let cmd_t = Term.(term_result (const main $ Logging.cmdliner $ Current.Config.cmdliner $ Current_web.cmdliner $
         Current_github.App.cmdliner $ slack $ Current_github.Auth.cmdliner $
-                     submission_service $ staging_password) in
+                    submission_service $ staging_password $ Pipeline.Flavour.cmdliner)) in
   let info = Cmd.info "deploy" ~doc in
   Cmd.v info cmd_t
 
-let () = exit (Cmd.eval_result cmd)
+let () = exit (Cmd.eval cmd)

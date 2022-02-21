@@ -39,7 +39,8 @@ To test changes to the pipeline, use:
 
 ```
 dune exec -- ocurrent-deployer-local --confirm=harmless --submission-service submission.cap \
-                                     --github-webhook-secret-file github-secret-file -v
+                                     --github-webhook-secret-file github-secret-file \
+                                     --flavour tarides -v \
                                      ocurrent/ocaml-ci
 ```
 
