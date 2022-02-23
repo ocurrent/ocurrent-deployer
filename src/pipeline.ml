@@ -115,6 +115,7 @@ module Cluster = struct
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3-ocaml-org" end)
 
+  module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2-ocaml-org" end)
   module Deploycamlorg_docker = Current_docker.Default
 
   type build_info = {
@@ -137,7 +138,7 @@ module Cluster = struct
 
     (* Services on deploy.ci.ocaml.org. *)
     | `Ocamlorg_deployer of string           (* OCurrent deployer @ deploy.ci.ocaml.org *)
-    | `Ocamlorg_sw of (string * string) list (* OCaml website @ v2.ocaml.org *)
+    | `OCamlorg_v2 of (string * string) list (* OCaml website @ v2.ocaml.org *)
   ]
 
   type deploy_info = {
@@ -199,12 +200,18 @@ module Cluster = struct
             | `Tezos name -> pull_and_serve (module Tezos_docker) ~name `Service multi_hash
             | `Cb name -> pull_and_serve (module Cb_docker) ~name `Service multi_hash
             | `V3ocamlorg_cl name -> pull_and_serve (module V3ocamlorg_docker) ~name `Service multi_hash
-
-            | `Ocamlorg_deployer name -> pull_and_serve (module Deploycamlorg_docker) ~name `Service multi_hash
             | `Ocamlorg_sw domains ->
               let name = Cluster_api.Docker.Image_id.tag hub_id in
               let contents = Caddy.compose {Caddy.name; domains} in
               pull_and_serve (module Ocamlorg_docker) ~name (`Compose contents) multi_hash
+
+            (* ocaml.org *)
+            | `Ocamlorg_deployer name -> pull_and_serve (module Deploycamlorg_docker) ~name `Service multi_hash
+            | `OCamlorg_v2 domains ->
+              let name = Cluster_api.Docker.Image_id.tag hub_id in
+              let contents = Caddy.compose {Caddy.name; domains} in
+              pull_and_serve (module V2ocamlorg_docker) ~name (`Compose contents) multi_hash
+
           )
         |> Current.all
 end
@@ -321,7 +328,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
     let base = Uri.of_string "https://deploy.ci.ocaml.org" in
     fun repo -> Uri.with_query' base ["repo", repo] in
   let ocurrent = Build.org ?app ~account:"ocurrent" 23342906 in
-  let ocaml = Build.org ?app ~account:"ocaml" 18513252 in
+  let ocaml = Build.org ?app ~account:"ocaml" 18513252 in (* TODO Change to new installation ID. *)
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
   let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
   let docker = docker ~sched in
@@ -330,7 +337,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile"     ["live-ocaml-org", "ocurrent/ci.ocamllabs.io-deployer:live-ocaml-org", [`Ocamlorg_deployer "infra_deployer"]];
     ];
     ocaml, "v2.ocaml.org", [
-      docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live", [`Ocamlorg_sw ["v2.ocaml.org", "51.159.152.205"]]]
+      docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live", [`Ocamlorg_sw ["v2.ocaml.org", "51.159.152.205"]]] ~options:include_git;
     ]
   ]
 
