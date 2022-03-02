@@ -341,15 +341,10 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
     let base = Uri.of_string "https://deploy.ci.ocaml.org" in
     fun repo -> Uri.with_query' base ["repo", repo] in
   let ocurrent = Build.org ?app ~account:"ocurrent" 23342906 in
-  let ocaml = Build.org ?app ~account:"ocaml" 18513252 in
+  let ocaml = Build.org ?app ~account:"ocaml" 23711648 in
   (* TODO Change to new installation ID. *)
-  (* let ocaml_opam = Build.org ?app ~account:"ocaml-opam" 22575677 in *)
+  (* let ocaml_opam = Build.org ?app ~account:"ocaml-opam" 23690708 in *)
   let ocaml_opam_tmcgilchrist = Build.org ?app ~account:"tmcgilchrist" 23527376 in
-  (* TODO Install ocurrent-deployer app into this account and use the
-     installation id here!
-
-     https://github.com/organizations/ocurrent/settings/apps/ocaml-org-deployer
-  *)
 
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
   let docker_with_timeout timeout =
