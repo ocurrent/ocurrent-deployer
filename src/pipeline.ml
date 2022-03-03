@@ -302,11 +302,6 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4 "infra_multicore-ci"]];
       docker "Dockerfile.web" ["live-web", "ocurrent/multicore-ci-web:live", [`Ci4 "infra_multicore-ci-web"]];
     ];
-    ocurrent, "ocaml-docs-ci", [
-      docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Ci6 "infra_docs-ci"]];
-      docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Ci6 "infra_init"]];
-      docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6 "infra_storage-server"]];
-    ];
     ocurrent, "current-bench", [
       docker "pipeline/Dockerfile" ["main", "ocurrent/current-bench-pipeline:live", [`Cb "packet-current-bench_pipeline"]];
       docker "frontend/Dockerfile" ["main", "ocurrent/current-bench-frontend:live", [`Cb "packet-current-bench_frontend"]];
@@ -363,6 +358,12 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw ["staging.ocaml.org", "51.159.79.64"]]]
         ~options:include_git;
     ];
+
+    ocurrent, "ocaml-docs-ci", [
+        docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Ci6 "infra_docs-ci"]];
+        docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Ci6 "infra_init"]];
+        docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6 "infra_storage-server"]];
+      ];
 
     ocaml_opam_tmcgilchrist, "opam2web", [
       docker_with_timeout (Duration.of_min 180)
