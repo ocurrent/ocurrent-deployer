@@ -358,7 +358,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ];
 
     ocaml, "v2.ocaml.org", [
-      docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live", [`Ocamlorg_sw ["v2.ocaml.org", "51.159.152.205"]]] ~options:include_git;
+      docker "Dockerfile.deploy"  ["master", "ocurrent/v2.ocaml.org:live", [`Ocamlorg_sw ["v2.ocaml.org", "51.159.152.205"]]] ~options:include_git;
     ];
 
     ocaml_opam_tmcgilchrist, "opam2web", [
