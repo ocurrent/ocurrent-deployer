@@ -267,7 +267,8 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
   let tarides = Build.org ?app ~account:"tarides" 21197588 in
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
-  let ocaml = Build.org ?app ~account:"ocaml" 18513252 in
+  (* TODO Uninstall deploy.ci3.ocamllabs.io from ocaml GitHub org. *)
+  (* let ocaml = Build.org ?app ~account:"ocaml" 18513252 in *)
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
 
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
@@ -310,20 +311,10 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "pipeline/Dockerfile" ["main", "ocurrent/current-bench-pipeline:live", [`Cb "packet-current-bench_pipeline"]];
       docker "frontend/Dockerfile" ["main", "ocurrent/current-bench-frontend:live", [`Cb "packet-current-bench_frontend"]];
     ];
-    ocaml, "ocaml.org", [
-      docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live",    [`Ocamlorg_sw ["www.ocaml.org", "51.159.79.75"; "ocaml.org", "51.159.78.124"]]]
-        ~options:include_git;
-      docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw ["staging.ocaml.org", "51.159.79.64"]]]
-        ~options:include_git;
-    ];
-    ocaml, "v3.ocaml.org-server", [
-        docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", [`V3ocamlorg_cl "infra_www"]]
-    ];
+
     ocaml_bench, "sandmark-nightly", [
       docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]]
     ];
-
-
 
     tarides, "tezos-ci", [
       docker "Dockerfile" ["live", "ocurrent/tezos-ci:live", [`Tezos "tezos-ci_ci"]]
@@ -357,8 +348,20 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile"     ["live-ocaml-org", "ocurrent/ci.ocamllabs.io-deployer:live-ocaml-org", [`Ocamlorg_deployer "infra_deployer"]];
     ];
 
+    ocaml, "ocaml.org", [
+      (* New V3 ocaml.org website. *)
+      docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", [`V3ocamlorg_cl "infra_www"]]
+    ];
+
     ocaml, "v2.ocaml.org", [
-      docker "Dockerfile.deploy"  ["master", "ocurrent/v2.ocaml.org:live", [`OCamlorg_v2 ["v2.ocaml.org", "10.197.242.33"]]] ~options:include_git; (* 51.159.152.205 *)
+      (* Backup of existing ocaml.org website. *)
+      docker "Dockerfile.deploy"  ["master", "ocurrent/v2.ocaml.org:live", [`OCamlorg_v2 ["v2.ocaml.org", "10.197.242.33"]]] ~options:include_git;
+
+      (* Existing ocaml.org website TODO disable once v3 is launched. *)
+      docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live",    [`Ocamlorg_sw ["www.ocaml.org", "51.159.79.75"; "ocaml.org", "51.159.78.124"]]]
+        ~options:include_git;
+      docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw ["staging.ocaml.org", "51.159.79.64"]]]
+        ~options:include_git;
     ];
 
     ocaml_opam_tmcgilchrist, "opam2web", [
