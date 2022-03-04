@@ -1,5 +1,10 @@
 (* This is the main entry-point for the service. *)
 
+type flavour_opt =
+  | Tarides of Uri.t
+  | OCaml of Uri.t
+  | Toxis
+
 (* A low-security Docker Hub user used to push images to the staging area.
    Low-security because we never rely on the tags in this repository, just the hashes. *)
 let staging_user = "ocurrentbuilder"
@@ -33,15 +38,18 @@ let has_role user role =
       ), _ -> true        (* These users have all roles *)
     | _ -> role = `Viewer
 
-let main () config mode app slack auth sched staging_password_file flavour =
+let main () config mode app slack auth staging_password_file flavour =
   let vat = Capnp_rpc_unix.client_only_vat () in
-  let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
   let channel = read_channel_uri slack in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let engine = match flavour with
-    | `Tarides -> Current.Engine.create ~config (Pipeline.tarides ~app ~notify:channel ~sched ~staging_auth)
-    | `OCaml -> Current.Engine.create ~config (Pipeline.ocaml_org ~app ~notify:channel ~sched ~staging_auth)
-    | `Toxis -> Current.Engine.create ~config (Pipeline.toxis ~app ~notify:channel)
+    | Tarides sched -> 
+       let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
+       Current.Engine.create ~config (Pipeline.tarides ~app ~notify:channel ~sched ~staging_auth)
+    | OCaml sched -> 
+       let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
+       Current.Engine.create ~config (Pipeline.ocaml_org ~app ~notify:channel ~sched ~staging_auth)
+    | Toxis -> Current.Engine.create ~config (Pipeline.toxis ~app ~notify:channel)
   in
   let authn = Option.map Current_github.Auth.make_login_uri auth in
   let webhook_secret = Current_github.App.webhook_secret app in
@@ -62,7 +70,6 @@ let main () config mode app slack auth sched staging_password_file flavour =
   end
 
 (* Command-line parsing *)
-
 open Cmdliner
 
 let slack =
@@ -74,12 +81,23 @@ let slack =
     ["slack"]
 
 let submission_service =
-  Arg.required @@
+  Arg.value @@
   Arg.opt Arg.(some Capnp_rpc_unix.sturdy_uri) None @@
   Arg.info
     ~doc:"The submission.cap file for the build scheduler service."
     ~docv:"FILE"
     ["submission-service"]
+
+let flavour_opt =
+  let f s fl : flavour_opt Term.ret = match s,fl with
+    | Some s, `OCaml -> `Ok (OCaml s)
+    | Some s, `Tarides -> `Ok (Tarides s)
+    | None, `Toxis -> `Ok Toxis
+    | Some _ , `Toxis -> `Error (true, "--submission-service not required for --flavour toxis")
+    | None, `OCaml -> `Error (true, "--submission-service required for --flavour ocaml")
+    | None, `Tarides -> `Error (true, "--submission-service required for --flavour tarides") in
+
+  Term.(ret (const f $ submission_service $ Pipeline.Flavour.cmdliner))
 
 let staging_password =
   Arg.value @@
@@ -92,8 +110,7 @@ let staging_password =
 let cmd =
   let doc = "build and deploy services from Git" in
   let cmd_t = Term.(term_result (const main $ Logging.cmdliner $ Current.Config.cmdliner $ Current_web.cmdliner $
-        Current_github.App.cmdliner $ slack $ Current_github.Auth.cmdliner $
-                    submission_service $ staging_password $ Pipeline.Flavour.cmdliner)) in
+        Current_github.App.cmdliner $ slack $ Current_github.Auth.cmdliner $ staging_password $ flavour_opt)) in
   let info = Cmd.info "deploy" ~doc in
   Cmd.v info cmd_t
 
