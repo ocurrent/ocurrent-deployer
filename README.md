@@ -93,7 +93,7 @@ To update a deployment that is managed by ocurrent-deployer (which could be ocur
 	- The hash for the folder inside `context/meta` is generated with `docker context create <machine_name>`.
 	- Add to `known_hosts` with ssh-keyscan of the host where you are deploying the service. eg
       ```
-      ssh-keyscan -H awesome.ocmal.org >> config/ssh/known_hosts
+      ssh-keyscan -H awesome.ocaml.org >> config/ssh/known_hosts
       ```
 
 [OCurrent]: https://github.com/ocurrent/ocurrent
