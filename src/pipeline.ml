@@ -1,3 +1,22 @@
+(* Different Deployer pipelines available. *)
+module Flavour = struct
+  type t = [`Tarides | `OCaml | `Toxis ]
+  let cmdliner =
+    let open Cmdliner in
+    let flavours = ["tarides", `Tarides
+                   ; "ocaml", `OCaml
+                   ; "toxis", `Toxis
+                   ]
+    in
+    let enum_alts = Arg.doc_alts_enum flavours in
+    let doc = Format.asprintf "Pipeline flavour to run. $(docv) must be %s." enum_alts
+    in
+    Arg.(required & opt (some & enum flavours) None &
+         info ["flavour"] ~doc ~docv:"FLAVOUR"
+      )
+end
+
+
 open Current.Syntax
 
 module Github = Current_github
@@ -35,6 +54,56 @@ let pool_id : arch -> string = function
   | `Linux_x86_64 -> "linux-x86_64"
   | `Linux_ppc64 -> "linux-ppc64"
 
+module Packet_unikernel = struct
+  (* Mirage unikernels running on packet.net *)
+
+  module Docker = Current_docker.Default
+
+  type build_info = {
+    dockerfile : string;
+    target : string;
+    args : string list;
+  }
+
+  type deploy_info = {
+    service : string;
+  }
+
+  let build_image { dockerfile; target; args } src =
+    let src = Current_git.fetch src in
+    let args = ("TARGET=" ^ target) :: args in
+    let build_args = List.map (fun x -> ["--build-arg"; x]) args |> List.concat in
+    let dockerfile = Current.return (`File (Fpath.v dockerfile)) in
+    Docker.build (`Git src)
+      ~build_args
+      ~dockerfile
+      ~label:target
+      ~pull:true
+      ~timeout
+
+  let build info src = Current.ignore_value (build_image info src)
+
+  let name { service } = service
+
+  (* Deployment *)
+
+  module Mirage_m1_a = Mirage.Make(Docker)
+
+  let mirage_host_ssh = "root@147.75.204.215"
+
+  let deploy build_info { service } src =
+    let image = build_image build_info src in
+    (* We tag the image to prevent docker prune from removing it.
+       Otherwise, if we later deploy a new (bad) version and need to roll back quickly,
+       we may find the old version isn't around any longer. *)
+    let tag = "mirage-" ^ service in
+    Current.all [
+      Docker.tag ~tag image;
+      Mirage_m1_a.deploy ~name:service ~ssh_host:mirage_host_ssh image;
+    ]
+end
+module Build_unikernel = Build.Make(Packet_unikernel)
+
 module Cluster = struct
   (* Strings here represent the docker context to use. *)
   module Ci3_docker = Current_docker.Default
@@ -46,6 +115,10 @@ module Cluster = struct
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3-ocaml-org" end)
 
+  module Opamocamlorg_docker = Current_docker.Make(struct let docker_context = Some "opam3-ocaml-org" end)
+  module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2-ocaml-org" end)
+  module Deploycamlorg_docker = Current_docker.Default
+
   type build_info = {
     sched : Current_ocluster.t;
     dockerfile : [`Contents of string Current.t | `Path of string];
@@ -54,6 +127,7 @@ module Cluster = struct
   }
 
   type service = [
+    (* Services on deploy.ci3.ocamllabs.io *)
     | `Toxis of string
     | `Tezos of string
     | `Ci3 of string
@@ -62,6 +136,11 @@ module Cluster = struct
     | `Cb of string
     | `Ocamlorg_sw of (string * string) list
     | `V3ocamlorg_cl of string
+
+    (* Services on deploy.ci.ocaml.org. *)
+    | `Ocamlorg_deployer of string           (* OCurrent deployer @ deploy.ci.ocaml.org *)
+    | `OCamlorg_v2 of (string * string) list (* OCaml website @ v2.ocaml.org *)
+    | `Ocamlorg_opam of (string * string) list (* Opam website @ opam-3.ocaml.org *)
   ]
 
   type deploy_info = {
@@ -116,6 +195,7 @@ module Cluster = struct
       | services ->
         services
         |> List.map (function
+            (* ci3.ocamllabs.io *)
             | `Ci3 name -> pull_and_serve (module Ci3_docker) ~name `Service multi_hash
             | `Ci4 name -> pull_and_serve (module Ci4_docker) ~name `Service multi_hash
             | `Ci6 name -> pull_and_serve (module Ci6_docker) ~name `Service multi_hash
@@ -127,6 +207,17 @@ module Cluster = struct
               let name = Cluster_api.Docker.Image_id.tag hub_id in
               let contents = Caddy.compose {Caddy.name; domains} in
               pull_and_serve (module Ocamlorg_docker) ~name (`Compose contents) multi_hash
+
+            (* ocaml.org *)
+            | `Ocamlorg_deployer name -> pull_and_serve (module Deploycamlorg_docker) ~name `Service multi_hash
+            | `OCamlorg_v2 domains ->
+              let name = Cluster_api.Docker.Image_id.tag hub_id in
+              let contents = Caddy.compose {Caddy.name; domains} in
+              pull_and_serve (module V2ocamlorg_docker) ~name (`Compose contents) multi_hash
+            | `Ocamlorg_opam domains ->
+              let name = Cluster_api.Docker.Image_id.tag hub_id in
+              let contents = Caddy.compose {Caddy.name; domains} in
+              pull_and_serve (module Opamocamlorg_docker) ~name (`Compose contents) multi_hash
           )
         |> Current.all
 end
@@ -134,9 +225,6 @@ module Cluster_build = Build.Make(Cluster)
 
 (* [web_ui collapse_value] is a URL back to the deployment service, for links
    in status messages. *)
-let web_ui =
-  let base = Uri.of_string "https://deploy.ci3.ocamllabs.io/" in
-  fun repo -> Uri.with_query' base ["repo", repo]
 
 let docker ?(archs=[`Linux_x86_64]) ?(options=Cluster_api.Docker.Spec.defaults) ~sched dockerfile targets =
   let build_info = { Cluster.sched; dockerfile = `Path dockerfile; options; archs } in
@@ -164,18 +252,30 @@ let filter_list filter items =
 
 let include_git = { Cluster_api.Docker.Spec.defaults with include_git = true }
 
+let build_kit (v : Cluster_api.Docker.Spec.options) = { v with buildkit = true}
+
 (* This is a list of GitHub repositories to monitor.
    For each one, it lists the builds that are made from that repository.
    For each build, it says which which branch gives the desired live version of
-   the service, and where to deloy it. *)
-let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
+   the service, and where to deploy it. *)
+let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
+  (* [web_ui collapse_value] is a URL back to the deployment service, for links
+     in status messages. *)
+  let web_ui =
+    let base = Uri.of_string "https://deploy.ci3.ocamllabs.io/" in
+    fun repo -> Uri.with_query' base ["repo", repo] in
+
   let tarides = Build.org ?app ~account:"tarides" 21197588 in
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
-  let ocaml = Build.org ?app ~account:"ocaml" 18513252 in
+  (* TODO Uninstall deploy.ci3.ocamllabs.io from ocaml GitHub org. *)
+  (* let ocaml = Build.org ?app ~account:"ocaml" 18513252 in *)
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
+
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
-  let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
-  let docker = docker ~sched in
+  let sched_regular = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
+
+  let docker = docker ~sched:sched_regular in
+
   Current.all @@ List.map build @@ filter_list filter [
     ocurrent, "ocurrent-deployer", [
       docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3 "deployer_deployer"]];
@@ -202,24 +302,11 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4 "infra_multicore-ci"]];
       docker "Dockerfile.web" ["live-web", "ocurrent/multicore-ci-web:live", [`Ci4 "infra_multicore-ci-web"]];
     ];
-    ocurrent, "ocaml-docs-ci", [
-      docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Ci6 "infra_docs-ci"]];
-      docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Ci6 "infra_init"]];
-      docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6 "infra_storage-server"]];
-    ];
     ocurrent, "current-bench", [
       docker "pipeline/Dockerfile" ["main", "ocurrent/current-bench-pipeline:live", [`Cb "packet-current-bench_pipeline"]];
       docker "frontend/Dockerfile" ["main", "ocurrent/current-bench-frontend:live", [`Cb "packet-current-bench_frontend"]];
     ];
-    ocaml, "ocaml.org", [
-      docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live",    [`Ocamlorg_sw ["www.ocaml.org", "51.159.79.75"; "ocaml.org", "51.159.78.124"]]]
-        ~options:include_git;
-      docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw ["staging.ocaml.org", "51.159.79.64"]]]
-        ~options:include_git;
-    ];
-    ocaml, "v3.ocaml.org-server", [
-        docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", [`V3ocamlorg_cl "infra_www"]]
-    ];
+
     ocaml_bench, "sandmark-nightly", [
       docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]]
     ];
@@ -227,4 +314,82 @@ let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
     tarides, "tezos-ci", [
       docker "Dockerfile" ["live", "ocurrent/tezos-ci:live", [`Tezos "tezos-ci_ci"]]
     ]
+  ]
+
+(* This is a list of GitHub repositories to monitor.
+   For each one, it lists the builds that are made from that repository.
+   For each build, it says which which branch gives the desired live version of
+   the service, and where to deploy it. *)
+let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
+  (* [web_ui collapse_value] is a URL back to the deployment service, for links
+     in status messages. *)
+  let web_ui =
+    let base = Uri.of_string "https://deploy.ci.ocaml.org" in
+    fun repo -> Uri.with_query' base ["repo", repo] in
+  let ocurrent = Build.org ?app ~account:"ocurrent" 23342906 in
+  let ocaml = Build.org ?app ~account:"ocaml" 23711648 in
+  (* TODO Change to new installation ID. *)
+  (* let ocaml_opam = Build.org ?app ~account:"ocaml-opam" 23690708 in *)
+  let ocaml_opam_tmcgilchrist = Build.org ?app ~account:"tmcgilchrist" 23527376 in
+
+  let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
+  let docker_with_timeout timeout =
+    docker ~sched:(Current_ocluster.v ~timeout ?push_auth:staging_auth sched)
+  in
+  let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
+  let docker = docker ~sched in
+  Current.all @@ List.map build @@ filter_list filter [
+    ocurrent, "ocurrent-deployer", [
+      docker "Dockerfile"     ["live-ocaml-org", "ocurrent/ci.ocamllabs.io-deployer:live-ocaml-org", [`Ocamlorg_deployer "infra_deployer"]];
+    ];
+
+    ocaml, "ocaml.org", [
+      (* New V3 ocaml.org website. *)
+      docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", [`V3ocamlorg_cl "infra_www"]]
+    ];
+
+    ocaml, "v2.ocaml.org", [
+      (* Backup of existing ocaml.org website. *)
+      docker "Dockerfile.deploy"  ["master", "ocurrent/v2.ocaml.org:live", [`OCamlorg_v2 ["v2.ocaml.org", "10.197.242.33"]]] ~options:include_git;
+
+      (* Existing ocaml.org website TODO disable once v3 is launched. *)
+      docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live",    [`Ocamlorg_sw ["www.ocaml.org", "51.159.79.75"; "ocaml.org", "51.159.78.124"]]]
+        ~options:include_git;
+      docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw ["staging.ocaml.org", "51.159.79.64"]]]
+        ~options:include_git;
+    ];
+
+    ocurrent, "ocaml-docs-ci", [
+        docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Ci6 "infra_docs-ci"]];
+        docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Ci6 "infra_init"]];
+        docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6 "infra_storage-server"]];
+      ];
+
+    ocaml_opam_tmcgilchrist, "opam2web", [
+      docker_with_timeout (Duration.of_min 180)
+        "Dockerfile" ["live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam ["opam-3.ocaml.org", "172.30.0.212"]]]
+        ~options:(include_git |> build_kit)
+        ~archs:[`Linux_arm64]
+    ];
+  ]
+
+let unikernel dockerfile ~target args services =
+  let build_info = { Packet_unikernel.dockerfile; target; args } in
+  let deploys =
+    services
+    |> List.map (fun (branch, service) -> branch, { Packet_unikernel.service }) in
+  (build_info, deploys)
+
+let toxis ?app ?notify:channel () =
+  let web_ui =
+    let base = Uri.of_string "https://deploy.ocamllabs.io/" in
+    fun repo -> Uri.with_query' base ["repo", repo] in
+  let mirage = Build.org ?app ~account:"mirage" 7175142 in
+  let build (org, name, builds) = Build_unikernel.repo ?channel ~web_ui ~org ~name builds in
+  Current.all @@ List.map build [
+    mirage, "mirage-www", [
+      unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true"] ["master", "www"];
+      unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
+      unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true"] ["next", "next"];
+    ];
   ]
