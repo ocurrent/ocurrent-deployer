@@ -47,12 +47,14 @@ type arch = [
   | `Linux_arm64
   | `Linux_x86_64
   | `Linux_ppc64
+  | `Linux_s390x
 ]
 
 let pool_id : arch -> string = function
   | `Linux_arm64 -> "linux-arm64"
   | `Linux_x86_64 -> "linux-x86_64"
   | `Linux_ppc64 -> "linux-ppc64"
+  | `Linux_s390x -> "linux-s390x"
 
 module Packet_unikernel = struct
   (* Mirage unikernels running on packet.net *)
@@ -292,7 +294,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ocurrent, "ocluster", [
       docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []];
       docker "Dockerfile.worker" ["live-worker",    "ocurrent/ocluster-worker:live", []]
-        ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64];
+        ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64; `Linux_s390x];
     ];
     ocurrent, "opam-repo-ci", [
       docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Ci3 "opam-repo-ci_opam-repo-ci"]];
