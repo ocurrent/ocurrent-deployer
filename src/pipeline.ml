@@ -288,9 +288,6 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile.web" ["live-www",    "ocurrent/ocaml-ci-web:live",     [`Toxis "ocaml-ci_web"];
                                "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Toxis "test-www"]];
     ];
-    ocurrent, "docker-base-images", [
-      docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Ci3 "base-images_builder"]];
-    ];
     ocurrent, "ocluster", [
       docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []];
       docker "Dockerfile.worker" ["live-worker",    "ocurrent/ocluster-worker:live", []]
@@ -360,6 +357,11 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw ["staging.ocaml.org", "51.159.79.64"]]]
         ~options:include_git;
     ];
+
+    ocurrent, "docker-base-images", [
+        (* Docker base images @ images.ci.ocaml.org *)
+        docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Ci3 "base-images_builder"]];
+      ];
 
     ocurrent, "ocaml-docs-ci", [
         docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Ci6 "infra_docs-ci"]];
