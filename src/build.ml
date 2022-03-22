@@ -56,7 +56,7 @@ module Make(T : S.T) = struct
     | Error (`Active _) -> Github.Api.CheckRunStatus.v ~url `Queued
     | Error (`Msg m)    -> Github.Api.CheckRunStatus.v ~url (`Completed (`Failure m)) ~summary:m
 
-  let repo ?channel ~web_ui ~org:(org, github) ~opam ~name build_specs =
+  let repo ?channel ~web_ui ~org:(org, github) ?opam ~name build_specs =
     let repo_name = Printf.sprintf "%s/%s" org name in
     let repo = { Github.Repo_id.owner = org; name } in
     let root = Current.return ~label:repo_name () in      (* Group by repo in the diagram *)
@@ -73,7 +73,7 @@ module Make(T : S.T) = struct
           |> Current.list_iter (module Github.Api.Commit) @@ fun commit ->
           let src = Current.map Github.Api.Commit.id commit in
           Current.all (
-            build_specs |> List.map (fun (build_info, _deploys) -> T.build ~opam build_info src |> Current.ignore_value)
+            build_specs |> List.map (fun (build_info, _deploys) -> T.build ?opam build_info src |> Current.ignore_value)
           )
           |> status_of_build ~url
           |> Github.Api.CheckRun.set_status commit "deployability"
@@ -91,7 +91,7 @@ module Make(T : S.T) = struct
                     let service = T.name deploy_info in
                     let commit, src = head_of ?github repo branch in
                     let notify_repo = Printf.sprintf "%s-%s-%s" repo_name service branch in
-                    let deploy = T.deploy build_info deploy_info ~opam src in
+                    let deploy = T.deploy build_info deploy_info ?opam src in
                     match channel, commit with
                     | Some channel, Some commit -> notify ~channel ~web_ui ~service ~commit ~repo:notify_repo deploy
                     | _ -> deploy
@@ -103,11 +103,5 @@ module Make(T : S.T) = struct
               ~key:"repo" ~value:repo_name
               ~input:root
     in
-    (* let builds = match opam_repo with *)
-    (*   | Some opam_repo ->  *)
-    (*      (\* Current.with_context (Current.return opam_repo) @@ *\) *)
-    (*      (\*   fun () ->  *\) *)
-    (*      builds opam_repo () *)
-    (*   | None -> builds () in *)
     Current.all (deployment :: builds)
 end

@@ -14,7 +14,7 @@ module Make(T : S.T) : sig
     ?channel:Current_slack.channel ->
     web_ui:(string -> Uri.t) ->
     org:org ->
-    opam:(Current_git.Commit_id.t option Current.t) ->
+    ?opam:(Current_git.Commit_id.t Current.t) ->
     name:string ->
     (T.build_info * (string * T.deploy_info) list) list ->
     unit Current.t
