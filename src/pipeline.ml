@@ -119,7 +119,9 @@ module Cluster = struct
 
   module Opamocamlorg_docker = Current_docker.Make(struct let docker_context = Some "opam3-ocaml-org" end)
   module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2-ocaml-org" end)
+  module Ocamlorg_images = Current_docker.Make(struct let docker_context = Some "ci3.ocamllabs.io" end) 
   module Deploycamlorg_docker = Current_docker.Default
+  
 
   type build_info = {
     sched : Current_ocluster.t;
@@ -140,9 +142,10 @@ module Cluster = struct
     | `V3ocamlorg_cl of string
 
     (* Services on deploy.ci.ocaml.org. *)
-    | `Ocamlorg_deployer of string           (* OCurrent deployer @ deploy.ci.ocaml.org *)
-    | `OCamlorg_v2 of (string * string) list (* OCaml website @ v2.ocaml.org *)
+    | `Ocamlorg_deployer of string             (* OCurrent deployer @ deploy.ci.ocaml.org *)
+    | `OCamlorg_v2 of (string * string) list   (* OCaml website @ v2.ocaml.org *)
     | `Ocamlorg_opam of (string * string) list (* Opam website @ opam-3.ocaml.org *)
+    | `Ocamlorg_images of string               (* Base Image builder @ images.ci.ocaml.org *)
   ]
 
   type deploy_info = {
@@ -220,6 +223,7 @@ module Cluster = struct
               let name = Cluster_api.Docker.Image_id.tag hub_id in
               let contents = Caddy.compose {Caddy.name; domains} in
               pull_and_serve (module Opamocamlorg_docker) ~name (`Compose contents) multi_hash
+            | `Ocamlorg_images name -> pull_and_serve (module Ocamlorg_images) ~name `Service multi_hash
           )
         |> Current.all
 end
@@ -360,7 +364,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
     ocurrent, "docker-base-images", [
         (* Docker base images @ images.ci.ocaml.org *)
-        docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Ci3 "base-images_builder"]];
+        docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Ocamlorg_images "base-images_builder"]];
       ];
 
     ocurrent, "ocaml-docs-ci", [
