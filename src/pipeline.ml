@@ -402,7 +402,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
         docker_with_timeout (Duration.of_min 180)
           "Dockerfile" ["live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam ["opam-3.ocaml.org", "172.30.0.212"]]]
           ~options:(include_git |> build_kit )
-          ~archs:[`Linux_arm64]
+          ~archs:[`Linux_arm64; `Linux_x86_64]
       ](* ; *)
     (* ocaml_opam, "opam2web", [ *)
     (*   docker_with_timeout (Duration.of_min 180) *)
