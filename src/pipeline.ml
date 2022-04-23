@@ -55,27 +55,6 @@ let pool_id : arch -> string = function
   | `Linux_ppc64 -> "linux-ppc64"
   | `Linux_s390x -> "linux-s390x"
 
-(* TODO Use Auth token to improve rate limiting. *)
-let opam_repository_commit : Current_git.Commit_id.t Current.t =
-  let repo = { Github.Repo_id.owner = "ocaml"; name = "opam-repository" } in
-  Github.Api.Anonymous.head_of repo @@ `Ref "refs/heads/master"
-
-let opam_blog_commit : Current_git.Commit_id.t Current.t =
-  let repo = { Github.Repo_id.owner = "ocaml"; name = "platform-blog" } in
-  Github.Api.Anonymous.head_of repo @@ `Ref "refs/heads/master"
-
-let with_opam_ref opam_git_ref options = {
-    options with Cluster_api.Docker.Spec.build_args =
-                   ("OPAM_GIT_SHA=" ^ Current_git.Commit_id.hash opam_git_ref) ::
-                     options.Cluster_api.Docker.Spec.build_args
-  }
-
-let with_platform_blog git_ref options = {
-    options with Cluster_api.Docker.Spec.build_args =
-                   ("BLOG_GIT_SHA=" ^ Current_git.Commit_id.hash git_ref) ::
-                     options.Cluster_api.Docker.Spec.build_args
-  }
-
 module Packet_unikernel = struct
   (* Mirage unikernels running on packet.net *)
 
@@ -91,8 +70,6 @@ module Packet_unikernel = struct
     service : string;
   }
 
-  type opam_refs = unit
-
   let build_image { dockerfile; target; args } src =
     let src = Current_git.fetch src in
     let args = ("TARGET=" ^ target) :: args in
@@ -105,7 +82,7 @@ module Packet_unikernel = struct
       ~pull:true
       ~timeout
 
-  let build info ?opam:_ src  = Current.ignore_value (build_image info src)
+  let build info ?additional_build_args:_ src  = Current.ignore_value (build_image info src)
 
   let name { service } = service
 
@@ -115,7 +92,7 @@ module Packet_unikernel = struct
 
   let mirage_host_ssh = "root@147.75.204.215"
 
-  let deploy build_info { service } ?opam:_ src =
+  let deploy build_info { service } ?additional_build_args:_ src =
     let image = build_image build_info src in
     (* We tag the image to prevent docker prune from removing it.
        Otherwise, if we later deploy a new (bad) version and need to roll back quickly,
@@ -174,25 +151,14 @@ module Cluster = struct
     services : service list;
   }
 
-  type opam_refs = {
-      opam_repository_commit: Current_git.Commit_id.t Current.t
-    ; platform_blog_commit: Current_git.Commit_id.t Current.t
-    }
-
   (* Build [src/dockerfile] as a Docker service. *)
-  let build { sched; dockerfile; options; archs } ?opam src =
+  let build { sched; dockerfile; options; archs } ?(additional_build_args=Current.return []) src =
     let src = Current.map (fun x -> [x]) src in
-    match opam with
-    | Some opam_refs ->
-       Current.with_context opam_refs.opam_repository_commit @@ fun () ->
-       let* opam_git_ref = opam_refs.opam_repository_commit in
-       let* platform_blog_git_ref = opam_refs.platform_blog_commit in
-       let options = options |> with_opam_ref opam_git_ref |> with_platform_blog platform_blog_git_ref in
-       let build_arch arch = Current_ocluster.build sched ~options ~pool:(pool_id arch) ~src dockerfile in
-       Current.all (List.map build_arch archs)
-    | None ->
-       let build_arch arch = Current_ocluster.build sched ~options ~pool:(pool_id arch) ~src dockerfile in
-       Current.all (List.map build_arch archs)
+    Current.component "HEADs" |>
+    let** additional_build_args = additional_build_args in
+    let options = { options with build_args = additional_build_args @ options.build_args } in
+    let build_arch arch = Current_ocluster.build sched ~options ~pool:(pool_id arch) ~src dockerfile in
+    Current.all (List.map build_arch archs)
 
   let name info = Cluster_api.Docker.Image_id.to_string info.hub_id
 
@@ -216,22 +182,17 @@ module Cluster = struct
           Caddy.replace_hash_var ~hash:(D.Image.hash image) contents) image in
         D.compose ~name ~contents ()
 
-  let deploy { sched; dockerfile; options; archs } { hub_id; services } ?opam src =
+  let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(additional_build_args=Current.return []) src =
     let src = Current.map (fun x -> [x]) src in
-
     let target_label = Cluster_api.Docker.Image_id.repo hub_id |> String.map (function '/' | ':' -> '-' | c -> c) in
+    Current.component "HEADs" |>
+    let** additional_build_args = additional_build_args in
+    let options = { options with build_args = additional_build_args @ options.build_args } in
     let build_arch arch =
       let pool = pool_id arch in
       let tag = Printf.sprintf "live-%s-%s" target_label pool in
       let push_target = Cluster_api.Docker.Image_id.v ~repo:push_repo ~tag in
-      match opam with
-      | Some opam_refs ->
-         Current.with_context opam_refs.opam_repository_commit @@ fun () ->
-         let* opam_git_ref = opam_refs.opam_repository_commit in
-         let* platform_blog_git_ref = opam_refs.platform_blog_commit in
-         let options = options |> with_opam_ref opam_git_ref |> with_platform_blog platform_blog_git_ref in
-         Current_ocluster.build_and_push sched ~options ~push_target ~pool ~src dockerfile
-      | None -> Current_ocluster.build_and_push sched ~options ~push_target ~pool ~src dockerfile
+      Current_ocluster.build_and_push sched ~options ~push_target ~pool ~src dockerfile
     in
     let images = List.map build_arch archs in
     match auth with
@@ -371,7 +332,8 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let ocaml = Build.org ?app ~account:"ocaml" 23711648 in
   let ocaml_opam = Build.org ?app ~account:"ocaml-opam" 23690708 in
 
-  let build ?opam (org, name, builds) = Cluster_build.repo ?channel ?opam ~web_ui ~org ~name builds in
+  let build ?additional_build_args (org, name, builds) =
+    Cluster_build.repo ?channel ?additional_build_args ~web_ui ~org ~name builds in
 
   let docker_with_timeout timeout =
     docker ~sched:(Current_ocluster.v ~timeout ?push_auth:staging_auth sched)
@@ -412,8 +374,20 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
       ];
     ]  in
 
-  (* Follow the main repository plus ocaml/opam-repository and ocaml/platform-blog. *)
-  let opam_refs = { Cluster.opam_repository_commit; platform_blog_commit = opam_blog_commit } in
+  let head_of repo id =
+    match Build.api ocaml_opam with
+    | Some api -> Current.map Github.Api.Commit.id @@ Github.Api.head_of api repo id
+    | None -> Github.Api.Anonymous.head_of repo id
+  in
+
+  let additional_build_args =
+    let+ opam_repository_commit =
+      head_of { Github.Repo_id.owner = "ocaml"; name = "opam-repository" } @@ `Ref "refs/heads/master"
+    and+ platform_blog_commit =
+      head_of { Github.Repo_id.owner = "ocaml"; name = "platform-blog" } @@ `Ref "refs/heads/master" in
+    ["OPAM_GIT_SHA=" ^ Current_git.Commit_id.hash opam_repository_commit;
+     "BLOG_GIT_SHA=" ^ Current_git.Commit_id.hash platform_blog_commit]
+  in
 
   let opam_repository_pipeline = filter_list filter [
     ocaml_opam, "opam2web", [
@@ -426,7 +400,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   ]
   in
   Current.all (List.append
-                 (List.map (fun x -> build ~opam:opam_refs x) opam_repository_pipeline)
+                 (List.map (fun x -> build ~additional_build_args x) opam_repository_pipeline)
                  (List.map build pipelines))
 
 let unikernel dockerfile ~target args services =

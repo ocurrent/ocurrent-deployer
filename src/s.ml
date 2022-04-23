@@ -2,11 +2,9 @@ module type T = sig
   type build_info
   type deploy_info
 
-  type opam_refs
-
   val build :
     build_info ->
-    ?opam:opam_refs ->
+    ?additional_build_args:string list Current.t ->
     Current_git.Commit_id.t Current.t -> unit Current.t
 
   val name : deploy_info -> string
@@ -15,6 +13,6 @@ module type T = sig
   val deploy :
     build_info ->
     deploy_info ->
-    ?opam:opam_refs ->
+    ?additional_build_args:string list Current.t ->
     Current_git.Commit_id.t Current.t -> unit Current.t
 end
