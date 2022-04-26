@@ -370,7 +370,6 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let ocurrent = Build.org ?app ~account:"ocurrent" 23342906 in
   let ocaml = Build.org ?app ~account:"ocaml" 23711648 in
   let ocaml_opam = Build.org ?app ~account:"ocaml-opam" 23690708 in
-  let ocaml_opam_tmcgilchrist = Build.org ?app ~account:"tmcgilchrist" 23527376 in
 
   let build ?opam (org, name, builds) = Cluster_build.repo ?channel ?opam ~web_ui ~org ~name builds in
 
@@ -417,15 +416,10 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let opam_refs = { Cluster.opam_repository_commit; platform_blog_commit = opam_blog_commit } in
 
   let opam_repository_pipeline = filter_list filter [
-    ocaml_opam_tmcgilchrist, "opam2web", [
-        docker_with_timeout (Duration.of_min 180)
-          "Dockerfile" ["live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam ["opam-3.ocaml.org", "172.30.0.212"]]]
-          ~options:(include_git |> build_kit)
-          ~archs:[`Linux_arm64; `Linux_x86_64]
-      ];
     ocaml_opam, "opam2web", [
       docker_with_timeout (Duration.of_min 180)
-        "Dockerfile" []
+        "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam ["opam-3.ocaml.org", "172.30.0.212"]]
+                     ; "live-staging", "ocurrent/opam.ocaml.org:staging", []]
         ~options:(include_git |> build_kit)
         ~archs:[`Linux_arm64; `Linux_x86_64]
     ]
