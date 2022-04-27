@@ -21,8 +21,24 @@ let read_channel_uri path =
   with ex ->
     Fmt.failwith "Failed to read slack URI from %S: %a" path Fmt.exn ex
 
-(* Access control policy. *)
-let has_role user role =
+(* Access control policy for Tarides. *)
+let has_role_tarides user role =
+  match user with
+  | None -> role = `Viewer || role = `Monitor         (* Unauthenticated users can only look at things. *)
+  | Some user ->
+    match Current_web.User.id user, role with
+    | ("github:talex5"
+      |"github:avsm"
+      |"github:kit-ty-kate"
+      |"github:samoht"
+      |"github:tmcgilchrist"
+      |"github:mtelvers"
+      |"github:dra27"
+      ), _ -> true        (* These users have all roles *)
+    | _ -> role = `Viewer
+
+(* Access control policy for Mirage. *)
+let has_role_mirage user role =
   match user with
   | None -> role = `Viewer || role = `Monitor         (* Unauthenticated users can only look at things. *)
   | Some user ->
@@ -35,6 +51,24 @@ let has_role user role =
       |"github:tmcgilchrist"
       |"github:mtelvers"
       |"github:dra27"
+      ), _ -> true        (* These users have all roles *)
+    | _ -> role = `Viewer
+
+(* Access control policy for OCaml. *)
+let has_role_ocaml user role =
+  match user with
+  | None -> role = `Viewer || role = `Monitor         (* Unauthenticated users can only look at things. *)
+  | Some user ->
+    match Current_web.User.id user, role with
+    | ("github:talex5"
+      |"github:avsm"
+      |"github:kit-ty-kate"
+      |"github:samoht"
+      |"github:tmcgilchrist"
+      |"github:mtelvers"
+      |"github:dra27"
+      |"github:rjbou"
+      |"github:AltGr"
       ), _ -> true        (* These users have all roles *)
     | _ -> role = `Viewer
 
@@ -55,7 +89,10 @@ let main () config mode app slack auth staging_password_file flavour =
   let webhook_secret = Current_github.App.webhook_secret app in
   let has_role =
     if auth = None then Current_web.Site.allow_all
-    else has_role
+    else match flavour with
+      | Tarides _ -> has_role_tarides
+      | Toxis -> has_role_mirage
+      | OCaml _ -> has_role_ocaml
   in
   let routes =
     Routes.(s "login" /? nil @--> Current_github.Auth.login auth) ::
