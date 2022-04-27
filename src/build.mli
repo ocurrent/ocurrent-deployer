@@ -9,11 +9,14 @@ val org :
 
 val account : org -> string
 
+val api : org -> Current_github.Api.t option
+
 module Make(T : S.T) : sig
   val repo :
     ?channel:Current_slack.channel ->
     web_ui:(string -> Uri.t) ->
     org:org ->
+    ?additional_build_args:string list Current.t ->
     name:string ->
     (T.build_info * (string * T.deploy_info) list) list ->
     unit Current.t

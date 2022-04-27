@@ -5,6 +5,7 @@ module Github = Current_github
 type org = string * Current_github.Api.t option
 
 let account = fst
+let api = snd
 
 let org ?app ~account id =
   let api =
@@ -56,7 +57,7 @@ module Make(T : S.T) = struct
     | Error (`Active _) -> Github.Api.CheckRunStatus.v ~url `Queued
     | Error (`Msg m)    -> Github.Api.CheckRunStatus.v ~url (`Completed (`Failure m)) ~summary:m
 
-  let repo ?channel ~web_ui ~org:(org, github) ~name build_specs =
+  let repo ?channel ~web_ui ~org:(org, github) ?additional_build_args ~name build_specs =
     let repo_name = Printf.sprintf "%s/%s" org name in
     let repo = { Github.Repo_id.owner = org; name } in
     let root = Current.return ~label:repo_name () in      (* Group by repo in the diagram *)
@@ -73,7 +74,7 @@ module Make(T : S.T) = struct
           |> Current.list_iter (module Github.Api.Commit) @@ fun commit ->
           let src = Current.map Github.Api.Commit.id commit in
           Current.all (
-            build_specs |> List.map (fun (build_info, _deploys) -> T.build build_info src |> Current.ignore_value)
+            build_specs |> List.map (fun (build_info, _deploys) -> T.build ?additional_build_args build_info src |> Current.ignore_value)
           )
           |> status_of_build ~url
           |> Github.Api.CheckRun.set_status commit "deployability"
@@ -81,27 +82,27 @@ module Make(T : S.T) = struct
         [Current.collapse
           ~key:"repo" ~value:collapse_value
           ~input:refs pipeline]
-    and deployments =
+    and deployment =
       let root = label "deployments" root in
-      Current.with_context root @@ fun () ->
-      Current.all (
-        build_specs |> List.map (fun (build_info, deploys) ->
-            Current.all (
-              deploys |> List.map (fun (branch, deploy_info) ->
-                  let service = T.name deploy_info in
-                  let commit, src = head_of ?github repo branch in
-                  let notify_repo = Printf.sprintf "%s-%s-%s" repo_name service branch in
-                  let deploy = T.deploy build_info deploy_info src in
-                  match channel, commit with
-                  | Some channel, Some commit -> notify ~channel ~web_ui ~service ~commit ~repo:notify_repo deploy
-                  | _ -> deploy
-                )
-            )
-          )
-      )
-      |> Current.collapse
-        ~key:"repo" ~value:repo_name
-        ~input:root
+         Current.with_context root @@ fun () ->
+         Current.all (
+           build_specs |> List.map (fun (build_info, deploys) ->
+               Current.all (
+                 deploys |> List.map (fun (branch, deploy_info) ->
+                    let service = T.name deploy_info in
+                    let commit, src = head_of ?github repo branch in
+                    let notify_repo = Printf.sprintf "%s-%s-%s" repo_name service branch in
+                    let deploy = T.deploy build_info deploy_info ?additional_build_args src in
+                    match channel, commit with
+                    | Some channel, Some commit -> notify ~channel ~web_ui ~service ~commit ~repo:notify_repo deploy
+                    | _ -> deploy
+                  )
+               )
+             )
+         )
+         |> Current.collapse
+              ~key:"repo" ~value:repo_name
+              ~input:root
     in
-    Current.all (builds @ [deployments])
+    Current.all (deployment :: builds)
 end

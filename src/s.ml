@@ -4,6 +4,7 @@ module type T = sig
 
   val build :
     build_info ->
+    ?additional_build_args:string list Current.t ->
     Current_git.Commit_id.t Current.t -> unit Current.t
 
   val name : deploy_info -> string
@@ -12,5 +13,6 @@ module type T = sig
   val deploy :
     build_info ->
     deploy_info ->
+    ?additional_build_args:string list Current.t ->
     Current_git.Commit_id.t Current.t -> unit Current.t
 end
