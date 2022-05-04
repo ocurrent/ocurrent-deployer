@@ -142,7 +142,7 @@ module Cluster = struct
     (* Services on deploy.ci.ocaml.org. *)
     | `Ocamlorg_deployer of string             (* OCurrent deployer @ deploy.ci.ocaml.org *)
     | `OCamlorg_v2 of (string * string) list   (* OCaml website @ v2.ocaml.org *)
-    | `Ocamlorg_opam of (string * string) list (* Opam website @ opam-3.ocaml.org *)
+    | `Ocamlorg_opam of string                 (* Opam website @ opam-3.ocaml.org *)
     | `Ocamlorg_images of string               (* Base Image builder @ images.ci.ocaml.org *)
   ]
 
@@ -223,18 +223,13 @@ module Cluster = struct
               let name = Cluster_api.Docker.Image_id.tag hub_id in
               let contents = Caddy.compose {Caddy.name; domains} in
               pull_and_serve (module V2ocamlorg_docker) ~name (`Compose contents) multi_hash
-            | `Ocamlorg_opam domains ->
-              let name = Cluster_api.Docker.Image_id.tag hub_id in
-              let contents = Caddy.compose {Caddy.name; domains} in
-              pull_and_serve (module Opamocamlorg_docker) ~name (`Compose contents) multi_hash
+            | `Ocamlorg_opam name ->
+              pull_and_serve (module Opamocamlorg_docker) ~name `Service multi_hash
             | `Ocamlorg_images name -> pull_and_serve (module Ocamlorg_images) ~name `Service multi_hash
           )
         |> Current.all
 end
 module Cluster_build = Build.Make(Cluster)
-
-(* [web_ui collapse_value] is a URL back to the deployment service, for links
-   in status messages. *)
 
 let docker ?(archs=[`Linux_x86_64]) ?(options=Cluster_api.Docker.Spec.defaults) ~sched dockerfile targets =
   let build_info = { Cluster.sched; dockerfile = `Path dockerfile; options; archs } in
@@ -392,8 +387,8 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let opam_repository_pipeline = filter_list filter [
     ocaml_opam, "opam2web", [
       docker_with_timeout (Duration.of_min 180)
-        "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam ["opam-3.ocaml.org", "172.30.0.212"]]
-                     ; "live-staging", "ocurrent/opam.ocaml.org:staging", []]
+        "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam "infra_opam_live"]
+                     ; "live-staging", "ocurrent/opam.ocaml.org:staging", [`Ocamlorg_opam "infra_opam_staging"]]
         ~options:(include_git |> build_kit)
         ~archs:[`Linux_arm64; `Linux_x86_64]
     ]
@@ -411,6 +406,8 @@ let unikernel dockerfile ~target args services =
   (build_info, deploys)
 
 let toxis ?app ?notify:channel () =
+  (* [web_ui collapse_value] is a URL back to the deployment service, for links
+     in status messages. *)
   let web_ui =
     let base = Uri.of_string "https://deploy.ocamllabs.io/" in
     fun repo -> Uri.with_query' base ["repo", repo] in
