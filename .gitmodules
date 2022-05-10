@@ -1,6 +1,8 @@
 [submodule "ocurrent"]
 	path = ocurrent
 	url = https://github.com/ocurrent/ocurrent.git
+	branch = master
 [submodule "ocluster"]
 	path = ocluster
 	url = https://github.com/ocurrent/ocluster.git
+	branch = master
