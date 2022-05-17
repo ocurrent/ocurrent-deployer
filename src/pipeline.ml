@@ -268,8 +268,6 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
   let tarides = Build.org ?app ~account:"tarides" 21197588 in
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
-  (* TODO Uninstall deploy.ci3.ocamllabs.io from ocaml GitHub org. *)
-  (* let ocaml = Build.org ?app ~account:"ocaml" 18513252 in *)
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
 
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
