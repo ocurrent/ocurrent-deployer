@@ -1,1 +1,0 @@
-{"Name":"ci4","Metadata":{"StackOrchestrator":"swarm"},"Endpoints":{"docker":{"Host":"ssh://root@ci4.ocamllabs.io","SkipTLSVerify":false}}}

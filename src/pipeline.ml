@@ -108,7 +108,7 @@ module Build_unikernel = Build.Make(Packet_unikernel)
 module Cluster = struct
   (* Strings here represent the docker context to use. *)
   module Ci3_docker = Current_docker.Default
-  module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4" end)
+  module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4.ocamllabs.io" end)
   module Ci6_docker = Current_docker.Make(struct let docker_context = Some "docsci" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "toxis" end)
   module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos.ci.dev" end)
