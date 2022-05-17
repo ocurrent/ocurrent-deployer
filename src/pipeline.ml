@@ -117,7 +117,7 @@ module Cluster = struct
   module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3-ocaml-org" end)
 
   module Opamocamlorg_docker = Current_docker.Make(struct let docker_context = Some "opam-3.ocaml.org" end)
-  module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2-ocaml-org" end)
+  module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2.ocaml.org" end)
   module Ocamlorg_images = Current_docker.Make(struct let docker_context = Some "ci3.ocamllabs.io" end)
   module Deploycamlorg_docker = Current_docker.Default
 
