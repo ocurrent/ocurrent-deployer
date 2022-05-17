@@ -35,7 +35,7 @@ let notify ?channel ~web_ui ~service ~commit ~repo x =
       and+ commit = commit in
       let uri = Github.Api.Commit.uri commit in
       Fmt.str "@[<h>Deploy <%a|%a> as %s: <%s|%a>@]"
-        Uri.pp uri Github.Api.Commit.pp commit
+        Uri.pp uri Github.Api.Commit.pp_short commit
         service
         (Uri.to_string (web_ui repo)) (Current_term.Output.pp Current.Unit.pp) state
     in
@@ -91,10 +91,9 @@ module Make(T : S.T) = struct
                  deploys |> List.map (fun (branch, deploy_info) ->
                     let service = T.name deploy_info in
                     let commit, src = head_of ?github repo branch in
-                    let notify_repo = Printf.sprintf "%s-%s-%s" repo_name service branch in
                     let deploy = T.deploy build_info deploy_info ?additional_build_args src in
                     match channel, commit with
-                    | Some channel, Some commit -> notify ~channel ~web_ui ~service ~commit ~repo:notify_repo deploy
+                    | Some channel, Some commit -> notify ~channel ~web_ui ~service ~commit ~repo:repo_name deploy
                     | _ -> deploy
                   )
                )
