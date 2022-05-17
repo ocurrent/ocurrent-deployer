@@ -111,7 +111,7 @@ module Cluster = struct
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4" end)
   module Ci6_docker = Current_docker.Make(struct let docker_context = Some "docsci" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "toxis" end)
-  module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos" end)
+  module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos.ci.dev" end)
   module Cb_docker = Current_docker.Make(struct let docker_context = Some "packet_current_bench" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3-ocaml-org" end)
