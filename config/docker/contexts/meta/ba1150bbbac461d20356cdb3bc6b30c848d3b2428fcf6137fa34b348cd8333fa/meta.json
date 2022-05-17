@@ -1,1 +1,0 @@
-{"Name":"toxis","Metadata":{"StackOrchestrator":"swarm"},"Endpoints":{"docker":{"Host":"ssh://root@ci.ocamllabs.io","SkipTLSVerify":false}}}
