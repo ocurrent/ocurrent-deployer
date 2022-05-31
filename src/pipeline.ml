@@ -109,7 +109,7 @@ module Cluster = struct
   (* Strings here represent the docker context to use. *)
   module Ci3_docker = Current_docker.Default
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4.ocamllabs.io" end)
-  module Ci6_docker = Current_docker.Make(struct let docker_context = Some "docs.ci.ocaml.org" end)
+  module Docs_docker = Current_docker.Make(struct let docker_context = Some "docs.ci.ocaml.org" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "ci.ocamllabs.io" end)
   module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos.ci.dev" end)
   module Cb_docker = Current_docker.Make(struct let docker_context = Some "packet_current_bench" end)
@@ -134,7 +134,7 @@ module Cluster = struct
     | `Tezos of string
     | `Ci3 of string
     | `Ci4 of string
-    | `Ci6 of string
+    | `Docs of string
     | `Cb of string
     | `Ocamlorg_sw of (string * string) list
     | `V3ocamlorg_cl of string
@@ -207,7 +207,7 @@ module Cluster = struct
             (* ci3.ocamllabs.io *)
             | `Ci3 name -> pull_and_serve (module Ci3_docker) ~name `Service multi_hash
             | `Ci4 name -> pull_and_serve (module Ci4_docker) ~name `Service multi_hash
-            | `Ci6 name -> pull_and_serve (module Ci6_docker) ~name `Service multi_hash
+            | `Docs name -> pull_and_serve (module Docs_docker) ~name `Service multi_hash
             | `Toxis name -> pull_and_serve (module Toxis_docker) ~name `Service multi_hash
             | `Tezos name -> pull_and_serve (module Tezos_docker) ~name `Service multi_hash
             | `Cb name -> pull_and_serve (module Cb_docker) ~name `Service multi_hash
@@ -361,9 +361,9 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
       ];
 
     ocurrent, "ocaml-docs-ci", [
-        docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Ci6 "infra_docs-ci"]];
-        docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Ci6 "infra_init"]];
-        docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Ci6 "infra_storage-server"]];
+        docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Docs "infra_docs-ci"]];
+        docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Docs "infra_init"]];
+        docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Docs "infra_storage-server"]];
       ];
     ]  in
 
