@@ -115,7 +115,7 @@ module Cluster = struct
   module Cb_docker = Current_docker.Make(struct let docker_context = Some "packet_current_bench" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3.ocaml.org" end)
-
+  module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirage.io" end)
   module Opamocamlorg_docker = Current_docker.Make(struct let docker_context = Some "opam-3.ocaml.org" end)
   module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2.ocaml.org" end)
   module Ocamlorg_images = Current_docker.Make(struct let docker_context = Some "ci3.ocamllabs.io" end)
@@ -135,6 +135,7 @@ module Cluster = struct
     | `Ci3 of string
     | `Ci4 of string
     | `Docs of string
+    | `Cimirage of string
     | `Cb of string
     | `Ocamlorg_sw of (string * string) list
     | `V3ocamlorg_cl of string
@@ -210,6 +211,7 @@ module Cluster = struct
             | `Docs name -> pull_and_serve (module Docs_docker) ~name `Service multi_hash
             | `Toxis name -> pull_and_serve (module Toxis_docker) ~name `Service multi_hash
             | `Tezos name -> pull_and_serve (module Tezos_docker) ~name `Service multi_hash
+            | `Cimirage name -> pull_and_serve (module Cimirage_docker) ~name `Service multi_hash
             | `Cb name -> pull_and_serve (module Cb_docker) ~name `Service multi_hash
             | `V3ocamlorg_cl name -> pull_and_serve (module V3ocamlorg_docker) ~name `Service multi_hash
             | `Ocamlorg_sw domains ->
@@ -308,6 +310,10 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ];
     tarides, "tezos-ci", [
       docker "Dockerfile" ["live", "ocurrent/tezos-ci:live", [`Tezos "tezos-ci_ci"]]
+    ];
+    ocurrent, "mirage-ci", [
+        docker "Dockerfile" ["live", "ocurrent/mirage-ci:live", [`Cimirage "infra_mirage-ci"]]
+        ~options:(include_git |> build_kit)
     ]
   ]
 
