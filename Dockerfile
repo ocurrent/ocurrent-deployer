@@ -38,5 +38,5 @@ WORKDIR /var/lib/ocurrent
 ENTRYPOINT ["dumb-init", "/usr/local/bin/ocurrent-deployer"]
 COPY config/ssh /root/.ssh
 COPY config/docker /root/.docker
-RUN docker context use ocaml-www1 && docker context use default
+RUN docker context use default
 COPY --from=build /src/_build/install/default/bin/ocurrent-deployer /usr/local/bin/
