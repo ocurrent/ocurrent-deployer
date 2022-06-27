@@ -373,9 +373,14 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
       ];
     ]  in
 
-  let head_of repo id =
+  let head_of repo (id: Github.Api.Ref.t) =
     match Build.api ocaml_opam with
-    | Some api -> Current.map Github.Api.Commit.id @@ Github.Api.head_of api repo id
+    | Some api -> 
+      let (id': Github.Api.Ref.id) = match id with
+      | `Ref x -> `Ref x
+      | `PR pri -> `PR pri.id
+      in
+      Current.map Github.Api.Commit.id @@ Github.Api.head_of api repo id'
     | None -> Github.Api.Anonymous.head_of repo id
   in
 
