@@ -12,6 +12,7 @@
    current_slack
    current_web
    cmdliner
+   deployer
    fmt.tty
    fmt.cli
    logs.fmt
@@ -19,4 +20,29 @@
    str
    lwt
    lwt.unix)
+ (modules main local)
+ (preprocess (pps ppx_deriving.std ppx_deriving_yojson)))
+
+(library
+ (name deployer)
+ (public_name deployer)
+ (libraries
+   capnp-rpc-unix
+   current
+   current.cache
+   current_git
+   current_github
+   current_docker
+   current_ocluster
+   current_slack
+   current_web
+   cmdliner
+   fmt.tty
+   fmt.cli
+   logs.fmt
+   logs.cli
+   str
+   lwt
+   lwt.unix)
+ (modules index pipeline caddy logging mirage s build)
  (preprocess (pps ppx_deriving.std ppx_deriving_yojson)))

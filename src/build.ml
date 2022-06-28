@@ -74,7 +74,7 @@ module Make(T : S.T) = struct
           |> Current.list_iter (module Github.Api.Commit) @@ fun commit ->
           let src = Current.map Github.Api.Commit.id commit in
           Current.all (
-            build_specs |> List.map (fun (build_info, _deploys) -> T.build ?additional_build_args build_info src |> Current.ignore_value)
+            build_specs |> List.map (fun (build_info, _deploys) -> T.build ?additional_build_args build_info repo src |> Current.ignore_value)
           )
           |> status_of_build ~url
           |> Github.Api.CheckRun.set_status commit "deployability"

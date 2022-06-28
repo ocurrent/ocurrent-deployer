@@ -2,6 +2,8 @@
 
 (* A low-security Docker Hub user used to push images to the staging area.
    Low-security because we never rely on the tags in this repository, just the hashes. *)
+open Deployer
+
 let staging_user = "ocurrentbuilder"
 
 (* Placeholder webhook_secret, when running in local mode. *)
@@ -13,6 +15,7 @@ let read_first_line path =
     ~finally:(fun () -> close_in ch)
 
 let main () config mode app sched staging_password_file repo flavour =
+  Logs.info (fun f -> f "Is this thing on?");
   let filter = Option.map (=) repo in
   let vat = Capnp_rpc_unix.client_only_vat () in
   let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
@@ -25,7 +28,7 @@ let main () config mode app sched staging_password_file repo flavour =
   let webhook_secret = Option.value ~default:webhook_secret @@ Option.map Current_github.App.webhook_secret app in
   let has_role = Current_web.Site.allow_all in
   let routes =
-    Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook ~engine ~webhook_secret ~has_role) ::
+    Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook ~engine ~get_job_ids:Index.get_job_ids ~webhook_secret ~has_role) ::
     Current_web.routes engine in
   let site = Current_web.Site.v ~has_role ~name:"OCurrent Deployer" routes in
   Logging.run begin

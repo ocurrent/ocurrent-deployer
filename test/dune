@@ -1,0 +1,11 @@
+(test
+ (name test)
+ (package deployer)
+ (libraries deployer alcotest alcotest-lwt ppx_deriving_yojson.runtime logs.fmt)
+ (preprocess (pps ppx_deriving.eq ppx_deriving_yojson)))
+
+(rule
+  (alias runtest)
+  (package deployer)
+  (deps (package deployer))
+  (action (run ./test.exe)))
