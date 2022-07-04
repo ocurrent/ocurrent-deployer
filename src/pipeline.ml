@@ -347,7 +347,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
       (* New V3 ocaml.org website. *)
       docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", [`V3ocamlorg_cl "infra_www"]];
       (* Staging branch for ocaml.org website. *)
-      docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:staging", [`Stagingocamlorg_cl "infra_www"]]
+      docker "Dockerfile" ["staging", "ocurrent/v3.ocaml.org-server:staging", [`Stagingocamlorg_cl "infra_www"]]
     ];
 
     ocaml, "v2.ocaml.org", [
