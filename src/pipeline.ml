@@ -115,6 +115,7 @@ module Cluster = struct
   module Cb_docker = Current_docker.Make(struct let docker_context = Some "packet_current_bench" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3.ocaml.org" end)
+  module Stagingocamlorg_docker = Current_docker.Make(struct let docker_context = Some "staging.ocaml.org" end)
   module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirage.io" end)
   module Opamocamlorg_docker = Current_docker.Make(struct let docker_context = Some "opam-3.ocaml.org" end)
   module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2.ocaml.org" end)
@@ -137,14 +138,14 @@ module Cluster = struct
     | `Docs of string
     | `Cimirage of string
     | `Cb of string
-    | `Ocamlorg_sw of (string * string) list
-    | `V3ocamlorg_cl of string
 
     (* Services on deploy.ci.ocaml.org. *)
     | `Ocamlorg_deployer of string             (* OCurrent deployer @ deploy.ci.ocaml.org *)
     | `OCamlorg_v2 of (string * string) list   (* OCaml website @ v2.ocaml.org *)
     | `Ocamlorg_opam of string                 (* Opam website @ opam-3.ocaml.org *)
     | `Ocamlorg_images of string               (* Base Image builder @ images.ci.ocaml.org *)
+    | `V3ocamlorg_cl of string                 (* OCaml website @ v3a.ocaml.org aka www.ocaml.org *)
+    | `Stagingocamlorg_cl of string            (* Staging OCaml website @ staging.ocaml.org *)
   ]
 
   type deploy_info = {
@@ -227,11 +228,6 @@ module Cluster = struct
             | `Tezos name -> pull_and_serve (module Tezos_docker) ~name `Service multi_hash
             | `Cimirage name -> pull_and_serve (module Cimirage_docker) ~name `Service multi_hash
             | `Cb name -> pull_and_serve (module Cb_docker) ~name `Service multi_hash
-            | `V3ocamlorg_cl name -> pull_and_serve (module V3ocamlorg_docker) ~name `Service multi_hash
-            | `Ocamlorg_sw domains ->
-              let name = Cluster_api.Docker.Image_id.tag hub_id in
-              let contents = Caddy.compose {Caddy.name; domains} in
-              pull_and_serve (module Ocamlorg_docker) ~name (`Compose contents) multi_hash
 
             (* ocaml.org *)
             | `Ocamlorg_deployer name -> pull_and_serve (module Deploycamlorg_docker) ~name `Service multi_hash
@@ -242,6 +238,8 @@ module Cluster = struct
             | `Ocamlorg_opam name ->
               pull_and_serve (module Opamocamlorg_docker) ~name `Service multi_hash
             | `Ocamlorg_images name -> pull_and_serve (module Ocamlorg_images) ~name `Service multi_hash
+            | `V3ocamlorg_cl name -> pull_and_serve (module V3ocamlorg_docker) ~name `Service multi_hash
+            | `Stagingocamlorg_cl name -> pull_and_serve (module Stagingocamlorg_docker) ~name `Service multi_hash
           )
         |> Current.all
 end
@@ -361,18 +359,14 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
     ocaml, "ocaml.org", [
       (* New V3 ocaml.org website. *)
-      docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", [`V3ocamlorg_cl "infra_www"]]
+      docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", [`V3ocamlorg_cl "infra_www"]];
+      (* Staging branch for ocaml.org website. *)
+      docker "Dockerfile" ["staging", "ocurrent/v3.ocaml.org-server:staging", [`Stagingocamlorg_cl "infra_www"]]
     ];
 
     ocaml, "v2.ocaml.org", [
       (* Backup of existing ocaml.org website. *)
       docker "Dockerfile.deploy"  ["master", "ocurrent/v2.ocaml.org:live", [`OCamlorg_v2 ["v2.ocaml.org", "10.197.242.33"]]] ~options:include_git;
-
-      (* Existing ocaml.org website TODO disable once v3 is launched. *)
-      docker "Dockerfile.deploy"  ["master", "ocurrent/ocaml.org:live",    [`Ocamlorg_sw ["www.ocaml.org", "51.159.79.75"; "ocaml.org", "51.159.78.124"]]]
-        ~options:include_git;
-      docker "Dockerfile.staging" ["staging","ocurrent/ocaml.org:staging", [`Ocamlorg_sw ["staging.ocaml.org", "51.159.79.64"]]]
-        ~options:include_git;
     ];
 
     ocurrent, "docker-base-images", [
