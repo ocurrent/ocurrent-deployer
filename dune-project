@@ -4,6 +4,7 @@
 (source (github ocurrent/ocurrent-deployer))
 (authors "talex5@gmail.com")
 (maintainers "talex5@gmail.com")
+(formatting disabled)
 (package
  (name deployer)
  (synopsis "Deploy other pipelines")
