@@ -1,9 +1,10 @@
-(lang dune 1.11)
+(lang dune 2.0)
 (name deployer)
 (generate_opam_files true)
 (source (github ocurrent/ocurrent-deployer))
 (authors "talex5@gmail.com")
 (maintainers "talex5@gmail.com")
+(formatting disabled)
 (package
  (name deployer)
  (synopsis "Deploy other pipelines")
@@ -22,4 +23,6 @@
   fmt
   lwt
   (cmdliner (>= 1.1.0))
-  (ocaml (>= 4.08.0))))
+  (ocaml (>= 4.08.0))
+  (alcotest (and (>= 1.0.0) :with-test))
+  (alcotest-lwt (and (>= 1.0.1) :with-test))))
