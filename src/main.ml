@@ -79,10 +79,10 @@ let main () config mode app slack auth staging_password_file flavour =
   let channel = read_channel_uri slack in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let engine = match flavour with
-    | Tarides sched -> 
+    | Tarides sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
        Current.Engine.create ~config (Pipeline.tarides ~app ~notify:channel ~sched ~staging_auth)
-    | OCaml sched -> 
+    | OCaml sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
        Current.Engine.create ~config (Pipeline.ocaml_org ~app ~notify:channel ~sched ~staging_auth)
     | Toxis -> Current.Engine.create ~config (Pipeline.toxis ~app ~notify:channel)
@@ -98,7 +98,7 @@ let main () config mode app slack auth staging_password_file flavour =
   in
   let routes =
     Routes.(s "login" /? nil @--> Current_github.Auth.login auth) ::
-    Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook ~engine ~get_job_ids:Index.get_job_ids ~webhook_secret ~has_role) ::
+    Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook ~engine ~get_job_ids:Index.get_job_ids ~webhook_secret) ::
     Current_web.routes engine in
   let site = Current_web.Site.v ?authn ~has_role ~name:"OCurrent Deployer" routes in
   Logging.run begin

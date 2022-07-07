@@ -28,7 +28,7 @@ let main () config mode app sched staging_password_file repo flavour =
   let webhook_secret = Option.value ~default:webhook_secret @@ Option.map Current_github.App.webhook_secret app in
   let has_role = Current_web.Site.allow_all in
   let routes =
-    Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook ~engine ~get_job_ids:Index.get_job_ids ~webhook_secret ~has_role) ::
+    Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook ~engine ~get_job_ids:Index.get_job_ids ~webhook_secret) ::
     Current_web.routes engine in
   let site = Current_web.Site.v ~has_role ~name:"OCurrent Deployer" routes in
   Logging.run begin
