@@ -1,4 +1,4 @@
-(lang dune 2.0)
+(lang dune 3.3)
 (name deployer)
 (generate_opam_files true)
 (source (github ocurrent/ocurrent-deployer))
@@ -21,7 +21,7 @@
   ocluster-api
   capnp-rpc-unix
   fmt
-  lwt
+  (lwt (>= 5.6.1))
   (cmdliner (>= 1.1.0))
   (ocaml (>= 4.08.0))
   (alcotest (and (>= 1.0.0) :with-test))
