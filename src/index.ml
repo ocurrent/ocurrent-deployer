@@ -6,13 +6,9 @@ module Db = Current.Db
 module Job_map = Astring.String.Map
 
 type t = {
-  db : Sqlite3.db;
   record_job : Sqlite3.stmt;
   remove : Sqlite3.stmt;
-  get_jobs : Sqlite3.stmt;
-  get_job : Sqlite3.stmt;
   get_job_ids : Sqlite3.stmt;
-  full_hash : Sqlite3.stmt;
 }
 
 let or_fail label x =
@@ -37,25 +33,13 @@ CREATE TABLE IF NOT EXISTS deployer_index (
                                      VALUES (?, ?, ?, ?, ?)" in
   let remove = Sqlite3.prepare db "DELETE FROM deployer_index \
                                      WHERE owner = ? AND name = ? AND hash = ? AND variant = ?" in
-  let get_jobs = Sqlite3.prepare db "SELECT deployer_index.variant, deployer_index.job_id, cache.ok, cache.outcome \
-                                     FROM deployer_index \
-                                     LEFT JOIN cache ON deployer_index.job_id = cache.job_id \
-                                     WHERE deployer_index.owner = ? AND deployer_index.name = ? AND deployer_index.hash = ?" in
-  let get_job = Sqlite3.prepare db "SELECT job_id FROM deployer_index \
-                                     WHERE owner = ? AND name = ? AND hash = ? AND variant = ?" in
   let get_job_ids = Sqlite3.prepare db "SELECT variant, job_id FROM deployer_index \
                                      WHERE owner = ? AND name = ? AND hash = ?" in
-  let full_hash = Sqlite3.prepare db "SELECT DISTINCT hash FROM deployer_index \
-                                      WHERE owner = ? AND name = ? AND hash LIKE ?" in
-      {
-        db;
-        record_job;
-        remove;
-        get_jobs;
-        get_job;
-        get_job_ids;
-        full_hash
-      }
+  {
+    record_job;
+    remove;
+    get_job_ids;
+  }
 )
 
 let init () = ignore (Lazy.force db)
