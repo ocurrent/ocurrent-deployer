@@ -322,9 +322,15 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ocaml_bench, "sandmark-nightly", [
       docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]]
     ];
+
     tarides, "tezos-ci", [
       docker "Dockerfile" ["live", "ocurrent/tezos-ci:live", [`Tezos "tezos-ci_ci"]]
     ];
+    ocurrent, "ocaml-ci", [
+      docker "Dockerfile.gitlab" ["gitlab", "ocurrent/ocaml-ci-gitlab-service:live", [`Tezos "ocaml-ci-gitlab_ci"]];
+      docker "Dockerfile.web"    ["gitlab", "ocurrent/ocaml-ci-gitlab-web:live",     [`Tezos "ocaml-ci-gitlab_web"]]
+    ];
+
     ocurrent, "mirage-ci", [
         docker "Dockerfile" ["live", "ocurrent/mirage-ci:live", [`Cimirage "infra_mirage-ci"]]
         ~options:(include_git |> build_kit)
