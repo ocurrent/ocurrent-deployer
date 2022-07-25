@@ -200,11 +200,11 @@ module Cluster = struct
     | `Compose contents ->
         let contents = Current.map (fun image ->
           Caddy.replace_hash_var ~hash:(D.Image.hash image) contents) image in
-        D.compose ~name ~contents ()
+        D.compose_cli ~name ~contents ~detach:true ()
     | `Compose_cli contents ->
         let contents = Current.map (fun hash ->
           Aws.replace_hash_var ~hash contents) repo_id in
-        D.compose_cli ~name ~contents ()
+        D.compose_cli ~name ~contents ~detach:false ()
 
   let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(additional_build_args=Current.return []) src =
     let src = Current.map (fun x -> [x]) src in
