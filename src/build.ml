@@ -62,26 +62,26 @@ module Make(T : S.T) = struct
     let repo = { Github.Repo_id.owner = org; name } in
     let root = Current.return ~label:repo_name () in      (* Group by repo in the diagram *)
     Current.with_context root @@ fun () ->
-    let builds =
-      match github with
-      | None -> []
-      | Some github ->
-        let refs = Github.Api.ci_refs github repo in
-        let collapse_value = repo_name ^ "-builds" in
-        let url = web_ui collapse_value in
-        let pipeline =
-          refs
-          |> Current.list_iter (module Github.Api.Commit) @@ fun commit ->
-          let src = Current.map Github.Api.Commit.id commit in
-          Current.all (
-            build_specs |> List.map (fun (build_info, _deploys) -> T.build ?additional_build_args build_info repo src |> Current.ignore_value)
-          )
-          |> status_of_build ~url
-          |> Github.Api.CheckRun.set_status commit "deployability"
-        in
-        [Current.collapse
+    let builds = github |> Option.map @@ fun github ->
+      let refs = Github.Api.ci_refs github repo in
+      let collapse_value = repo_name ^ "-builds" in
+      let url = web_ui collapse_value in
+      let pipeline =
+        refs
+        |> Current.list_iter (module Github.Api.Commit) @@ fun commit ->
+        let src = Current.map Github.Api.Commit.id commit in
+        Current.all (
+            build_specs
+            |> List.map (fun (build_info, _) ->
+                   T.build ?additional_build_args build_info src
+                   |> Current.ignore_value)
+        )
+        |> status_of_build ~url
+        |> Github.Api.CheckRun.set_status commit "deployability"
+      in
+      Current.collapse
           ~key:"repo" ~value:collapse_value
-          ~input:refs pipeline]
+          ~input:refs pipeline 
     and deployment =
       let root = label "deployments" root in
          Current.with_context root @@ fun () ->
@@ -103,5 +103,5 @@ module Make(T : S.T) = struct
               ~key:"repo" ~value:repo_name
               ~input:root
     in
-    Current.all (deployment :: builds)
+    Current.all (deployment :: Option.to_list builds)
 end

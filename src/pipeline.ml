@@ -42,20 +42,23 @@ let or_fail = function
   | Ok x -> x
   | Error (`Msg m) -> failwith m
 
-type arch = [
-  | `Linux_arm64
-  | `Linux_x86_64
-  | `Linux_ppc64
-  | `Linux_s390x
-  | `Linux_riscv64
-]
+module Arch = struct 
+  type t = [
+    | `Linux_arm64
+    | `Linux_x86_64
+    | `Linux_ppc64
+    | `Linux_s390x
+    | `Linux_riscv64
+    ]
 
-let pool_id : arch -> string = function
-  | `Linux_arm64 -> "linux-arm64"
-  | `Linux_x86_64 -> "linux-x86_64"
-  | `Linux_ppc64 -> "linux-ppc64"
-  | `Linux_s390x -> "linux-s390x"
-  | `Linux_riscv64 -> "linux-riscv64"
+  let pool_id : t -> string = function
+    | `Linux_arm64 -> "linux-arm64"
+    | `Linux_x86_64 -> "linux-x86_64"
+    | `Linux_ppc64 -> "linux-ppc64"
+    | `Linux_s390x -> "linux-s390x"
+    | `Linux_riscv64 -> "linux-riscv64"
+
+end
 
 module Packet_unikernel = struct
   (* Mirage unikernels running on packet.net *)
@@ -84,7 +87,7 @@ module Packet_unikernel = struct
       ~pull:true
       ~timeout
 
-  let build info ?additional_build_args:_ (_:Github.Repo_id.t) src  = Current.ignore_value (build_image info src)
+  let build info ?additional_build_args:_ src  = Current.ignore_value (build_image info src)
 
   let name { service } = service
 
@@ -130,8 +133,8 @@ module Cluster = struct
     sched : Current_ocluster.t;
     dockerfile : [`Contents of string Current.t | `Path of string];
     options : Cluster_api.Docker.Spec.options;
-    archs : arch list;
-  }
+    archs : Arch.t list;
+  }  
 
   type service = [
     (* Services on deploy.ci3.ocamllabs.io *)
@@ -159,27 +162,17 @@ module Cluster = struct
     services : service list;
   }
 
-  let get_job_id x =
-    let+ md = Current.Analysis.metadata x in
-    match md with
-    | Some { Current.Metadata.job_id; _ } -> job_id
-    | None -> None
-
   (* Build [src/dockerfile] as a Docker service. *)
-  let build { sched; dockerfile; options; archs } ?(additional_build_args=Current.return []) repo src : unit Current.t =
+  let build { sched; dockerfile; options; archs } ?(additional_build_args=Current.return []) commit =
     Current.component "HEADs" |>
     let** additional_build_args = additional_build_args in
     let options = { options with build_args = additional_build_args @ options.build_args } in
+
+    let src = Current.map (fun x -> [x]) commit in
     let build_arch arch =
-      let* src = src in
-      let build = Current_ocluster.build sched ~options ~pool:(pool_id arch) ~src:(Current.return [src]) dockerfile in
-      let hash = Current_git.Commit_id.hash src in
-      let () = Logs.info (fun f -> f "Building arch: %s repo: %s hash: %s" (pool_id arch) (Fmt.str("%s/%s") repo.Github.Repo_id.owner repo.name) hash) in
-      let+ job_id = get_job_id build in
-      let job_str = match job_id with | Some x -> x | None -> "None" in
-      let () = Logs.info (fun f -> f "Recording repo: %s hash: %s job: %s" (Fmt.str("%s/%s") repo.owner repo.name) hash job_str) in
-      Index.record ~repo ~hash [("build", job_id)]
+      Current_ocluster.build sched ~options ~pool:(Arch.pool_id arch) ~src dockerfile
     in
+
     Current.all (List.map build_arch archs)
 
   let name info = Cluster_api.Docker.Image_id.to_string info.hub_id
@@ -215,7 +208,7 @@ module Cluster = struct
     let** additional_build_args = additional_build_args in
     let options = { options with build_args = additional_build_args @ options.build_args } in
     let build_arch arch =
-      let pool = pool_id arch in
+      let pool = Arch.pool_id arch in
       let tag = Printf.sprintf "live-%s-%s" target_label pool in
       let push_target = Cluster_api.Docker.Image_id.v ~repo:push_repo ~tag in
       Current_ocluster.build_and_push sched ~options ~push_target ~pool ~src dockerfile
@@ -400,14 +393,14 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
       ];
     ]  in
 
-  let head_of repo (id: Github.Api.Ref.t) =
+  let head_of (repo : Github.Repo_id.t) (id: Github.Api.Ref.t) : Current_git.Commit_id.t Current.t =
     match Build.api ocaml_opam with
     | Some api ->
-      let (id': Github.Api.Ref.id) = match id with
+      let id_type = match id with
       | `Ref x -> `Ref x
       | `PR pri -> `PR pri.id
       in
-      Current.map Github.Api.Commit.id @@ Github.Api.head_of api repo id'
+      Current.map Github.Api.Commit.id @@ Github.Api.head_of api repo id_type
     | None -> Github.Api.Anonymous.head_of repo id
   in
 
