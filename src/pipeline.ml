@@ -297,6 +297,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ];
     ocurrent, "ocaml-ci", [
       docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Toxis "ocaml-ci_ci"]];
+      docker "Dockerfile.gitlab" ["live-engine", "ocurrent/ocaml-ci-gitlab-service:live", [`Toxis "ocaml-ci_gitlab"]];
       docker "Dockerfile.web" ["live-www",    "ocurrent/ocaml-ci-web:live",     [`Toxis "ocaml-ci_web"];
                                "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Toxis "test-www"]];
     ];
