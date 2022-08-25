@@ -282,7 +282,6 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     let base = Uri.of_string "https://deploy.ci3.ocamllabs.io/" in
     fun repo -> Uri.with_query' base ["repo", repo] in
 
-  let tarides = Build.org ?app ~account:"tarides" 21197588 in
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
 
@@ -322,14 +321,6 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
     ocaml_bench, "sandmark-nightly", [
       docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]]
-    ];
-
-    tarides, "tezos-ci", [
-      docker "Dockerfile" ["live", "ocurrent/tezos-ci:live", [`Tezos "tezos-ci_ci"]]
-    ];
-    ocurrent, "ocaml-ci", [
-      docker "Dockerfile.gitlab" ["gitlab", "ocurrent/ocaml-ci-gitlab-service:live", [`Tezos "ocaml-ci-gitlab_ci"]];
-      docker "Dockerfile.web"    ["gitlab", "ocurrent/ocaml-ci-gitlab-web:live",     [`Tezos "ocaml-ci-gitlab_web"]]
     ];
 
     ocurrent, "mirage-ci", [
