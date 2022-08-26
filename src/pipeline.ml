@@ -315,6 +315,9 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4 "infra_multicore-ci"]];
       docker "Dockerfile.web" ["live-web", "ocurrent/multicore-ci-web:live", [`Ci4 "infra_multicore-ci-web"]];
     ];
+    ocurrent, "ocurrent.org", [
+      docker "Dockerfile"     ["live-engine", "ocurrent/ocurrent.org:live-engine", [`Ci3 "ocurrent_org_watcher"]];
+    ];
     ocurrent, "current-bench", [
       docker "pipeline/Dockerfile" ["main", "ocurrent/current-bench-pipeline:live", [`Cb "packet-current-bench_pipeline"]];
       docker "frontend/Dockerfile" ["main", "ocurrent/current-bench-frontend:live", [`Cb "packet-current-bench_frontend"]];
