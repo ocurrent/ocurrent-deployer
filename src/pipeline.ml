@@ -307,6 +307,10 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile.worker" ["live-worker",    "ocurrent/ocluster-worker:live", []]
         ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64; `Linux_s390x; `Linux_riscv64] ~options:include_git;
     ];
+    ocurrent, "solver-service", [
+      docker "Dockerfile" ["live",    "ocurrent/solver-service:live", []]
+        ~archs:[`Linux_x86_64] ~options:include_git;
+    ];
     ocurrent, "opam-repo-ci", [
       docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Ci3 "opam-repo-ci_opam-repo-ci"]];
       docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Ci3 "opam-repo-ci_opam-repo-ci-web"]];
