@@ -114,7 +114,6 @@ module Cluster = struct
   module Docs_docker = Current_docker.Make(struct let docker_context = Some "docs.ci.ocaml.org" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "ci.ocamllabs.io" end)
   module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos.ci.dev" end)
-  module Cb_docker = Current_docker.Make(struct let docker_context = Some "packet_current_bench" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3.ocaml.org" end)
   module Stagingocamlorg_docker = Current_docker.Make(struct let docker_context = Some "staging.ocaml.org" end)
@@ -139,7 +138,6 @@ module Cluster = struct
     | `Ci4 of string
     | `Docs of string
     | `Cimirage of string
-    | `Cb of string
 
     (* Services on deploy.ci.ocaml.org. *)
     | `Ocamlorg_deployer of string             (* OCurrent deployer @ deploy.ci.ocaml.org *)
@@ -229,7 +227,6 @@ module Cluster = struct
             | `Toxis name -> pull_and_serve (module Toxis_docker) ~name `Service multi_hash
             | `Tezos name -> pull_and_serve (module Tezos_docker) ~name `Service multi_hash
             | `Cimirage name -> pull_and_serve (module Cimirage_docker) ~name `Service multi_hash
-            | `Cb name -> pull_and_serve (module Cb_docker) ~name `Service multi_hash
 
             (* ocaml.org *)
             | `Ocamlorg_deployer name -> pull_and_serve (module Deploycamlorg_docker) ~name `Service multi_hash
@@ -314,10 +311,6 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ocurrent, "ocaml-multicore-ci", [
       docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4 "infra_multicore-ci"]];
       docker "Dockerfile.web" ["live-web", "ocurrent/multicore-ci-web:live", [`Ci4 "infra_multicore-ci-web"]];
-    ];
-    ocurrent, "current-bench", [
-      docker "pipeline/Dockerfile" ["main", "ocurrent/current-bench-pipeline:live", [`Cb "packet-current-bench_pipeline"]];
-      docker "frontend/Dockerfile" ["main", "ocurrent/current-bench-frontend:live", [`Cb "packet-current-bench_frontend"]];
     ];
 
     ocaml_bench, "sandmark-nightly", [
