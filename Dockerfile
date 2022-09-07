@@ -29,11 +29,11 @@ ADD --chown=opam . .
 RUN opam config exec -- dune build ./_build/install/default/bin/ocurrent-deployer
 
 FROM debian:11
-RUN apt-get update && apt-get install libffi-dev libev4 openssh-client curl gnupg2 dumb-init git graphviz libsqlite3-dev ca-certificates netbase rsync -y --no-install-recommends
+RUN apt-get update && apt-get install libffi-dev libev4 openssh-client curl gnupg2 dumb-init git graphviz libsqlite3-dev ca-certificates netbase rsync awscli -y --no-install-recommends
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 RUN echo 'deb [arch=amd64] https://download.docker.com/linux/debian bullseye stable' >> /etc/apt/sources.list
-RUN apt-get update && apt-get install docker-ce -y --no-install-recommends
-RUN apt-get update && apt-get install python3-pip -y && pip3 install docker-compose --no-cache-dir
+RUN apt-get update && apt-get install docker-ce docker-ce-cli docker-compose-plugin -y --no-install-recommends
+RUN curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
 WORKDIR /var/lib/ocurrent
 ENTRYPOINT ["dumb-init", "/usr/local/bin/ocurrent-deployer"]
 COPY config/ssh /root/.ssh

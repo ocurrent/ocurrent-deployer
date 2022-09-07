@@ -122,6 +122,7 @@ module Cluster = struct
   module Opamocamlorg_docker = Current_docker.Make(struct let docker_context = Some "opam-3.ocaml.org" end)
   module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2.ocaml.org" end)
   module Ocamlorg_images = Current_docker.Make(struct let docker_context = Some "ci3.ocamllabs.io" end)
+  module Docker_aws = Current_docker.Make(struct let docker_context = Some "awsecs" end)
   module Deploycamlorg_docker = Current_docker.Default
 
   type build_info = {
@@ -148,6 +149,7 @@ module Cluster = struct
     | `Ocamlorg_images of string               (* Base Image builder @ images.ci.ocaml.org *)
     | `V3ocamlorg_cl of string                 (* OCaml website @ v3a.ocaml.org aka www.ocaml.org *)
     | `Stagingocamlorg_cl of string            (* Staging OCaml website @ staging.ocaml.org *)
+    | `Aws_ecs of Aws.t                        (* Amazon Web Services - Elastic Container Service *)
   ]
 
   type deploy_info = {
@@ -198,7 +200,11 @@ module Cluster = struct
     | `Compose contents ->
         let contents = Current.map (fun image ->
           Caddy.replace_hash_var ~hash:(D.Image.hash image) contents) image in
-        D.compose ~name ~contents ()
+        D.compose_cli ~name ~contents ~detach:true ()
+    | `Compose_cli contents ->
+        let contents = Current.map (fun hash ->
+          Aws.replace_hash_var ~hash contents) repo_id in
+        D.compose_cli ~name ~contents ~detach:false ()
 
   let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(additional_build_args=Current.return []) src =
     let src = Current.map (fun x -> [x]) src in
@@ -242,6 +248,9 @@ module Cluster = struct
             | `Ocamlorg_images name -> pull_and_serve (module Ocamlorg_images) ~name `Service multi_hash
             | `V3ocamlorg_cl name -> pull_and_serve (module V3ocamlorg_docker) ~name `Service multi_hash
             | `Stagingocamlorg_cl name -> pull_and_serve (module Stagingocamlorg_docker) ~name `Service multi_hash
+            | `Aws_ecs project ->
+              let contents = Aws.compose project in
+              pull_and_serve (module Docker_aws) ~name:(project.name ^ "-" ^ project.branch) (`Compose_cli contents) multi_hash
           )
         |> Current.all
 end
@@ -360,9 +369,11 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
     ocaml, "ocaml.org", [
       (* New V3 ocaml.org website. *)
-      docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", [`V3ocamlorg_cl "infra_www"]];
+      docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", [`V3ocamlorg_cl "infra_www";
+                                                                         `Aws_ecs {name = "v3a"; branch = "live"; vcpu = 0.5; memory = 2048; storage = None; replicas = 2; command = None; port = 8080; certificate = "arn:aws:acm:us-east-1:867081712685:certificate/24cde0e9-42c0-41ef-99d8-0fe8db462f36"}]];
       (* Staging branch for ocaml.org website. *)
-      docker "Dockerfile" ["staging", "ocurrent/v3.ocaml.org-server:staging", [`Stagingocamlorg_cl "infra_www"]]
+      docker "Dockerfile" ["staging", "ocurrent/v3.ocaml.org-server:staging", [`Stagingocamlorg_cl "infra_www";
+                                                                               `Aws_ecs {name = "v3a"; branch = "staging"; vcpu = 0.5; memory = 2048; storage = None; replicas = 1; command = None; port = 8080; certificate = "arn:aws:acm:us-east-1:867081712685:certificate/9647db34-004d-43d2-9102-accf6e09c63a"}]]
     ];
 
     ocaml, "v2.ocaml.org", [
@@ -405,8 +416,10 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let opam_repository_pipeline = filter_list filter [
     ocaml_opam, "opam2web", [
       docker_with_timeout (Duration.of_min 240)
-        "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam "infra_opam_live"]
-                     ; "live-staging", "ocurrent/opam.ocaml.org:staging", [`Ocamlorg_opam "infra_opam_staging"]]
+        "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam "infra_opam_live";
+                                                                `Aws_ecs {name = "opam3"; branch = "live"; vcpu = 0.25; memory = 512; storage = Some 50; replicas = 2; command = Some "--root /usr/share/caddy"; port = 80; certificate = "arn:aws:acm:us-east-1:867081712685:certificate/941be8db-4733-49c9-b634-43ff0537890c"}]
+                     ; "live-staging", "ocurrent/opam.ocaml.org:staging", [`Ocamlorg_opam "infra_opam_staging";
+                                                                           `Aws_ecs {name = "opam3"; branch = "staging"; vcpu = 0.25; memory = 512; storage = Some 50; replicas = 1; command = Some "--root /usr/share/caddy"; port = 80; certificate = "arn:aws:acm:us-east-1:867081712685:certificate/954e46c1-33fe-405d-ba4b-49ca189f050b"}]]
         ~options:(include_git |> build_kit)
         ~archs:[`Linux_arm64; `Linux_x86_64]
     ]
