@@ -332,6 +332,10 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ocurrent, "mirage-ci", [
         docker "Dockerfile" ["live", "ocurrent/mirage-ci:live", [`Cimirage "infra_mirage-ci"]]
         ~options:(include_git |> build_kit)
+      ];
+    ocurrent, "solver-service", [
+      docker "Dockerfile" ["live", "ocurrent/solver-service:live", [`Ci4 "infra_solver-service"]]
+        ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64]
     ]
   ]
 
