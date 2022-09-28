@@ -1,0 +1,1 @@
+{"Name":"awsecs","Metadata":{"Type":"ecs"},"Endpoints":{"docker":{"Profile":"default"},"ecs":{"Profile":"default"}}}
