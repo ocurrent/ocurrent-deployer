@@ -447,7 +447,7 @@ let toxis ?app ?notify:channel () =
   Current.all @@ List.map build [
     mirage, "mirage-www", [
       unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["master", "www"];
-      unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] [];     (* (no deployments) *)
+      unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
       unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["next", "next"];
     ];
   ]
