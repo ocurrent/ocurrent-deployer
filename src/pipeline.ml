@@ -326,7 +326,8 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ];
 
     ocaml_bench, "sandmark-nightly", [
-      docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]]
+      docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]] 
+      ~options:include_git;
     ];
 
     ocurrent, "mirage-ci", [
