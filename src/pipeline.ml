@@ -415,10 +415,8 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let opam_repository_pipeline = filter_list filter [
     ocaml_opam, "opam2web", [
       docker_with_timeout (Duration.of_min 240)
-        "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam "infra_opam_live";
-                                                                `Aws_ecs {name = "opam3"; branch = "live"; vcpu = 0.25; memory = 512; storage = Some 50; replicas = 2; command = Some "--root /usr/share/caddy"; port = 80; certificate = "arn:aws:acm:us-east-1:867081712685:certificate/941be8db-4733-49c9-b634-43ff0537890c"}]
-                     ; "live-staging", "ocurrent/opam.ocaml.org:staging", [`Ocamlorg_opam "infra_opam_staging";
-                                                                           `Aws_ecs {name = "opam3"; branch = "staging"; vcpu = 0.25; memory = 512; storage = Some 50; replicas = 1; command = Some "--root /usr/share/caddy"; port = 80; certificate = "arn:aws:acm:us-east-1:867081712685:certificate/954e46c1-33fe-405d-ba4b-49ca189f050b"}]]
+        "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam "infra_opam_live"]
+                     ; "live-staging", "ocurrent/opam.ocaml.org:staging", [`Ocamlorg_opam "infra_opam_staging"]]
         ~options:(include_git |> build_kit)
         ~archs:[`Linux_arm64; `Linux_x86_64]
     ]
