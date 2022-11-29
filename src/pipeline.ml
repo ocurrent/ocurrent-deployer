@@ -115,13 +115,13 @@ module Cluster = struct
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "ci.ocamllabs.io" end)
   module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos.ci.dev" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
-  module V3ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v3.ocaml.org" end)
-  module Stagingocamlorg_docker = Current_docker.Make(struct let docker_context = Some "staging.ocaml.org" end)
   module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirage.io" end)
   module Opamocamlorg_docker = Current_docker.Make(struct let docker_context = Some "opam-3.ocaml.org" end)
   module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2.ocaml.org" end)
   module Ocamlorg_images = Current_docker.Make(struct let docker_context = Some "ci3.ocamllabs.io" end)
   module Docker_aws = Current_docker.Make(struct let docker_context = Some "awsecs" end)
+  module V3b_docker = Current_docker.Make(struct let docker_context = Some "v3b.ocaml.org" end)
+  module V3c_docker = Current_docker.Make(struct let docker_context = Some "v3c.ocaml.org" end)
   module Deploycamlorg_docker = Current_docker.Default
 
   type build_info = {
@@ -145,8 +145,8 @@ module Cluster = struct
     | `OCamlorg_v2 of (string * string) list   (* OCaml website @ v2.ocaml.org *)
     | `Ocamlorg_opam of string                 (* Opam website @ opam-3.ocaml.org *)
     | `Ocamlorg_images of string               (* Base Image builder @ images.ci.ocaml.org *)
-    | `V3ocamlorg_cl of string                 (* OCaml website @ v3a.ocaml.org aka www.ocaml.org *)
-    | `Stagingocamlorg_cl of string            (* Staging OCaml website @ staging.ocaml.org *)
+    | `OCamlorg_v3b of string                  (* OCaml website @ v3b.ocaml.org aka www.ocaml.org *)
+    | `OCamlorg_v3c of string                  (* Staging OCaml website @ staging.ocaml.org *)
     | `Aws_ecs of Aws.t                        (* Amazon Web Services - Elastic Container Service *)
   ]
 
@@ -243,8 +243,8 @@ module Cluster = struct
             | `Ocamlorg_opam name ->
               pull_and_serve (module Opamocamlorg_docker) ~name `Service multi_hash
             | `Ocamlorg_images name -> pull_and_serve (module Ocamlorg_images) ~name `Service multi_hash
-            | `V3ocamlorg_cl name -> pull_and_serve (module V3ocamlorg_docker) ~name `Service multi_hash
-            | `Stagingocamlorg_cl name -> pull_and_serve (module Stagingocamlorg_docker) ~name `Service multi_hash
+            | `OCamlorg_v3b name -> pull_and_serve (module V3b_docker) ~name `Service multi_hash
+            | `OCamlorg_v3c name -> pull_and_serve (module V3c_docker) ~name `Service multi_hash
             | `Aws_ecs project ->
               let contents = Aws.compose project in
               pull_and_serve (module Docker_aws) ~name:(project.name ^ "-" ^ project.branch) (`Compose_cli contents) multi_hash
@@ -370,11 +370,9 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
     ocaml, "ocaml.org", [
       (* New V3 ocaml.org website. *)
-      docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", [`V3ocamlorg_cl "infra_www";
-                                                                         `Aws_ecs {name = "v3a"; branch = "live"; vcpu = 0.5; memory = 2048; storage = None; replicas = 2; command = None; port = 8080; certificate = "arn:aws:acm:us-east-1:867081712685:certificate/24cde0e9-42c0-41ef-99d8-0fe8db462f36"}]];
+      docker "Dockerfile" ["main", "ocurrent/v3.ocaml.org-server:live", [`OCamlorg_v3b "infra_www"]];
       (* Staging branch for ocaml.org website. *)
-      docker "Dockerfile" ["staging", "ocurrent/v3.ocaml.org-server:staging", [`Stagingocamlorg_cl "infra_www";
-                                                                               `Aws_ecs {name = "v3a"; branch = "staging"; vcpu = 0.5; memory = 2048; storage = None; replicas = 1; command = None; port = 8080; certificate = "arn:aws:acm:us-east-1:867081712685:certificate/9647db34-004d-43d2-9102-accf6e09c63a"}]]
+      docker "Dockerfile" ["staging", "ocurrent/v3.ocaml.org-server:staging", [`OCamlorg_v3c "infra_www"]]
     ];
 
     ocaml, "v2.ocaml.org", [
