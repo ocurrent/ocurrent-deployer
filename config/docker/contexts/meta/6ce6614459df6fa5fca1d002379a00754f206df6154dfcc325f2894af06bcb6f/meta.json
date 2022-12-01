@@ -1,1 +1,0 @@
-{"Name":"docs.ci.ocaml.org","Metadata":{"Description":"OCaml - docs.ci.ocaml.org"},"Endpoints":{"docker":{"Host":"ssh://root@docs.ci.ocaml.org","SkipTLSVerify":false}}}

@@ -1,1 +1,0 @@
-{"Name":"tezos.ci.dev","Metadata":{"Description":"Tezos CI - OCamlLabs","StackOrchestrator":"swarm"},"Endpoints":{"docker":{"Host":"ssh://root@tezos.ci.dev","SkipTLSVerify":false}}}

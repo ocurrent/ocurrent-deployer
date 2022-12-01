@@ -1,1 +1,0 @@
-{"Name":"dev1.ocamllabs.io","Metadata":{"Description":"Dev1 - OCamlLabs"},"Endpoints":{"docker":{"Host":"ssh://root@dev1.ocamllabs.io","SkipTLSVerify":false}}}

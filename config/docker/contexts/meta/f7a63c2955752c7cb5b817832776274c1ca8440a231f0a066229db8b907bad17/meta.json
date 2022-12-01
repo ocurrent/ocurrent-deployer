@@ -1,1 +1,0 @@
-{"Name":"ci3.ocamllabs.io","Metadata":{"Description":"Ci3 - OCamlLabs"},"Endpoints":{"docker":{"Host":"ssh://root@ci3.ocamllabs.io","SkipTLSVerify":false}}}

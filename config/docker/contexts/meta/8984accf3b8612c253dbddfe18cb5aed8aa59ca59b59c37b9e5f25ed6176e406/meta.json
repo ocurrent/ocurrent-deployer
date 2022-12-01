@@ -1,1 +1,0 @@
-{"Name":"deploy.ci.ocaml.org","Metadata":{"Description":"OCaml - deploy.ci.ocaml.org"},"Endpoints":{"docker":{"Host":"ssh://root@deploy.ci.ocaml.org","SkipTLSVerify":false}}}

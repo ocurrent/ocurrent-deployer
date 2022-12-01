@@ -1,1 +1,0 @@
-{"Name":"watch.ocaml.org","Metadata":{"Description":"OCaml - watch.ocaml.org"},"Endpoints":{"docker":{"Host":"ssh://root@watch.ocaml.org","SkipTLSVerify":false}}}

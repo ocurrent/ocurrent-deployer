@@ -38,7 +38,7 @@ RUN apt-get update && apt-get install docker-ce docker-ce-cli docker-compose-plu
 RUN curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
 WORKDIR /var/lib/ocurrent
 ENTRYPOINT ["dumb-init", "/usr/local/bin/ocurrent-deployer"]
-COPY config/ssh /root/.ssh
-COPY config/docker /root/.docker
+COPY create-config.sh create-config.sh
+RUN ./create-config.sh
 RUN docker context use default
 COPY --from=build /src/_build/install/default/bin/ocurrent-deployer /usr/local/bin/
