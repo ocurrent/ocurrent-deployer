@@ -407,9 +407,12 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
     let+ opam_repository_commit =
       head_of { Github.Repo_id.owner = "ocaml"; name = "opam-repository" } @@ `Ref "refs/heads/master"
     and+ platform_blog_commit =
-      head_of { Github.Repo_id.owner = "ocaml"; name = "platform-blog" } @@ `Ref "refs/heads/master" in
-    ["OPAM_GIT_SHA=" ^ Current_git.Commit_id.hash opam_repository_commit;
-     "BLOG_GIT_SHA=" ^ Current_git.Commit_id.hash platform_blog_commit]
+      head_of { Github.Repo_id.owner = "ocaml"; name = "platform-blog" } @@ `Ref "refs/heads/master"
+    and+ opam_commit =
+      head_of { Github.Repo_id.owner = "ocaml"; name = "opam" } @@ `Ref "refs/heads/master" in
+    ["OPAM_REPO_GIT_SHA=" ^ Current_git.Commit_id.hash opam_repository_commit;
+     "BLOG_GIT_SHA=" ^ Current_git.Commit_id.hash platform_blog_commit;
+     "OPAM_GIT_SHA=" ^ Current_git.Commit_id.hash opam_commit]
   in
 
   let opam_repository_pipeline = filter_list filter [
