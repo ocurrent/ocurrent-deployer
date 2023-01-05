@@ -117,6 +117,8 @@ module Cluster = struct
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirage.io" end)
   module Opamocamlorg_docker = Current_docker.Make(struct let docker_context = Some "opam-3.ocaml.org" end)
+  module Opam4_docker = Current_docker.Make(struct let docker_context = Some "opam-4.ocaml.org" end)
+  module Opam5_docker = Current_docker.Make(struct let docker_context = Some "opam-5.ocaml.org" end)
   module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2.ocaml.org" end)
   module Ocamlorg_images = Current_docker.Make(struct let docker_context = Some "ci3.ocamllabs.io" end)
   module Docker_aws = Current_docker.Make(struct let docker_context = Some "awsecs" end)
@@ -144,6 +146,8 @@ module Cluster = struct
     | `Ocamlorg_deployer of string             (* OCurrent deployer @ deploy.ci.ocaml.org *)
     | `OCamlorg_v2 of (string * string) list   (* OCaml website @ v2.ocaml.org *)
     | `Ocamlorg_opam of string                 (* Opam website @ opam-3.ocaml.org *)
+    | `Ocamlorg_opam4 of string                (* Opam website @ opam-4.ocaml.org *)
+    | `Ocamlorg_opam5 of string                (* Opam website @ opam-5.ocaml.org *)
     | `Ocamlorg_images of string               (* Base Image builder @ images.ci.ocaml.org *)
     | `OCamlorg_v3b of string                  (* OCaml website @ v3b.ocaml.org aka www.ocaml.org *)
     | `OCamlorg_v3c of string                  (* Staging OCaml website @ staging.ocaml.org *)
@@ -242,6 +246,10 @@ module Cluster = struct
               pull_and_serve (module V2ocamlorg_docker) ~name (`Compose contents) multi_hash
             | `Ocamlorg_opam name ->
               pull_and_serve (module Opamocamlorg_docker) ~name `Service multi_hash
+            | `Ocamlorg_opam4 name ->
+              pull_and_serve (module Opam4_docker) ~name `Service multi_hash
+            | `Ocamlorg_opam5 name ->
+              pull_and_serve (module Opam5_docker) ~name `Service multi_hash
             | `Ocamlorg_images name -> pull_and_serve (module Ocamlorg_images) ~name `Service multi_hash
             | `OCamlorg_v3b name -> pull_and_serve (module V3b_docker) ~name `Service multi_hash
             | `OCamlorg_v3c name -> pull_and_serve (module V3c_docker) ~name `Service multi_hash
@@ -407,16 +415,19 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
     let+ opam_repository_commit =
       head_of { Github.Repo_id.owner = "ocaml"; name = "opam-repository" } @@ `Ref "refs/heads/master"
     and+ platform_blog_commit =
-      head_of { Github.Repo_id.owner = "ocaml"; name = "platform-blog" } @@ `Ref "refs/heads/master" in
-    ["OPAM_GIT_SHA=" ^ Current_git.Commit_id.hash opam_repository_commit;
-     "BLOG_GIT_SHA=" ^ Current_git.Commit_id.hash platform_blog_commit]
+      head_of { Github.Repo_id.owner = "ocaml"; name = "platform-blog" } @@ `Ref "refs/heads/master"
+    and+ opam_commit =
+      head_of { Github.Repo_id.owner = "ocaml"; name = "opam" } @@ `Ref "refs/heads/master" in
+    ["OPAM_REPO_GIT_SHA=" ^ Current_git.Commit_id.hash opam_repository_commit;
+     "BLOG_GIT_SHA=" ^ Current_git.Commit_id.hash platform_blog_commit;
+     "OPAM_GIT_SHA=" ^ Current_git.Commit_id.hash opam_commit]
   in
 
   let opam_repository_pipeline = filter_list filter [
     ocaml_opam, "opam2web", [
       docker_with_timeout (Duration.of_min 240)
-        "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam "infra_opam_live"]
-                     ; "live-staging", "ocurrent/opam.ocaml.org:staging", [`Ocamlorg_opam "infra_opam_staging"]]
+        "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam "infra_opam_live"; `Ocamlorg_opam4 "infra_opam_live"; `Ocamlorg_opam5 "infra_opam_live"]
+                     ; "live-staging", "ocurrent/opam.ocaml.org:staging", [`Ocamlorg_opam "infra_opam_staging"; `Ocamlorg_opam4 "infra_opam_staging"; `Ocamlorg_opam5 "infra_opam_staging"]]
         ~options:(include_git |> build_kit)
         ~archs:[`Linux_arm64; `Linux_x86_64]
     ]
