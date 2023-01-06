@@ -236,18 +236,25 @@ module Cluster = struct
           Aws.replace_hash_var ~hash contents) repo_id in
         D.compose_cli ~name ~contents ~detach:false ()
 
+  let build_and_push ?level ?label ?cache_hint t ~push_target ~pool ~src ~options dockerfile =
+    component_label label dockerfile pool |>
+    let> dockerfile = unwrap dockerfile
+    and> options 
+    and> src in
+    Current_ocluster.Raw.build_and_push ?level ?cache_hint t ~push_target ~pool ~src ~options dockerfile
+
   let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(additional_build_args=Current.return []) src =
     let src = Current.map (fun x -> [x]) src in
     let target_label = Cluster_api.Docker.Image_id.repo hub_id |> String.map (function '/' | ':' -> '-' | c -> c) in
-    (* TODO Clean this up like build. *)
-    Current.component "HEADs" |>
-    let** additional_build_args = additional_build_args in
-    let options = { options with build_args = additional_build_args @ options.build_args } in
+    let options =
+      let+ additional_build_args = additional_build_args in
+      { options with build_args = additional_build_args @ options.build_args }
+    in
     let build_arch arch =
       let pool = Arch.pool_id arch in
       let tag = Printf.sprintf "live-%s-%s" target_label pool in
       let push_target = Cluster_api.Docker.Image_id.v ~repo:push_repo ~tag in
-      Current_ocluster.build_and_push sched ~options ~push_target ~pool ~src dockerfile
+      build_and_push sched ~options ~push_target ~pool ~src dockerfile
     in
     let images = List.map build_arch archs in
     match auth with
@@ -325,12 +332,12 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     let base = Uri.of_string "https://deploy.ci3.ocamllabs.io/" in
     fun repo -> Uri.with_query' base ["repo", repo] in
 
+  (* GitHub organisations to monitor. *)
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
 
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
   let sched_regular = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
-
   let docker = docker ~sched:sched_regular in
 
   Current.all @@ List.map build @@ filter_list filter [
@@ -387,6 +394,8 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let web_ui =
     let base = Uri.of_string "https://deploy.ci.ocaml.org" in
     fun repo -> Uri.with_query' base ["repo", repo] in
+
+  (* GitHub organisations to monitor. *)
   let ocurrent = Build.org ?app ~account:"ocurrent" 23342906 in
   let ocaml = Build.org ?app ~account:"ocaml" 23711648 in
   let ocaml_opam = Build.org ?app ~account:"ocaml-opam" 23690708 in
@@ -395,8 +404,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
     Cluster_build.repo ?channel ?additional_build_args ~web_ui ~org ~name builds in
 
   let docker_with_timeout timeout =
-    docker ~sched:(Current_ocluster.v ~timeout ?push_auth:staging_auth sched)
-  in
+    docker ~sched:(Current_ocluster.v ~timeout ?push_auth:staging_auth sched) in
 
   let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
   let docker = docker ~sched in
@@ -429,12 +437,12 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
       ];
     ]  in
 
-  let head_of (repo : Github.Repo_id.t) (id: Github.Api.Ref.t) : Current_git.Commit_id.t Current.t =
+  let head_of repo id =
     match Build.api ocaml_opam with
     | Some api ->
       let id_type = match id with
       | `Ref x -> `Ref x
-      | `PR pri -> `PR pri.id
+      | `PR pri -> `PR pri.Github.Api.Ref.id
       in
       Current.map Github.Api.Commit.id @@ Github.Api.head_of api repo id_type
     | None -> Github.Api.Anonymous.head_of repo id
@@ -463,7 +471,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   ]
   in
   Current.all (List.append
-                 (List.map (fun x -> build ~additional_build_args x) opam_repository_pipeline)
+                 (List.map (build ~additional_build_args) opam_repository_pipeline)
                  (List.map build pipelines))
 
 let unikernel dockerfile ~target args services =
@@ -479,6 +487,8 @@ let toxis ?app ?notify:channel () =
   let web_ui =
     let base = Uri.of_string "https://deploy.ocamllabs.io/" in
     fun repo -> Uri.with_query' base ["repo", repo] in
+
+  (* GitHub organisations to monitor. *)
   let mirage = Build.org ?app ~account:"mirage" 7175142 in
   let build (org, name, builds) = Build_unikernel.repo ?channel ~web_ui ~org ~name builds in
   Current.all @@ List.map build [
