@@ -32,7 +32,7 @@ let notify ?channel ~web_ui ~service ~commit ~repo x =
   | Some channel ->
     let s =
       let+ state = Current.state x
-      and+ commit = commit in
+      and+ commit in
       let uri = Github.Api.Commit.uri commit in
       Fmt.str "@[<h>Deploy <%a|%a> as %s: <%s|%a>@]"
         Uri.pp uri Github.Api.Commit.pp_short commit
@@ -46,7 +46,7 @@ let notify ?channel ~web_ui ~service ~commit ~repo x =
 
 let label l x =
   Current.component "%s" l |>
-  let> x = x in
+  let> x in
   Current.Primitive.const x
 
 module Make(T : S.T) = struct

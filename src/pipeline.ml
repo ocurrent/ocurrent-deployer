@@ -217,7 +217,7 @@ module Cluster = struct
   let pull_and_serve (module D : Current_docker.S.DOCKER) ~name op repo_id =
     let image =
       Current.component "pull" |>
-      let> repo_id = repo_id in
+      let> repo_id in
       Current_docker.Raw.pull repo_id
       ~docker_context:D.docker_context
       ~schedule:no_schedule
@@ -239,6 +239,7 @@ module Cluster = struct
   let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(additional_build_args=Current.return []) src =
     let src = Current.map (fun x -> [x]) src in
     let target_label = Cluster_api.Docker.Image_id.repo hub_id |> String.map (function '/' | ':' -> '-' | c -> c) in
+    (* TODO Clean this up like build. *)
     Current.component "HEADs" |>
     let** additional_build_args = additional_build_args in
     let options = { options with build_args = additional_build_args @ options.build_args } in
