@@ -86,6 +86,6 @@ let record ~repo ~hash jobs =
   let _ : [`Empty] Job_map.t = Job_map.merge merge previous jobs in
   ()
 
-let get_job_ids  ~owner ~name ~hash =
+let get_job_ids ~owner ~name ~hash =
   let t = Lazy.force db in
   get_job_ids_with_variant t ~owner ~name ~hash |> List.filter_map snd

@@ -75,7 +75,7 @@ module Deploy = Current_cache.Output(Op)
 module Make(Docker : Current_docker.S.DOCKER) = struct
   let deploy ~name ~ssh_host image =
     Current.component "deploy %s" name |>
-    let> image = image in
+    let> image in
     let docker_context = Docker.docker_context in
     Deploy.set Op.No_context { Op.Key.name; ssh_host; docker_context } (Docker.Image.hash image |> Raw.Image.of_hash)
 end

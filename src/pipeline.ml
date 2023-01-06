@@ -42,20 +42,23 @@ let or_fail = function
   | Ok x -> x
   | Error (`Msg m) -> failwith m
 
-type arch = [
-  | `Linux_arm64
-  | `Linux_x86_64
-  | `Linux_ppc64
-  | `Linux_s390x
-  | `Linux_riscv64
-]
+module Arch = struct 
+  type t = [
+    | `Linux_arm64
+    | `Linux_x86_64
+    | `Linux_ppc64
+    | `Linux_s390x
+    | `Linux_riscv64
+    ]
 
-let pool_id : arch -> string = function
-  | `Linux_arm64 -> "linux-arm64"
-  | `Linux_x86_64 -> "linux-x86_64"
-  | `Linux_ppc64 -> "linux-ppc64"
-  | `Linux_s390x -> "linux-s390x"
-  | `Linux_riscv64 -> "linux-riscv64"
+  let pool_id : t -> string = function
+    | `Linux_arm64 -> "linux-arm64"
+    | `Linux_x86_64 -> "linux-x86_64"
+    | `Linux_ppc64 -> "linux-ppc64"
+    | `Linux_s390x -> "linux-s390x"
+    | `Linux_riscv64 -> "linux-riscv64"
+
+end
 
 module Packet_unikernel = struct
   (* Mirage unikernels running on packet.net *)
@@ -84,7 +87,7 @@ module Packet_unikernel = struct
       ~pull:true
       ~timeout
 
-  let build info ?additional_build_args:_ (_:Github.Repo_id.t) src  = Current.ignore_value (build_image info src)
+  let build info ?additional_build_args:_ _repo src  = Current.ignore_value (build_image info src)
 
   let name { service } = service
 
@@ -130,8 +133,8 @@ module Cluster = struct
     sched : Current_ocluster.t;
     dockerfile : [`Contents of string Current.t | `Path of string];
     options : Cluster_api.Docker.Spec.options;
-    archs : arch list;
-  }
+    archs : Arch.t list;
+  }  
 
   type service = [
     (* Services on deploy.ci3.ocamllabs.io *)
@@ -160,25 +163,50 @@ module Cluster = struct
   }
 
   let get_job_id x =
-    let+ md = Current.Analysis.metadata x in
-    match md with
-    | Some { Current.Metadata.job_id; _ } -> job_id
-    | None -> None
+     let+ md = Current.Analysis.metadata x in
+     match md with
+     | Some { Current.Metadata.job_id; _ } -> job_id
+     | None -> None
+
+  let unwrap = function
+    | `Path _ as x -> Current.return x
+    | `Contents x -> Current.map (fun x -> `Contents x) x
+
+  let component_label label dockerfile pool =
+    let pp_label = Fmt.(option (cut ++ string)) in
+    match dockerfile with
+    | `Path path -> Current.component "build %s@,%s%a" path pool pp_label label
+    | `Contents _ -> Current.component "build@,%s%a" pool pp_label label
+
+  let ocluster_build ?level ?label ?cache_hint t ~pool ~src ~options dockerfile =
+    component_label label dockerfile pool |>
+    let> dockerfile = unwrap dockerfile
+    and> options
+    and> src in
+    Current_ocluster.Raw.build ?level ?cache_hint t ~pool ~src ~options dockerfile
 
   (* Build [src/dockerfile] as a Docker service. *)
-  let build { sched; dockerfile; options; archs } ?(additional_build_args=Current.return []) repo src : unit Current.t =
-    Current.component "HEADs" |>
-    let** additional_build_args = additional_build_args in
-    let options = { options with build_args = additional_build_args @ options.build_args } in
+  let build { sched; dockerfile; options; archs } ?(additional_build_args=Current.return []) repo src =
+    let options =
+      let+ additional_build_args = additional_build_args in
+      { options with build_args = additional_build_args @ options.build_args }
+    in
+    let hash = Current.map Current_git.Commit_id.hash src in
     let build_arch arch =
-      let* src = src in
-      let build = Current_ocluster.build sched ~options ~pool:(pool_id arch) ~src:(Current.return [src]) dockerfile in
-      let hash = Current_git.Commit_id.hash src in
-      let () = Logs.info (fun f -> f "Building arch: %s repo: %s hash: %s" (pool_id arch) (Fmt.str("%s/%s") repo.Github.Repo_id.owner repo.name) hash) in
-      let+ job_id = get_job_id build in
-      let job_str = match job_id with | Some x -> x | None -> "None" in
-      let () = Logs.info (fun f -> f "Recording repo: %s hash: %s job: %s" (Fmt.str("%s/%s") repo.owner repo.name) hash job_str) in
-      Index.record ~repo ~hash [("build", job_id)]
+      let src = Current.map (fun x -> [x]) src in
+      let pool = Arch.pool_id arch in
+      let build = ocluster_build sched ~options ~pool ~src dockerfile in
+      let index =
+        let+ job_id = get_job_id build
+        and+ hash in
+        let label =
+          match dockerfile with
+          | `Path path -> Fmt.str "build %s@,%s" path pool
+          | `Contents _ -> Fmt.str "build@,%s" pool
+        in
+        Index.record ~repo ~hash [(label, job_id)]
+      in
+      Current.all [build; index]
     in
     Current.all (List.map build_arch archs)
 
@@ -189,7 +217,7 @@ module Cluster = struct
   let pull_and_serve (module D : Current_docker.S.DOCKER) ~name op repo_id =
     let image =
       Current.component "pull" |>
-      let> repo_id = repo_id in
+      let> repo_id in
       Current_docker.Raw.pull repo_id
       ~docker_context:D.docker_context
       ~schedule:no_schedule
@@ -208,17 +236,25 @@ module Cluster = struct
           Aws.replace_hash_var ~hash contents) repo_id in
         D.compose_cli ~name ~contents ~detach:false ()
 
+  let build_and_push ?level ?label ?cache_hint t ~push_target ~pool ~src ~options dockerfile =
+    component_label label dockerfile pool |>
+    let> dockerfile = unwrap dockerfile
+    and> options 
+    and> src in
+    Current_ocluster.Raw.build_and_push ?level ?cache_hint t ~push_target ~pool ~src ~options dockerfile
+
   let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(additional_build_args=Current.return []) src =
     let src = Current.map (fun x -> [x]) src in
     let target_label = Cluster_api.Docker.Image_id.repo hub_id |> String.map (function '/' | ':' -> '-' | c -> c) in
-    Current.component "HEADs" |>
-    let** additional_build_args = additional_build_args in
-    let options = { options with build_args = additional_build_args @ options.build_args } in
+    let options =
+      let+ additional_build_args = additional_build_args in
+      { options with build_args = additional_build_args @ options.build_args }
+    in
     let build_arch arch =
-      let pool = pool_id arch in
+      let pool = Arch.pool_id arch in
       let tag = Printf.sprintf "live-%s-%s" target_label pool in
       let push_target = Cluster_api.Docker.Image_id.v ~repo:push_repo ~tag in
-      Current_ocluster.build_and_push sched ~options ~push_target ~pool ~src dockerfile
+      build_and_push sched ~options ~push_target ~pool ~src dockerfile
     in
     let images = List.map build_arch archs in
     match auth with
@@ -296,12 +332,12 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     let base = Uri.of_string "https://deploy.ci3.ocamllabs.io/" in
     fun repo -> Uri.with_query' base ["repo", repo] in
 
+  (* GitHub organisations to monitor. *)
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
 
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
   let sched_regular = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
-
   let docker = docker ~sched:sched_regular in
 
   Current.all @@ List.map build @@ filter_list filter [
@@ -358,6 +394,8 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let web_ui =
     let base = Uri.of_string "https://deploy.ci.ocaml.org" in
     fun repo -> Uri.with_query' base ["repo", repo] in
+
+  (* GitHub organisations to monitor. *)
   let ocurrent = Build.org ?app ~account:"ocurrent" 23342906 in
   let ocaml = Build.org ?app ~account:"ocaml" 23711648 in
   let ocaml_opam = Build.org ?app ~account:"ocaml-opam" 23690708 in
@@ -366,8 +404,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
     Cluster_build.repo ?channel ?additional_build_args ~web_ui ~org ~name builds in
 
   let docker_with_timeout timeout =
-    docker ~sched:(Current_ocluster.v ~timeout ?push_auth:staging_auth sched)
-  in
+    docker ~sched:(Current_ocluster.v ~timeout ?push_auth:staging_auth sched) in
 
   let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
   let docker = docker ~sched in
@@ -400,14 +437,14 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
       ];
     ]  in
 
-  let head_of repo (id: Github.Api.Ref.t) =
+  let head_of repo id =
     match Build.api ocaml_opam with
     | Some api ->
-      let (id': Github.Api.Ref.id) = match id with
+      let id_type = match id with
       | `Ref x -> `Ref x
-      | `PR pri -> `PR pri.id
+      | `PR pri -> `PR pri.Github.Api.Ref.id
       in
-      Current.map Github.Api.Commit.id @@ Github.Api.head_of api repo id'
+      Current.map Github.Api.Commit.id @@ Github.Api.head_of api repo id_type
     | None -> Github.Api.Anonymous.head_of repo id
   in
 
@@ -434,7 +471,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   ]
   in
   Current.all (List.append
-                 (List.map (fun x -> build ~additional_build_args x) opam_repository_pipeline)
+                 (List.map (build ~additional_build_args) opam_repository_pipeline)
                  (List.map build pipelines))
 
 let unikernel dockerfile ~target args services =
@@ -450,6 +487,8 @@ let toxis ?app ?notify:channel () =
   let web_ui =
     let base = Uri.of_string "https://deploy.ocamllabs.io/" in
     fun repo -> Uri.with_query' base ["repo", repo] in
+
+  (* GitHub organisations to monitor. *)
   let mirage = Build.org ?app ~account:"mirage" 7175142 in
   let build (org, name, builds) = Build_unikernel.repo ?channel ~web_ui ~org ~name builds in
   Current.all @@ List.map build [
