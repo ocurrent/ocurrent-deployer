@@ -87,7 +87,7 @@ module Packet_unikernel = struct
       ~pull:true
       ~timeout
 
-  let build info ?additional_build_args:_ src  = Current.ignore_value (build_image info src)
+  let build info ?additional_build_args:_ _repo src  = Current.ignore_value (build_image info src)
 
   let name { service } = service
 
@@ -162,17 +162,52 @@ module Cluster = struct
     services : service list;
   }
 
+  let get_job_id x =
+     let+ md = Current.Analysis.metadata x in
+     match md with
+     | Some { Current.Metadata.job_id; _ } -> job_id
+     | None -> None
+
+  let unwrap = function
+    | `Path _ as x -> Current.return x
+    | `Contents x -> Current.map (fun x -> `Contents x) x
+
+  let component_label label dockerfile pool =
+    let pp_label = Fmt.(option (cut ++ string)) in
+    match dockerfile with
+    | `Path path -> Current.component "build %s@,%s%a" path pool pp_label label
+    | `Contents _ -> Current.component "build@,%s%a" pool pp_label label
+
+  let ocluster_build ?level ?label ?cache_hint t ~pool ~src ~options dockerfile =
+    component_label label dockerfile pool |>
+    let> dockerfile = unwrap dockerfile
+    and> options
+    and> src in
+    Current_ocluster.Raw.build ?level ?cache_hint t ~pool ~src ~options dockerfile
+
   (* Build [src/dockerfile] as a Docker service. *)
-  let build { sched; dockerfile; options; archs } ?(additional_build_args=Current.return []) commit =
-    Current.component "HEADs" |>
-    let** additional_build_args = additional_build_args in
-    let options = { options with build_args = additional_build_args @ options.build_args } in
-
-    let src = Current.map (fun x -> [x]) commit in
-    let build_arch arch =
-      Current_ocluster.build sched ~options ~pool:(Arch.pool_id arch) ~src dockerfile
+  let build { sched; dockerfile; options; archs } ?(additional_build_args=Current.return []) repo src =
+    let options =
+      let+ additional_build_args = additional_build_args in
+      { options with build_args = additional_build_args @ options.build_args }
     in
-
+    let hash = Current.map Current_git.Commit_id.hash src in
+    let build_arch arch =
+      let src = Current.map (fun x -> [x]) src in
+      let pool = Arch.pool_id arch in
+      let build = ocluster_build sched ~options ~pool ~src dockerfile in
+      let index =
+        let+ job_id = get_job_id build
+        and+ hash in
+        let label =
+          match dockerfile with
+          | `Path path -> Fmt.str "build %s@,%s" path pool
+          | `Contents _ -> Fmt.str "build@,%s" pool
+        in
+        Index.record ~repo ~hash [(label, job_id)]
+      in
+      Current.all [build; index]
+    in
     Current.all (List.map build_arch archs)
 
   let name info = Cluster_api.Docker.Image_id.to_string info.hub_id

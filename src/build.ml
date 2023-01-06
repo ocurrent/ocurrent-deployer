@@ -73,7 +73,7 @@ module Make(T : S.T) = struct
         Current.all (
             build_specs
             |> List.map (fun (build_info, _) ->
-                   T.build ?additional_build_args build_info src
+                   T.build ?additional_build_args build_info repo src
                    |> Current.ignore_value)
         )
         |> status_of_build ~url
