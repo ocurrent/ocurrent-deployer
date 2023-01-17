@@ -1,0 +1,1 @@
+{"Name":"docs.ocamllabs.io","Metadata":{"Description":"Staging for docs.ci.ocaml.org"},"Endpoints":{"docker":{"Host":"ssh://root@docs.ocamllabs.io","SkipTLSVerify":false}}}
