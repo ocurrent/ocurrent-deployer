@@ -380,7 +380,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
       ];
     ocurrent, "solver-service", [
       docker "Dockerfile" ["live", "ocurrent/solver-service:live", []]
-        ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64]
+        ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64] ~options:include_git
     ]
   ]
 
