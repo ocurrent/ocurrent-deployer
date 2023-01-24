@@ -115,6 +115,7 @@ module Cluster = struct
   module Ci3_docker = Current_docker.Default
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4.ocamllabs.io" end)
   module Docs_docker = Current_docker.Make(struct let docker_context = Some "docs.ci.ocaml.org" end)
+  module Staging_docs_docker = Current_docker.Make(struct let docker_context = Some "docs.ocamllabs.io" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "ci.ocamllabs.io" end)
   module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos.ci.dev" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
@@ -143,6 +144,7 @@ module Cluster = struct
     | `Ci3 of string
     | `Ci4 of string
     | `Docs of string
+    | `Staging_docs of string
     | `Cimirage of string
 
     (* Services on deploy.ci.ocaml.org. *)
@@ -270,6 +272,7 @@ module Cluster = struct
             | `Ci3 name -> pull_and_serve (module Ci3_docker) ~name `Service multi_hash
             | `Ci4 name -> pull_and_serve (module Ci4_docker) ~name `Service multi_hash
             | `Docs name -> pull_and_serve (module Docs_docker) ~name `Service multi_hash
+            | `Staging_docs name -> pull_and_serve (module Staging_docs_docker) ~name `Service multi_hash
             | `Toxis name -> pull_and_serve (module Toxis_docker) ~name `Service multi_hash
             | `Tezos name -> pull_and_serve (module Tezos_docker) ~name `Service multi_hash
             | `Cimirage name -> pull_and_serve (module Cimirage_docker) ~name `Service multi_hash
@@ -434,6 +437,9 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
         docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Docs "infra_docs-ci"]];
         docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Docs "infra_init"]];
         docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Docs "infra_storage-server"]];
+        docker "Dockerfile"                 ["staging", "ocurrent/docs-ci:staging", [`Staging_docs "infra_docs-ci"]];
+        docker "docker/init/Dockerfile"     ["staging", "ocurrent/docs-ci-init:staging", [`Staging_docs "infra_init"]];
+        docker "docker/storage/Dockerfile"  ["staging", "ocurrent/docs-ci-storage-server:staging", [`Staging_docs "infra_storage-server"]];
       ];
     ]  in
 
