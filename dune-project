@@ -18,6 +18,7 @@
   current_github
   current_docker
   current_slack
+  current_ssh
   ocluster-api
   capnp-rpc-unix
   fmt
