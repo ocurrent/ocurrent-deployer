@@ -40,6 +40,7 @@ let has_role_tarides user role =
       |"github:novemberkilo"
       |"github:benmandrew"
       |"github:MisterDA"
+      |"github:maiste"
       ), _ -> true        (* These users have all roles *)
     | _ -> role = `Viewer
 
