@@ -79,7 +79,7 @@ module Make(T : S.T) = struct
         |> status_of_build ~url
         |> Github.Api.CheckRun.set_status commit "deployability"
       in
-      Current.collapse ~key:"repo" ~value:collapse_value ~input:refs pipeline 
+      Current.collapse ~key:"repo" ~value:collapse_value ~input:refs pipeline
     and deployment =
       let root = label "deployments" root in
       Current.with_context root @@ fun () ->

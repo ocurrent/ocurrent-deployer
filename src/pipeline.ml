@@ -42,7 +42,7 @@ let or_fail = function
   | Ok x -> x
   | Error (`Msg m) -> failwith m
 
-module Arch = struct 
+module Arch = struct
   type t = [
     | `Linux_arm64
     | `Linux_x86_64
@@ -135,7 +135,7 @@ module Cluster = struct
     dockerfile : [`Contents of string Current.t | `Path of string];
     options : Cluster_api.Docker.Spec.options;
     archs : Arch.t list;
-  }  
+  }
 
   type service = [
     (* Services on deploy.ci3.ocamllabs.io *)
@@ -241,7 +241,7 @@ module Cluster = struct
   let build_and_push ?level ?label ?cache_hint t ~push_target ~pool ~src ~options dockerfile =
     component_label label dockerfile pool |>
     let> dockerfile = unwrap dockerfile
-    and> options 
+    and> options
     and> src in
     Current_ocluster.Raw.build_and_push ?level ?cache_hint t ~push_target ~pool ~src ~options dockerfile
 
@@ -355,7 +355,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
                                "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Toxis "test-www"]];
     ];
     ocurrent, "ocluster", [
-      docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []] 
+      docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []]
         ~archs:[`Linux_x86_64; `Linux_arm64] ~options:include_git;
       docker "Dockerfile.worker" ["live-worker",    "ocurrent/ocluster-worker:live", []]
         ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64; `Linux_s390x; `Linux_riscv64] ~options:include_git;
@@ -373,7 +373,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ];
 
     ocaml_bench, "sandmark-nightly", [
-      docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]] 
+      docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]]
       ~options:include_git;
     ];
 
