@@ -1,6 +1,7 @@
-FROM ocaml/opam:debian-11-ocaml-4.14@sha256:5ec0c5418a519972b9a856c8500335a39e255a830a653b45deac1b49d9d0149e AS build
+# syntax=docker/dockerfile:1
+FROM ocaml/opam:debian-11-ocaml-4.14@sha256:31210ba244a27fc4ca0b3dc1fe55c7393017b9367811ad19006dd19065bfd65b AS build
 RUN sudo apt-get update && sudo apt-get install libffi-dev libev-dev m4 pkg-config libsqlite3-dev libgmp-dev libssl-dev capnproto graphviz -y --no-install-recommends
-RUN cd ~/opam-repository && git fetch -q origin master && git reset --hard 99c704701437f5a9674b58cc5fbbb593653d0a3a && opam update
+RUN cd ~/opam-repository && git fetch -q origin master && git reset --hard ec44728f8aed95c8576d461d31c0f14e0cd3097b && opam update
 COPY --chown=opam \
 	ocurrent/current_docker.opam \
 	ocurrent/current_github.opam \
@@ -31,14 +32,17 @@ ADD --chown=opam . .
 RUN opam config exec -- dune build ./_build/install/default/bin/ocurrent-deployer
 
 FROM debian:11
-RUN apt-get update && apt-get install libffi-dev libev4 openssh-client curl gnupg2 dumb-init git graphviz libsqlite3-dev ca-certificates netbase rsync awscli -y --no-install-recommends
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 RUN echo 'deb [arch=amd64] https://download.docker.com/linux/debian bullseye stable' >> /etc/apt/sources.list
-RUN apt-get update && apt-get install docker-ce docker-ce-cli docker-compose-plugin -y --no-install-recommends
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      libffi-dev libev4 openssh-client curl gnupg2 dumb-init git graphviz libsqlite3-dev ca-certificates netbase rsync awscli \
+      docker-ce docker-ce-cli docker-compose-plugin && \
+    rm -rf /var/lib/apt/lists/*
 RUN curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
 WORKDIR /var/lib/ocurrent
 ENTRYPOINT ["dumb-init", "/usr/local/bin/ocurrent-deployer"]
 COPY config/ssh /root/.ssh
 COPY config/docker /root/.docker
 RUN docker context use default
-COPY --from=build /src/_build/install/default/bin/ocurrent-deployer /usr/local/bin/
+COPY --link --from=build /src/_build/install/default/bin/ocurrent-deployer /usr/local/bin/
