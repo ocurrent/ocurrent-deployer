@@ -324,7 +324,9 @@ let filter_list filter items =
     items |> List.filter @@ fun (org, name, _) ->
     filter { Current_github.Repo_id.owner = Build.account org; name }
 
-let include_git = { Cluster_api.Docker.Spec.defaults with include_git = true }
+let defaults = Cluster_api.Docker.Spec.defaults
+
+let include_git (v : Cluster_api.Docker.Spec.options) = { v with include_git = true }
 
 let build_kit (v : Cluster_api.Docker.Spec.options) = { v with buildkit = true }
 
@@ -354,7 +356,10 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
   Current.all @@ List.map build @@ filter_list filter [
     ocurrent, "ocurrent-deployer", [
-      docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3 "deployer_deployer"]];
+      docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3 "deployer_deployer"]]
+        ~options:(defaults |> build_kit);
+      docker "Dockerfile"     ["live-toxis", "ocurrent/ci.ocamllabs.io-deployer:live-toxis", [`Toxis "infra_deployer"]]
+        ~options:(defaults |> build_kit);
     ];
     ocurrent, "ocaml-ci", [
       docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Toxis "ocaml-ci_ci"]];
@@ -364,9 +369,10 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ];
     ocurrent, "ocluster", [
       docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []]
-        ~archs:[`Linux_x86_64; `Linux_arm64] ~options:include_git;
+        ~archs:[`Linux_x86_64; `Linux_arm64] ~options:(defaults |> include_git);
       docker "Dockerfile.worker" ["live-worker",    "ocurrent/ocluster-worker:live", []]
-        ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64; `Linux_s390x; `Linux_riscv64] ~options:include_git;
+        ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64; `Linux_s390x; `Linux_riscv64]
+        ~options:(defaults |> include_git);
     ];
     ocurrent, "opam-repo-ci", [
       docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Dev1 "opam-repo-ci_opam-repo-ci"]];
@@ -382,12 +388,12 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
     ocaml_bench, "sandmark-nightly", [
       docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]]
-      ~options:include_git;
+        ~options:(defaults |> include_git);
     ];
 
     ocurrent, "solver-service", [
       docker "Dockerfile" ["live", "ocurrent/solver-service:live", []]
-        ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64] ~options:include_git
+        ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64] ~options:(defaults |> include_git)
     ]
   ]
 
@@ -429,7 +435,8 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
     ocaml, "v2.ocaml.org", [
       (* Backup of existing ocaml.org website. *)
-      docker "Dockerfile.deploy"  ["master", "ocurrent/v2.ocaml.org:live", [`OCamlorg_v2 ["v2.ocaml.org", "10.197.242.33"]]] ~options:include_git;
+      docker "Dockerfile.deploy"  ["master", "ocurrent/v2.ocaml.org:live", [`OCamlorg_v2 ["v2.ocaml.org", "10.197.242.33"]]]
+        ~options:(defaults |> include_git);
     ];
 
     ocurrent, "docker-base-images", [
@@ -475,7 +482,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker_with_timeout (Duration.of_min 240)
         "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam "infra_opam_live"; `Ocamlorg_opam4 "infra_opam_live"; `Ocamlorg_opam5 "infra_opam_live"]
                      ; "live-staging", "ocurrent/opam.ocaml.org:staging", [`Ocamlorg_opam "infra_opam_staging"; `Ocamlorg_opam4 "infra_opam_staging"; `Ocamlorg_opam5 "infra_opam_staging"]]
-        ~options:(include_git |> build_kit)
+        ~options:(defaults |> include_git |> build_kit)
         ~archs:[`Linux_arm64; `Linux_x86_64]
     ]
   ]
@@ -524,7 +531,7 @@ let mirage ?app ?notify:channel ~sched ~staging_auth () =
   ] @ List.map build_docker [
     ocurrent, "mirage-ci", [
       docker "Dockerfile" ["live", "ocurrent/mirage-ci:live", [`Cimirage "infra_mirage-ci"]]
-        ~options:(include_git |> build_kit)
+        ~options:(defaults |> include_git |> build_kit)
     ];
     ocurrent, "ocurrent-deployer", [
       docker "Dockerfile"     ["live-mirage", "ocurrent/deploy.mirage.io:live", [`Cimirage "infra_deployer"]];
