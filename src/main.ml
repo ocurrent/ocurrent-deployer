@@ -83,6 +83,8 @@ let has_role_ocaml user role =
     | _ -> role = `Viewer
 
 let main () config mode app slack auth staging_password_file flavour =
+  if not Sys.win32 then Unix.putenv "DOCKER_BUILDKIT" "1";
+  Unix.putenv "PROGRESS_NO_TRUNC" "1";
   let vat = Capnp_rpc_unix.client_only_vat () in
   let channel = read_channel_uri slack in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
