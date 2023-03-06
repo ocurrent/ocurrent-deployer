@@ -11,6 +11,7 @@
    current_ocluster
    current_slack
    current_web
+   current_ssh
    cmdliner
    deployer
    fmt.tty
@@ -36,6 +37,7 @@
    current_ocluster
    current_slack
    current_web
+   current_ssh
    cmdliner
    fmt.tty
    fmt.cli

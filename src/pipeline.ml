@@ -118,6 +118,7 @@ module Cluster = struct
   module Staging_docs_docker = Current_docker.Make(struct let docker_context = Some "docs.ocamllabs.io" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "ci.ocamllabs.io" end)
   module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos.ci.dev" end)
+  module Watch_docker = Current_docker.Make(struct let docker_context = Some "watch.ocaml.org" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirage.io" end)
   module Opamocamlorg_docker = Current_docker.Make(struct let docker_context = Some "opam-3.ocaml.org" end)
@@ -479,9 +480,19 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ]
   ]
   in
-  Current.all (List.append
+
+  let monthly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 30) () in
+  let tarsnap = Current_ssh.run ~schedule:monthly "watch.ocaml.org" ~key:"tarsnap" (Current.return ["./tarsnap-backup.sh"])
+  in
+  let peertube =
+    let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) () in
+    let image = Cluster.Watch_docker.pull ~schedule:weekly "chocobozzz/peertube:production-bullseye" in
+    Cluster.Watch_docker.service ~name:"peertube" ~image ()
+
+  in
+  Current.all ((List.append
                  (List.map (build ~additional_build_args) opam_repository_pipeline)
-                 (List.map build pipelines))
+                 (List.map build pipelines)) @ [tarsnap; peertube])
 
 let unikernel dockerfile ~target args services =
   let build_info = { Packet_unikernel.dockerfile; target; args } in

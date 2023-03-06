@@ -8,6 +8,7 @@ COPY --chown=opam \
 	ocurrent/current.opam \
 	ocurrent/current_rpc.opam \
 	ocurrent/current_slack.opam \
+	ocurrent/current_ssh.opam \
 	ocurrent/current_web.opam \
 	/src/ocurrent/
 COPY --chown=opam \
@@ -20,6 +21,7 @@ RUN opam pin add -yn current_docker.dev "./ocurrent" && \
     opam pin add -yn current.dev "./ocurrent" && \
     opam pin add -yn current_rpc.dev "./ocurrent" && \
     opam pin add -yn current_slack.dev "./ocurrent" && \
+    opam pin add -yn current_ssh.dev "./ocurrent" && \
     opam pin add -yn current_web.dev "./ocurrent" && \
     opam pin add -yn ocluster-api.dev "./ocluster"
 COPY --chown=opam deployer.opam /src/
