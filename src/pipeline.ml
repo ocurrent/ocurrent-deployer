@@ -125,6 +125,7 @@ module Cluster = struct
   module Opam5_docker = Current_docker.Make(struct let docker_context = Some "opam-5.ocaml.org" end)
   module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2.ocaml.org" end)
   module Ocamlorg_images = Current_docker.Make(struct let docker_context = Some "ci3.ocamllabs.io" end)
+  module Dev1_docker = Current_docker.Make(struct let docker_context = Some "dev1.ocamllabs.io" end)
   module Docker_aws = Current_docker.Make(struct let docker_context = Some "awsecs" end)
   module V3b_docker = Current_docker.Make(struct let docker_context = Some "v3b.ocaml.org" end)
   module V3c_docker = Current_docker.Make(struct let docker_context = Some "v3c.ocaml.org" end)
@@ -143,6 +144,7 @@ module Cluster = struct
     | `Tezos of string
     | `Ci3 of string
     | `Ci4 of string
+    | `Dev1 of string
     | `Docs of string
     | `Staging_docs of string
     | `Cimirage of string
@@ -271,6 +273,7 @@ module Cluster = struct
             (* ci3.ocamllabs.io *)
             | `Ci3 name -> pull_and_serve (module Ci3_docker) ~name `Service multi_hash
             | `Ci4 name -> pull_and_serve (module Ci4_docker) ~name `Service multi_hash
+            | `Dev1 name -> pull_and_serve (module Dev1_docker) ~name `Service multi_hash
             | `Docs name -> pull_and_serve (module Docs_docker) ~name `Service multi_hash
             | `Staging_docs name -> pull_and_serve (module Staging_docs_docker) ~name `Service multi_hash
             | `Toxis name -> pull_and_serve (module Toxis_docker) ~name `Service multi_hash
@@ -361,8 +364,8 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
         ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64; `Linux_s390x; `Linux_riscv64] ~options:include_git;
     ];
     ocurrent, "opam-repo-ci", [
-      docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Ci3 "opam-repo-ci_opam-repo-ci"]];
-      docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Ci3 "opam-repo-ci_opam-repo-ci-web"]];
+      docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Dev1 "opam-repo-ci_opam-repo-ci"]];
+      docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Dev1 "opam-repo-ci_opam-repo-ci-web"]];
     ];
     ocurrent, "ocaml-multicore-ci", [
       docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4 "infra_multicore-ci"]];
