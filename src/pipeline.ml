@@ -344,8 +344,13 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
 
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
-  let sched_regular = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
-  let docker = docker ~sched:sched_regular in
+  let docker ?archs =
+    let timeout = match archs with
+      | Some archs when List.mem `Linux_riscv64 archs -> Int64.mul timeout 2L
+      | _ -> timeout
+    in
+    docker ?archs ~sched:(Current_ocluster.v ~timeout ?push_auth:staging_auth sched)
+  in
 
   Current.all @@ List.map build @@ filter_list filter [
     ocurrent, "ocurrent-deployer", [
