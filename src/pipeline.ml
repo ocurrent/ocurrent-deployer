@@ -121,7 +121,6 @@ module Cluster = struct
   module Watch_docker = Current_docker.Make(struct let docker_context = Some "watch.ocaml.org" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirage.io" end)
-  module Opamocamlorg_docker = Current_docker.Make(struct let docker_context = Some "opam-3.ocaml.org" end)
   module Opam4_docker = Current_docker.Make(struct let docker_context = Some "opam-4.ocaml.org" end)
   module Opam5_docker = Current_docker.Make(struct let docker_context = Some "opam-5.ocaml.org" end)
   module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2.ocaml.org" end)
@@ -153,7 +152,6 @@ module Cluster = struct
     (* Services on deploy.ci.ocaml.org. *)
     | `Ocamlorg_deployer of string             (* OCurrent deployer @ deploy.ci.ocaml.org *)
     | `OCamlorg_v2 of (string * string) list   (* OCaml website @ v2.ocaml.org *)
-    | `Ocamlorg_opam of string                 (* Opam website @ opam-3.ocaml.org *)
     | `Ocamlorg_opam4 of string                (* Opam website @ opam-4.ocaml.org *)
     | `Ocamlorg_opam5 of string                (* Opam website @ opam-5.ocaml.org *)
     | `Ocamlorg_images of string               (* Base Image builder @ images.ci.ocaml.org *)
@@ -287,8 +285,6 @@ module Cluster = struct
               let name = Cluster_api.Docker.Image_id.tag hub_id in
               let contents = Caddy.compose {Caddy.name; domains} in
               pull_and_serve (module V2ocamlorg_docker) ~name (`Compose contents) multi_hash
-            | `Ocamlorg_opam name ->
-              pull_and_serve (module Opamocamlorg_docker) ~name `Service multi_hash
             | `Ocamlorg_opam4 name ->
               pull_and_serve (module Opam4_docker) ~name `Service multi_hash
             | `Ocamlorg_opam5 name ->
@@ -473,8 +469,8 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let opam_repository_pipeline = filter_list filter [
     ocaml_opam, "opam2web", [
       docker_with_timeout (Duration.of_min 240)
-        "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam "infra_opam_live"; `Ocamlorg_opam4 "infra_opam_live"; `Ocamlorg_opam5 "infra_opam_live"]
-                     ; "live-staging", "ocurrent/opam.ocaml.org:staging", [`Ocamlorg_opam "infra_opam_staging"; `Ocamlorg_opam4 "infra_opam_staging"; `Ocamlorg_opam5 "infra_opam_staging"]]
+        "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam4 "infra_opam_live"; `Ocamlorg_opam5 "infra_opam_live"]
+                     ; "live-staging", "ocurrent/opam.ocaml.org:staging", [`Ocamlorg_opam4 "infra_opam_staging"; `Ocamlorg_opam5 "infra_opam_staging"]]
         ~options:(include_git |> build_kit)
         ~archs:[`Linux_arm64; `Linux_x86_64]
     ]
