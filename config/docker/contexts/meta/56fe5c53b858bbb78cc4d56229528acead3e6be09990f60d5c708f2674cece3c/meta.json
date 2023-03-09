@@ -1,0 +1,1 @@
+{"Name":"docs-staging.sw.ocaml.org","Metadata":{"Description":"OCaml Docs - docs-staging.sw.ocaml.org"},"Endpoints":{"docker":{"Host":"ssh://root@docs-staging.sw.ocaml.org","SkipTLSVerify":false}}}
