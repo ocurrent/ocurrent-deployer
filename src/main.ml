@@ -5,7 +5,7 @@ open Deployer
 type flavour_opt =
   | Tarides of Uri.t
   | OCaml of Uri.t
-  | Toxis
+  | Mirage of Uri.t
 
 (* A low-security Docker Hub user used to push images to the staging area.
    Low-security because we never rely on the tags in this repository, just the hashes. *)
@@ -93,7 +93,9 @@ let main () config mode app slack auth staging_password_file flavour =
     | OCaml sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
        Current.Engine.create ~config (Pipeline.ocaml_org ~app ~notify:channel ~sched ~staging_auth)
-    | Toxis -> Current.Engine.create ~config (Pipeline.toxis ~app ~notify:channel)
+    | Mirage sched ->
+       let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
+       Current.Engine.create ~config (Pipeline.mirage ~app ~notify:channel ~sched ~staging_auth)
   in
   let authn = Option.map Current_github.Auth.make_login_uri auth in
   let webhook_secret = Current_github.App.webhook_secret app in
@@ -101,7 +103,7 @@ let main () config mode app slack auth staging_password_file flavour =
     if auth = None then Current_web.Site.allow_all
     else match flavour with
       | Tarides _ -> has_role_tarides
-      | Toxis -> has_role_mirage
+      | Mirage _ -> has_role_mirage
       | OCaml _ -> has_role_ocaml
   in
   let routes =
@@ -139,8 +141,8 @@ let flavour_opt =
   let f s fl : flavour_opt Term.ret = match s,fl with
     | Some s, `OCaml -> `Ok (OCaml s)
     | Some s, `Tarides -> `Ok (Tarides s)
-    | None, `Toxis -> `Ok Toxis
-    | Some _ , `Toxis -> `Error (true, "--submission-service not required for --flavour toxis")
+    | Some s, `Mirage -> `Ok (Mirage s)
+    | None, `Mirage -> `Error (true, "--submission-service required for --flavour mirage")
     | None, `OCaml -> `Error (true, "--submission-service required for --flavour ocaml")
     | None, `Tarides -> `Error (true, "--submission-service required for --flavour tarides") in
 

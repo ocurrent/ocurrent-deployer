@@ -23,7 +23,7 @@ let main () config mode app sched staging_password_file repo flavour =
   let engine = match flavour with
     | `Tarides -> Current.Engine.create ~config (Pipeline.tarides ?app ~sched ~staging_auth ?filter)
     | `OCaml -> Current.Engine.create ~config (Pipeline.ocaml_org ?app ~sched ~staging_auth ?filter)
-    | `Toxis -> Current.Engine.create ~config (Pipeline.toxis ?app)
+    | `Mirage -> Current.Engine.create ~config (Pipeline.mirage ?app ~sched ~staging_auth)
   in
   let webhook_secret = Option.value ~default:webhook_secret @@ Option.map Current_github.App.webhook_secret app in
   let has_role = Current_web.Site.allow_all in
