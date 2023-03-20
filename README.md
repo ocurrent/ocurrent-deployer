@@ -36,12 +36,12 @@ See [VM-host.md](./VM-host.md) for instructions about setting up a host for unik
 There are 3 different flavours of pipelines:
  * Tarides - existing Tarides/OCamlLabs pipelines on deploy.ci3.ocamlabs.io.
  * OCaml - pipelines for deploying ocaml.org services.
- * Toxis - existing Mirage piplines on deploy.ocamllabs.io.
+ * Mirage - existing Mirage piplines on deploy.mirage.io.
 
 Each pipeline flavour is connected to a different GitHub Application:
  * [deploy.ci.ocaml.org]() @ https://github.com/apps/deploy-ci-ocaml-org on branch live-ocaml-org
  * [deploy.ci3.ocamllabs.io]() @ https://github.com/apps/deploy-ci3-ocamllabs-io on branch live-ci3
- * [ci.ocamllabs.io]() (toxis deployer) @ https://github.com/apps/deploy-ocamllabs-io on branch live-toxis
+ * [deploy.mirage.io]() @ https://github.com/apps/deploy-mirage-io on branch live-mirage
 
 ## Testing locally
 
