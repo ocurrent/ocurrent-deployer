@@ -342,7 +342,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
   (* GitHub organisations to monitor. *)
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
-  let tunbury = Build.org ?app ~account:"tunbury" 104900955 in
+  let tunbury = Build.org ?app ~account:"tunbury" 35428116 in
 
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
   let docker ?archs =
