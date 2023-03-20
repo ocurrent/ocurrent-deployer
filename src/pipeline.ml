@@ -510,7 +510,7 @@ let mirage ?app ?notify:channel ~sched ~staging_auth () =
 
   (* GitHub organisations to monitor. *)
   let mirage = Build.org ?app ~account:"mirage" 7175142 in
-  let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
+  let ocurrent = Build.org ?app ~account:"ocurrent" 6853813 in
   let build_unikernel (org, name, builds) = Build_unikernel.repo ?channel ~web_ui ~org ~name builds in
   let build_docker (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
   let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
