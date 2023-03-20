@@ -505,7 +505,7 @@ let mirage ?app ?notify:channel ~sched ~staging_auth () =
   (* [web_ui collapse_value] is a URL back to the deployment service, for links
      in status messages. *)
   let web_ui =
-    let base = Uri.of_string "https://deploy.ocamllabs.io/" in
+    let base = Uri.of_string "https://deploy.mirage.io/" in
     fun repo -> Uri.with_query' base ["repo", repo] in
 
   (* GitHub organisations to monitor. *)
@@ -515,13 +515,13 @@ let mirage ?app ?notify:channel ~sched ~staging_auth () =
   let build_docker (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
   let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
   let docker = docker ~sched in
-  Current.all @@ ((List.map build_unikernel [
+  Current.all @@ (List.map build_unikernel [
     mirage, "mirage-www", [
       unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["master", "www"];
       unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
       unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["next", "next"];
     ];
-  ]) @ (List.map build_docker [
+  ] @ List.map build_docker [
     ocurrent, "mirage-ci", [
       docker "Dockerfile" ["live", "ocurrent/mirage-ci:live", [`Cimirage "infra_mirage-ci"]]
         ~options:(include_git |> build_kit)
@@ -529,4 +529,7 @@ let mirage ?app ?notify:channel ~sched ~staging_auth () =
     ocurrent, "ocurrent-deployer", [
       docker "Dockerfile"     ["live-mirage", "ocurrent/deploy.mirage.io:live", [`Cimirage "infra_deployer"]];
     ];
-  ]))
+    ocurrent, "caddy-rfc2136", [
+      docker "Dockerfile"     ["master", "ocurrent/caddy-rfc2136:live", [`Cimirage "infra_caddy"]];
+    ];
+  ])
