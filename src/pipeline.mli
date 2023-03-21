@@ -2,7 +2,7 @@
 module Flavour : sig
   type t = [ `OCaml   (* for deploy.ci.ocaml.org *)
            | `Tarides (* for deploy.ci3.ocamllabs.io *)
-           | `Toxis ] (* for deploy.ocamllabs.io *)
+           | `Mirage ] (* for deploy.mirage.io *)
 
   val cmdliner : t Cmdliner.Term.t
 end
@@ -23,7 +23,9 @@ val ocaml_org :
   staging_auth:(string * string) option ->
   unit -> unit Current.t
 
-val toxis :
+val mirage :
   ?app:Current_github.App.t ->
   ?notify:Current_slack.channel ->
+  sched:Current_ocluster.Connection.t ->
+  staging_auth:(string * string) option ->
   unit -> unit Current.t

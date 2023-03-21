@@ -1,11 +1,11 @@
 (* Different Deployer pipelines available. *)
 module Flavour = struct
-  type t = [`Tarides | `OCaml | `Toxis ]
+  type t = [`Tarides | `OCaml | `Mirage]
   let cmdliner =
     let open Cmdliner in
     let flavours = ["tarides", `Tarides
                    ; "ocaml", `OCaml
-                   ; "toxis", `Toxis
+                   ; "mirage", `Mirage
                    ]
     in
     let enum_alts = Arg.doc_alts_enum flavours in
@@ -355,7 +355,6 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
   Current.all @@ List.map build @@ filter_list filter [
     ocurrent, "ocurrent-deployer", [
       docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3 "deployer_deployer"]];
-      docker "Dockerfile"     ["live-toxis", "ocurrent/ci.ocamllabs.io-deployer:live-toxis", [`Toxis "infra_deployer"]];
     ];
     ocurrent, "ocaml-ci", [
       docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Toxis "ocaml-ci_ci"]];
@@ -386,10 +385,6 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
       ~options:include_git;
     ];
 
-    ocurrent, "mirage-ci", [
-        docker "Dockerfile" ["live", "ocurrent/mirage-ci:live", [`Cimirage "infra_mirage-ci"]]
-        ~options:(include_git |> build_kit)
-      ];
     ocurrent, "solver-service", [
       docker "Dockerfile" ["live", "ocurrent/solver-service:live", []]
         ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64] ~options:include_git
@@ -506,20 +501,35 @@ let unikernel dockerfile ~target args services =
     |> List.map (fun (branch, service) -> branch, { Packet_unikernel.service }) in
   (build_info, deploys)
 
-let toxis ?app ?notify:channel () =
+let mirage ?app ?notify:channel ~sched ~staging_auth () =
   (* [web_ui collapse_value] is a URL back to the deployment service, for links
      in status messages. *)
   let web_ui =
-    let base = Uri.of_string "https://deploy.ocamllabs.io/" in
+    let base = Uri.of_string "https://deploy.mirage.io/" in
     fun repo -> Uri.with_query' base ["repo", repo] in
 
   (* GitHub organisations to monitor. *)
   let mirage = Build.org ?app ~account:"mirage" 7175142 in
-  let build (org, name, builds) = Build_unikernel.repo ?channel ~web_ui ~org ~name builds in
-  Current.all @@ List.map build [
+  let ocurrent = Build.org ?app ~account:"ocurrent" 6853813 in
+  let build_unikernel (org, name, builds) = Build_unikernel.repo ?channel ~web_ui ~org ~name builds in
+  let build_docker (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
+  let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
+  let docker = docker ~sched in
+  Current.all @@ (List.map build_unikernel [
     mirage, "mirage-www", [
       unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["master", "www"];
       unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
       unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["next", "next"];
     ];
-  ]
+  ] @ List.map build_docker [
+    ocurrent, "mirage-ci", [
+      docker "Dockerfile" ["live", "ocurrent/mirage-ci:live", [`Cimirage "infra_mirage-ci"]]
+        ~options:(include_git |> build_kit)
+    ];
+    ocurrent, "ocurrent-deployer", [
+      docker "Dockerfile"     ["live-mirage", "ocurrent/deploy.mirage.io:live", [`Cimirage "infra_deployer"]];
+    ];
+    ocurrent, "caddy-rfc2136", [
+      docker "Dockerfile"     ["master", "ocurrent/caddy-rfc2136:live", [`Cimirage "infra_caddy"]];
+    ];
+  ])
