@@ -336,7 +336,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
   (* [web_ui collapse_value] is a URL back to the deployment service, for links
      in status messages. *)
   let web_ui =
-    let base = Uri.of_string "https://deploy.ci3.ocamllabs.io/" in
+    let base = Uri.of_string "https://deploy.ci.dev/" in
     fun repo -> Uri.with_query' base ["repo", repo] in
 
   (* GitHub organisations to monitor. *)
