@@ -3,7 +3,7 @@ module Flavour = struct
   type t = [`Tarides | `OCaml | `Mirage]
   let cmdliner =
     let open Cmdliner in
-    let flavours = ["tarides", `Tarides
+    let flavours = [ "tarides", `Tarides
                    ; "ocaml", `OCaml
                    ; "mirage", `Mirage
                    ]
@@ -109,6 +109,64 @@ module Packet_unikernel = struct
     ]
 end
 module Build_unikernel = Build.Make(Packet_unikernel)
+
+module Docker_context = struct
+    module Taridescom = Current_docker.Make(struct let docker_context = Some "staging.tarides.com" end)
+    
+
+    type service = [
+        | `Taridescom of string
+    ]
+
+    type build_info = {
+        service: service;
+        target: string;
+        dockerfile: string;
+        args: (string * string) list;
+    }
+
+    type deploy_info = {
+        service: service;
+    }
+
+    let name { service } = match service with
+    | `Taridescom service -> service
+
+
+    let generate (module D : Current_docker.S.DOCKER) ~dockerfile ~target ~args:_ src =
+        let+ image =
+            D.build ~dockerfile
+                ~label:target
+                ~pull:true
+                ~timeout
+                (`Git src)
+        in
+        D.Image.hash image
+
+    let build_image { service ; dockerfile ; target ; args } src =
+        let src = Current_git.fetch src in
+        let dockerfile = Current.return (`File (Fpath.v dockerfile)) in
+        match service with
+        | `Taridescom _ -> generate (module Taridescom) ~dockerfile ~target ~args src
+       
+
+    let build build_info ?additional_build_args:_ _repo src  = Current.ignore_value (build_image build_info src)
+
+    let tag_and_serve (module D : Current_docker.S.DOCKER) ~image name =
+        let tag = "deployer-" ^  name in
+        let image = Current.map D.Image.of_hash image in
+        Current.all [
+            D.tag ~tag image;
+            D.service ~name ~image ()
+        ]
+
+    let deploy build_info { service } ?additional_build_args:_ src =
+        let image = build_image build_info src in
+        match service with
+        | `Taridescom name -> tag_and_serve (module Taridescom) ~image name
+        
+end
+module Docker_context_build = Build.Make(Docker_context)
 
 module Cluster = struct
   (* Strings here represent the docker context to use. *)
@@ -339,6 +397,17 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
   (* GitHub organisations to monitor. *)
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
+  let tarides = Build.org ?app ~account:"tarides" 21197588 in
+
+  let build_with_context (org, name, builds) = Docker_context_build.repo ?channel ~web_ui ~org ~name builds (* XXX: verify with the unikernel version. *) in
+  let docker_with_context dockerfile ~service ~target ~args services = 
+    let build_info = {Docker_context.service ; target ; dockerfile ; args } in
+    let deploys =
+      services 
+      |> List.map (fun branch -> branch, { Docker_context.service })
+    in
+    build_info, deploys
+  in
 
   let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
   let docker ?archs =
@@ -349,7 +418,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     docker ?archs ~sched:(Current_ocluster.v ~timeout ?push_auth:staging_auth sched)
   in
 
-  Current.all @@ List.map build @@ filter_list filter [
+  let cluster = List.map build @@ filter_list filter [
     ocurrent, "ocurrent-deployer", [
       docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3 "deployer_deployer"]];
     ];
@@ -391,8 +460,19 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ocurrent, "solver-service", [
       docker "Dockerfile" ["live", "ocurrent/solver-service:live", []]
         ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64] ~options:include_git
+    ];
+
+  ] in
+
+  let remote_docker = List.map build_with_context @@ filter_list filter [
+    tarides, "tarides.com", [
+      docker_with_context "Dockerfile" ~service:(`Taridescom "taridescom") ~target:"tarides/tarides.com" ~args:[] ["live"]
     ]
   ]
+
+  in
+  Current.all (List.append cluster remote_docker)
+
 
 (* This is a list of GitHub repositories to monitor.
    For each one, it lists the builds that are made from that repository.
