@@ -16,6 +16,7 @@ docker context create "v2.ocaml.org" --description "OCaml - v2.ocaml.org" --dock
 docker context create "v3b.ocaml.org" --description "OCaml - www.ocaml.org" --docker "host=ssh://root@v3b.ocaml.org"
 docker context create "v3c.ocaml.org" --description "OCaml - staging.ocaml.org" --docker "host=ssh://root@v3c.ocaml.org"
 docker context create "watch.ocaml.org" --description "OCaml - watch.ocaml.org" --docker "host=ssh://root@watch.ocaml.org"
+docker context create "staging.tarides.com" --description "Tarides - staging.tarides.com" --docker "host=ssh://root@staging.tarides.com"
 
 # Create AWS context
 mkdir ~/.aws
@@ -41,6 +42,7 @@ for host in \
   v3b.ocaml.org \
   v3c.ocaml.org \
   watch.ocaml.org \
+  staging.tarides.com \
   147.75.84.37 ; do
   ssh-keyscan -H -t ecdsa-sha2-nistp256 $host >> ~/.ssh/known_hosts
 done
