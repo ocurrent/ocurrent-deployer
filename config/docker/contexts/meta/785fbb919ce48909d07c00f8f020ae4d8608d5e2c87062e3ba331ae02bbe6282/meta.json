@@ -1,1 +1,0 @@
-{"Name":"v3b.ocaml.org","Metadata":{"Description":"OCaml - www.ocaml.org"},"Endpoints":{"docker":{"Host":"ssh://root@v3b.ocaml.org","SkipTLSVerify":false}}}

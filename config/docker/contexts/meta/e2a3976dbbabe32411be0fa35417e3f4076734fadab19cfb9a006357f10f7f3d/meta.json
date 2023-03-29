@@ -1,1 +1,0 @@
-{"Name":"ci.mirage.io","Metadata":{"Description":"Ci - Mirage","StackOrchestrator":"swarm"},"Endpoints":{"docker":{"Host":"ssh://root@ci.mirage.io","SkipTLSVerify":false}}}

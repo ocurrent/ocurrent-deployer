@@ -1,1 +1,0 @@
-{"Name":"opam-4.ocaml.org","Metadata":{"Description":"OPAM - opam-4.ocaml.org"},"Endpoints":{"docker":{"Host":"ssh://root@opam-4.ocaml.org","SkipTLSVerify":false}}}
