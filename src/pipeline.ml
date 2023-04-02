@@ -115,7 +115,7 @@ module Cluster = struct
   module Ci3_docker = Current_docker.Default
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4.ocamllabs.io" end)
   module Docs_docker = Current_docker.Make(struct let docker_context = Some "docs.ci.ocaml.org" end)
-  module Staging_docs_docker = Current_docker.Make(struct let docker_context = Some "docs-staging.sw.ocaml.org" end)
+  module Staging_docs_docker = Current_docker.Make(struct let docker_context = Some "staging.docs.ci.ocaml.org" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "ci.ocamllabs.io" end)
   module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos.ci.dev" end)
   module Watch_docker = Current_docker.Make(struct let docker_context = Some "watch.ocaml.org" end)
