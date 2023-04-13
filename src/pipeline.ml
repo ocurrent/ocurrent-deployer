@@ -117,7 +117,6 @@ module Cluster = struct
   module Docs_docker = Current_docker.Make(struct let docker_context = Some "docs.ci.ocaml.org" end)
   module Staging_docs_docker = Current_docker.Make(struct let docker_context = Some "staging.docs.ci.ocaml.org" end)
   module Toxis_docker = Current_docker.Make(struct let docker_context = Some "ci.ocamllabs.io" end)
-  module Tezos_docker = Current_docker.Make(struct let docker_context = Some "tezos.ci.dev" end)
   module Watch_docker = Current_docker.Make(struct let docker_context = Some "watch.ocaml.org" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirage.io" end)
@@ -142,7 +141,6 @@ module Cluster = struct
   type service = [
     (* Services on deploy.ci3.ocamllabs.io *)
     | `Toxis of string
-    | `Tezos of string
     | `Ci3 of string
     | `Ci4 of string
     | `Dev1 of string
@@ -278,7 +276,6 @@ module Cluster = struct
             | `Docs name -> pull_and_serve (module Docs_docker) ~name `Service multi_hash
             | `Staging_docs name -> pull_and_serve (module Staging_docs_docker) ~name `Service multi_hash
             | `Toxis name -> pull_and_serve (module Toxis_docker) ~name `Service multi_hash
-            | `Tezos name -> pull_and_serve (module Tezos_docker) ~name `Service multi_hash
             | `Cimirage name -> pull_and_serve (module Cimirage_docker) ~name `Service multi_hash
 
             (* ocaml.org *)
