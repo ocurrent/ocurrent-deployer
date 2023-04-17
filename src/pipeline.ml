@@ -115,10 +115,11 @@ module Docker_context = struct
     
 
     type service = [
-        | `Taridescom of string
+      | `Taridescom of string
     ]
 
     type build_info = {
+        token: (string, [ `Msg of string ]) result Lwt.t option;
         service: service;
         target: string;
         dockerfile: string;
@@ -143,8 +144,8 @@ module Docker_context = struct
         in
         D.Image.hash image
 
-    let build_image { service ; dockerfile ; target ; args } src =
-        let src = Current_git.fetch src in
+    let build_image { token ; service ; dockerfile ; target ; args } src =
+        let src = Current_git.fetch ?token src in
         let dockerfile = Current.return (`File (Fpath.v dockerfile)) in
         match service with
         | `Taridescom _ -> generate (module Taridescom) ~dockerfile ~target ~args src
@@ -400,8 +401,9 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let tarides = Build.org ?app ~account:"tarides" 21197588 in
 
   let build_with_context (org, name, builds) = Docker_context_build.repo ?channel ~web_ui ~org ~name builds (* XXX: verify with the unikernel version. *) in
-  let docker_with_context dockerfile ~service ~target ~args services = 
-    let build_info = {Docker_context.service ; target ; dockerfile ; args } in
+  let docker_with_context dockerfile ?api ~service ~target ~args services =
+    let token = Option.map (fun api -> Github.Api.get_token api) api in
+    let build_info = { token ; Docker_context.service ; target ; dockerfile ; args } in
     let deploys =
       services 
       |> List.map (fun branch -> branch, { Docker_context.service })
@@ -466,7 +468,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
   let remote_docker = List.map build_with_context @@ filter_list filter [
     tarides, "tarides.com", [
-      docker_with_context "Dockerfile" ~service:(`Taridescom "taridescom") ~target:"tarides/tarides.com" ~args:[] ["live"]
+      docker_with_context "Dockerfile" ?api:(Build.api tarides) ~service:(`Taridescom "taridescom") ~target:"tarides/tarides.com" ~args:[] ["live"]
     ]
   ]
 
