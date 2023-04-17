@@ -139,6 +139,7 @@ module Docker_context = struct
             D.build ~dockerfile
                 ~label:target
                 ~pull:true
+                ~buildx:true
                 ~timeout
                 (`Git src)
         in
