@@ -134,13 +134,17 @@ module Docker_context = struct
     | `Taridescom service -> service
 
 
-    let generate (module D : Current_docker.S.DOCKER) ~dockerfile ~target ~args:_ src =
+    let generate (module D : Current_docker.S.DOCKER) ~dockerfile ~target ~args src =
+        let build_args =
+            List.map (fun (flag, args) -> flag ^ " " ^ args) args
+        in
         let+ image =
             D.build ~dockerfile
                 ~label:target
                 ~pull:true
                 ~buildx:true
                 ~timeout
+                ~build_args
                 (`Git src)
         in
         D.Image.hash image
@@ -469,7 +473,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
   let remote_docker = List.map build_with_context @@ filter_list filter [
     tarides, "tarides.com", [
-      docker_with_context "Dockerfile" ?api:(Build.api tarides) ~service:(`Taridescom "taridescom") ~target:"tarides/tarides.com" ~args:[] ["live"]
+      docker_with_context "Dockerfile" ?api:(Build.api tarides) ~service:(`Taridescom "taridescom") ~target:"tarides/tarides.com" ~args:["--secret", "id=production_env,src=/run/secrets/tarides-production"] ["live"]
     ]
   ]
 
