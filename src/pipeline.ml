@@ -136,7 +136,8 @@ module Docker_context = struct
 
     let generate (module D : Current_docker.S.DOCKER) ~dockerfile ~target ~args src =
         let build_args =
-            List.map (fun (flag, args) -> flag ^ " " ^ args) args
+          List.map (fun (flag, args) -> [flag ; args]) args
+          |> List.flatten
         in
         let+ image =
             D.build ~dockerfile
