@@ -474,7 +474,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
   let remote_docker = List.map build_with_context @@ filter_list filter [
     tarides, "tarides.com", [
-      docker_with_context "Dockerfile" ?api:(Build.api tarides) ~service:(`Taridescom "taridescom") ~target:"tarides/tarides.com" ~args:["--secret", "id=production,src=/run/secrets/tarides-production"] ["live"]
+      docker_with_context "Dockerfile" ?api:(Build.api tarides) ~service:(`Taridescom "infra_taridescom") ~target:"tarides/tarides.com" ~args:["--secret", "id=production,src=/run/secrets/tarides-production"] ["live"]
     ]
   ]
 
