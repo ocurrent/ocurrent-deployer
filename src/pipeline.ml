@@ -111,6 +111,26 @@ end
 module Build_unikernel = Build.Make(Packet_unikernel)
 
 module Docker_context = struct
+(** The Docker_context module relies on [docker --context url cmd] to execute
+    the request on the remote machine. It requires the server to preload [ssh]
+    keys from the remote server.
+
+    +----------------+                          +---------------------------+
+    | Server         |                          | Remote machine            |
+    | +------------+ |                          | +---------------------+   |
+    | | OCurrent   | |                +---------->| docker buildx build |   |
+    | | +--------+ | |          1     |         | +---------------------+   |
+    | | | Docker |--------------------+         | +-----------------------+ |
+    | | +--------+ | |                    +------>| docker service update | |
+    | +-----|------+ |               +----+     | +------------------------+|
+    +-------|--------+        2      |          +---------------------------+
+            +------------------------+
+
+    The build part (1) executes [docker buildx build] to generate the image on the
+    remote machine. The deploy port use [docker swarm] to deploy services by
+    executing [docker service update]. This ensures the service are up-to-date with
+    the newly build image. *)
+
     module Taridescom = Current_docker.Make(struct let docker_context = Some "staging.tarides.com" end)
     
 
