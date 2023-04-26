@@ -408,7 +408,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
   let build_with_context (org, name, builds) = Docker_context_build.repo ?channel ~web_ui ~org ~name builds (* XXX: verify with the unikernel version. *) in
   let docker_with_context dockerfile ?api ~service ~target ~args services =
-    let token = Option.map (fun api -> Github.Api.get_token api) api in
+    let token = Option.map Github.Api.get_token api in
     let build_info = { token ; Docker_context.service ; target ; dockerfile ; args } in
     let deploys =
       services 
