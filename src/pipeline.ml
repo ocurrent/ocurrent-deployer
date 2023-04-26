@@ -406,7 +406,9 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
   let tarides = Build.org ?app ~account:"tarides" 21197588 in
 
-  let build_with_context (org, name, builds) = Docker_context_build.repo ?channel ~web_ui ~org ~name builds (* XXX: verify with the unikernel version. *) in
+  let build_with_context (org, name, builds) =
+    Docker_context_build.repo ?channel ~web_ui ~org ~name builds (* XXX: verify with the unikernel version. *)
+  in
   let docker_with_context dockerfile ?api ~service ~target ~args services =
     let token = Option.map Github.Api.get_token api in
     let build_info = { token ; Docker_context.service ; target ; dockerfile ; args } in
@@ -479,7 +481,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
   ]
 
   in
-  Current.all (List.append cluster remote_docker)
+  Current.all (cluster @ remote_docker)
 
 
 (* This is a list of GitHub repositories to monitor.
