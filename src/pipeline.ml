@@ -220,6 +220,7 @@ module Cluster = struct
       Current.component "pull" |>
       let> repo_id in
       Current_docker.Raw.pull repo_id
+      ?auth
       ~docker_context:D.docker_context
       ~schedule:no_schedule
       |> Current.Primitive.map_result (Result.map (fun raw_image ->
