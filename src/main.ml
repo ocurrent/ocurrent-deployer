@@ -16,12 +16,52 @@ let read_first_line path =
   Fun.protect (fun () -> input_line ch)
     ~finally:(fun () -> close_in ch)
 
-let read_channel_uri path =
+let read_file path =
+  let ch = open_in path in
+  Fun.protect (fun () -> really_input_string ch (in_channel_length ch))
+    ~finally:(fun () -> close_in ch)
+
+(*
+  [
+    {
+      "uri":"ci-firehose-uri",
+      "modes":["success", "failure"],
+    },
+    {
+      "uri":"opam-uri",
+      "modes":["failure"],
+    },
+  ]
+*)
+
+type slack_channel_mode =
+  | Success
+  | Failure
+  | Both
+
+type slack_channel = { uri : Current_slack.channel; mode : slack_channel_mode }
+
+let read_channels_file path =
+  let open Yojson.Safe in
+  let mode_of_t t = match Util.to_string t with
+    | "success" -> Success
+    | "failure" -> Failure
+    | "both" -> Both
+    | _ -> raise (Util.Type_error ("\"mode\" must be any of: \"success\", \"failure\", or \"both\"", t))
+  in
+  let read_channel ch =
+    let uri =
+      Util.(member "uri" ch |> to_string)
+      |> String.trim
+      |> Uri.of_string
+      |> Current_slack.channel in
+    let mode = Util.member "mode" ch |> mode_of_t in
+    { uri; mode }
+  in
   try
-    let uri = read_first_line path in
-    Current_slack.channel (Uri.of_string (String.trim uri))
+    read_file path |> from_string |> Util.to_list |> List.map read_channel
   with ex ->
-    Fmt.failwith "Failed to read slack URI from %S: %a" path Fmt.exn ex
+    Fmt.failwith "Failed to read slack URIs from %S: %a" path Fmt.exn ex
 
 (* Access control policy for Tarides. *)
 let has_role_tarides user role =
@@ -84,18 +124,18 @@ let has_role_ocaml user role =
 
 let main () config mode app slack auth staging_password_file flavour =
   let vat = Capnp_rpc_unix.client_only_vat () in
-  let channel = read_channel_uri slack in
+  let channels = read_channels_file slack in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let engine = match flavour with
     | Tarides sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-       Current.Engine.create ~config (Pipeline.tarides ~app ~notify:channel ~sched ~staging_auth)
+       Current.Engine.create ~config (Pipeline.tarides ~app ~notify:channels ~sched ~staging_auth)
     | OCaml sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-       Current.Engine.create ~config (Pipeline.ocaml_org ~app ~notify:channel ~sched ~staging_auth)
+       Current.Engine.create ~config (Pipeline.ocaml_org ~app ~notify:channels ~sched ~staging_auth)
     | Mirage sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-       Current.Engine.create ~config (Pipeline.mirage ~app ~notify:channel ~sched ~staging_auth)
+       Current.Engine.create ~config (Pipeline.mirage ~app ~notify:channels ~sched ~staging_auth)
   in
   let authn = Option.map Current_github.Auth.make_login_uri auth in
   let webhook_secret = Current_github.App.webhook_secret app in

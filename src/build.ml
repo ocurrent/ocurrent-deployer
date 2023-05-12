@@ -58,7 +58,7 @@ module Make(T : S.T) = struct
     | Error (`Active _) -> Github.Api.CheckRunStatus.v ~url `Queued
     | Error (`Msg m)    -> Github.Api.CheckRunStatus.v ~url (`Completed (`Failure m)) ~summary:m
 
-  let repo ?channel ~web_ui ~org:(org, github) ?additional_build_args ~name build_specs =
+  let repo ?channels ~web_ui ~org:(org, github) ?additional_build_args ~name build_specs =
     let repo_name = Printf.sprintf "%s/%s" org name in
     let repo = { Github.Repo_id.owner = org; name } in
     let root = Current.return ~label:repo_name () in      (* Group by repo in the diagram *)
@@ -87,17 +87,20 @@ module Make(T : S.T) = struct
         build_specs |> List.map (fun (build_info, deploys) ->
             Current.all (
               deploys |> List.map (fun (branch, deploy_info) ->
-                 let service = T.name deploy_info in
-                 let commit, src = head_of ?github repo branch in
-                 let deploy = T.deploy build_info deploy_info ?additional_build_args src in
-                 match channel, commit with
-                 | Some channel, Some commit -> notify ~channel ~web_ui ~service ~commit ~repo:repo_name deploy
-                 | _ -> deploy
-               )
+                let service = T.name deploy_info in
+                let commit, src = head_of ?github repo branch in
+                let deploy = T.deploy build_info deploy_info ?additional_build_args src in
+                match channels, commit with
+                | Some channels, Some commit ->
+                    List.map
+                      (fun channel ->
+                        notify ~channel ~web_ui ~service ~commit ~repo:repo_name deploy)
+                      channels
+                | _ -> [ deploy ]
+              ) |> List.flatten
             )
           )
-      )
-      |> Current.collapse ~key:"repo" ~value:repo_name ~input:root
+        ) |> Current.collapse ~key:"repo" ~value:repo_name ~input:root
     in
     Current.all (deployment :: Option.to_list builds)
 end

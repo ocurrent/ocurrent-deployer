@@ -9,7 +9,7 @@ end
 
 val tarides :
   ?app:Current_github.App.t ->
-  ?notify:Current_slack.channel ->
+  ?notify:Current_slack.channel list ->
   ?filter:(Current_github.Repo_id.t -> bool) ->
   sched:Current_ocluster.Connection.t ->
   staging_auth:(string * string) option ->
@@ -17,7 +17,7 @@ val tarides :
 
 val ocaml_org :
   ?app:Current_github.App.t ->
-  ?notify:Current_slack.channel ->
+  ?notify:Current_slack.channel list ->
   ?filter:(Current_github.Repo_id.t -> bool) ->
   sched:Current_ocluster.Connection.t ->
   staging_auth:(string * string) option ->
@@ -25,7 +25,7 @@ val ocaml_org :
 
 val mirage :
   ?app:Current_github.App.t ->
-  ?notify:Current_slack.channel ->
+  ?notify:Current_slack.channel list ->
   sched:Current_ocluster.Connection.t ->
   staging_auth:(string * string) option ->
   unit -> unit Current.t
