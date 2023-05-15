@@ -30,20 +30,27 @@ let notify ?channel ~web_ui ~service ~commit ~repo x =
   match channel with
   | None -> x
   | Some (channel, mode) ->
-    ignore mode;
     let s =
       let+ state = Current.state x
       and+ commit in
-      let uri = Github.Api.Commit.uri commit in
-      Fmt.str "@[<h>Deploy <%a|%a> as %s: <%s|%a>@]"
-        Uri.pp uri Github.Api.Commit.pp_short commit
-        service
-        (Uri.to_string (web_ui repo)) (Current_term.Output.pp Current.Unit.pp) state
+      match state, mode with
+      | Error (`Msg _), Slack_channel.Failure
+      | _, Slack_channel.All -> (
+          let uri = Github.Api.Commit.uri commit in
+          let s = Fmt.str "@[<h>Deploy <%a|%a> as %s: <%s|%a>@]"
+            Uri.pp uri Github.Api.Commit.pp_short commit
+            service
+            (Uri.to_string (web_ui repo)) (Current_term.Output.pp Current.Unit.pp) state
+          in
+          Some s)
+      | _ -> None
     in
-    Current.all [
-      Current_slack.post channel ~key:("deploy-" ^ service) s;
-      x   (* If [x] fails, the whole pipeline should fail too. *)
-    ]
+    Current.(option_iter
+      (fun s -> all [
+          Current_slack.post channel ~key:("deploy-" ^ service) s;
+          x   (* If [x] fails, the whole pipeline should fail too. *)
+        ]
+      )) s
 
 let label l x =
   Current.component "%s" l |>
