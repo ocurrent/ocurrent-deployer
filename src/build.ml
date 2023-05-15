@@ -29,7 +29,8 @@ let head_of ?github repo name =
 let notify ?channel ~web_ui ~service ~commit ~repo x =
   match channel with
   | None -> x
-  | Some channel ->
+  | Some (channel, mode) ->
+    ignore mode;
     let s =
       let+ state = Current.state x
       and+ commit in
@@ -93,8 +94,8 @@ module Make(T : S.T) = struct
                 match channels, commit with
                 | Some channels, Some commit ->
                     List.map
-                      (fun channel ->
-                        notify ~channel ~web_ui ~service ~commit ~repo:repo_name deploy)
+                      (fun Slack_channel.{ uri; mode } ->
+                        notify ~channel:(uri, mode) ~web_ui ~service ~commit ~repo:repo_name deploy)
                       channels
                 | _ -> [ deploy ]
               ) |> List.flatten

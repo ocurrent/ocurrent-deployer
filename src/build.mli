@@ -13,7 +13,7 @@ val api : org -> Current_github.Api.t option
 
 module Make(T : S.T) : sig
   val repo :
-    ?channels:Current_slack.channel list ->
+    ?channels:Slack_channel.t list ->
     web_ui:(string -> Uri.t) ->
     org:org ->
     ?additional_build_args:string list Current.t ->

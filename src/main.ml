@@ -21,47 +21,22 @@ let read_file path =
   Fun.protect (fun () -> really_input_string ch (in_channel_length ch))
     ~finally:(fun () -> close_in ch)
 
-(*
-  [
-    {
-      "uri":"ci-firehose-uri",
-      "modes":["success", "failure"],
-    },
-    {
-      "uri":"opam-uri",
-      "modes":["failure"],
-    },
-  ]
-*)
-
-type slack_channel_mode =
-  | Success
-  | Failure
-  | Both
-
-type slack_channel = { uri : Current_slack.channel; mode : slack_channel_mode }
-
 let read_channels_file path =
   let open Yojson.Safe in
-  let mode_of_t t = match Util.to_string t with
-    | "success" -> Success
-    | "failure" -> Failure
-    | "both" -> Both
-    | _ -> raise (Util.Type_error ("\"mode\" must be any of: \"success\", \"failure\", or \"both\"", t))
-  in
   let read_channel ch =
     let uri =
       Util.(member "uri" ch |> to_string)
       |> String.trim
       |> Uri.of_string
       |> Current_slack.channel in
-    let mode = Util.member "mode" ch |> mode_of_t in
-    { uri; mode }
+    let mode = Util.member "mode" ch
+      |> Slack_channel.mode_of_json_string in
+    Slack_channel.v uri mode
   in
   try
     read_file path |> from_string |> Util.to_list |> List.map read_channel
   with ex ->
-    Fmt.failwith "Failed to read slack URIs from %S: %a" path Fmt.exn ex
+    Fmt.failwith "Failed to read slack URI file '%S': %a" path Fmt.exn ex
 
 (* Access control policy for Tarides. *)
 let has_role_tarides user role =
