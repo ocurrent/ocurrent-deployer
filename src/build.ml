@@ -42,6 +42,7 @@ let notify ?channel ~web_ui ~service ~commit ~repo x =
             service
             (Uri.to_string (web_ui repo)) (Current_term.Output.pp Current.Unit.pp) state
           in
+          Logs.err (fun m -> m "Message: %s" s);
           Some s)
       | _ -> None
     in
@@ -89,6 +90,7 @@ module Make(T : S.T) = struct
       in
       Current.collapse ~key:"repo" ~value:collapse_value ~input:refs pipeline
     and deployment =
+      Logs.err (fun m -> m "Starting deployment current");
       let root = label "deployments" root in
       Current.with_context root @@ fun () ->
       Current.all (
@@ -104,6 +106,8 @@ module Make(T : S.T) = struct
                       (fun Slack_channel.{ uri; mode } ->
                         notify ~channel:(uri, mode) ~web_ui ~service ~commit ~repo:repo_name deploy)
                       channels
+                | Some _, _ -> Logs.err (fun m -> m "channels");[ deploy ]
+                | _, Some _ -> Logs.err (fun m -> m "commit");[ deploy ]
                 | _ -> [ deploy ]
               ) |> List.flatten
             )

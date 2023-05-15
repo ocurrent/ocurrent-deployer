@@ -21,23 +21,6 @@ let read_file path =
   Fun.protect (fun () -> really_input_string ch (in_channel_length ch))
     ~finally:(fun () -> close_in ch)
 
-let read_channels_file path =
-  let open Yojson.Safe in
-  let read_channel ch =
-    let uri =
-      Util.(member "uri" ch |> to_string)
-      |> String.trim
-      |> Uri.of_string
-      |> Current_slack.channel in
-    let mode = Util.member "mode" ch
-      |> Slack_channel.mode_of_json_string in
-    Slack_channel.v uri mode
-  in
-  try
-    read_file path |> from_string |> Util.to_list |> List.map read_channel
-  with ex ->
-    Fmt.failwith "Failed to read slack URI file '%S': %a" path Fmt.exn ex
-
 (* Access control policy for Tarides. *)
 let has_role_tarides user role =
   match user with
@@ -99,7 +82,7 @@ let has_role_ocaml user role =
 
 let main () config mode app slack auth staging_password_file flavour =
   let vat = Capnp_rpc_unix.client_only_vat () in
-  let channels = read_channels_file slack in
+  let channels = Slack_channel.parse_json @@ read_file slack in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let engine = match flavour with
     | Tarides sched ->

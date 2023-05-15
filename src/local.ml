@@ -14,16 +14,23 @@ let read_first_line path =
   Fun.protect (fun () -> input_line ch)
     ~finally:(fun () -> close_in ch)
 
-let main () config mode app sched staging_password_file repo flavour =
+let read_file path =
+  let ch = open_in path in
+  Fun.protect (fun () -> really_input_string ch (in_channel_length ch))
+    ~finally:(fun () -> close_in ch)
+
+let main () config mode app slack sched staging_password_file repo flavour =
   Logs.info (fun f -> f "Is this thing on?");
+  let channels = Slack_channel.parse_json @@ read_file slack in
   let filter = Option.map (=) repo in
   let vat = Capnp_rpc_unix.client_only_vat () in
+
   let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let engine = match flavour with
-    | `Tarides -> Current.Engine.create ~config (Pipeline.tarides ?app ~sched ~staging_auth ?filter)
-    | `OCaml -> Current.Engine.create ~config (Pipeline.ocaml_org ?app ~sched ~staging_auth ?filter)
-    | `Mirage -> Current.Engine.create ~config (Pipeline.mirage ?app ~sched ~staging_auth)
+    | `Tarides -> Current.Engine.create ~config (Pipeline.tarides ?app ~notify:channels ~sched ~staging_auth ?filter)
+    | `OCaml -> Current.Engine.create ~config (Pipeline.ocaml_org ?app ~notify:channels ~sched ~staging_auth ?filter)
+    | `Mirage -> Current.Engine.create ~config (Pipeline.mirage ?app ~notify:channels ~sched ~staging_auth)
   in
   let webhook_secret = Option.value ~default:webhook_secret @@ Option.map Current_github.App.webhook_secret app in
   let has_role = Current_web.Site.allow_all in
@@ -40,6 +47,14 @@ let main () config mode app sched staging_password_file repo flavour =
 
 (* Command-line parsing *)
 open Cmdliner
+
+let slack =
+  Arg.required @@
+  Arg.opt Arg.(some file) None @@
+  Arg.info
+    ~doc:"A file containing the URI of the endpoint for status updates."
+    ~docv:"URI-FILE"
+    ["slack"]
 
 let submission_service =
   Arg.required @@
@@ -68,7 +83,7 @@ let repo =
 let cmd =
   let doc = "build and deploy services from Git" in
   let cmd_t = Term.(term_result (const main $ Logging.cmdliner $ Current.Config.cmdliner $ Current_web.cmdliner
-                    $ Current_github.App.cmdliner_opt $ submission_service $ staging_password $ repo $ Pipeline.Flavour.cmdliner)) in
+                    $ Current_github.App.cmdliner_opt $ slack $ submission_service $ staging_password $ repo $ Pipeline.Flavour.cmdliner)) in
   let info = Cmd.info "deploy" ~doc in
   Cmd.v info cmd_t
 
