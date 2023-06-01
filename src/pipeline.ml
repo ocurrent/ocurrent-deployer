@@ -379,16 +379,17 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ocurrent, "ocurrent.org", [
       docker "Dockerfile"     ["live-engine", "ocurrent/ocurrent.org:live-engine", [`Ci3 "ocurrent_org_watcher"]];
     ];
-
     ocaml_bench, "sandmark-nightly", [
       docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]]
       ~options:include_git;
     ];
-
     ocurrent, "solver-service", [
       docker "Dockerfile" ["live", "ocurrent/solver-service:live", []]
         ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64] ~options:include_git
-    ]
+    ];
+    ocurrent, "multicoretests-ci", [
+      docker "Dockerfile" ["live", "ocurrent/multicoretests-ci:live", [`Ci4 "multicoretests-ci_ci"]];
+    ];
   ]
 
 (* This is a list of GitHub repositories to monitor.
