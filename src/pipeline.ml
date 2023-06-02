@@ -388,7 +388,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
         ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64] ~options:include_git
     ];
     ocurrent, "multicoretests-ci", [
-      docker "Dockerfile" ["live", "ocurrent/multicoretests-ci:live", [`Ci4 "multicoretests-ci_ci"]];
+      docker "Dockerfile" ["live", "ocurrent/multicoretests-ci:live", [`Ci4 "infra_multicoretests-ci"]];
     ];
   ]
 
