@@ -60,19 +60,19 @@ let label l x =
 
 module Make(T : S.T) = struct
   (* TODO Summarise build results. *)
-  let status_of_build ~url build =
+  (* let status_of_build ~url build =
     let+ state = Current.state build in
     match state with
     | Ok _              -> Github.Api.CheckRunStatus.v ~url (`Completed `Success) ~summary:"Passed"
     | Error (`Active _) -> Github.Api.CheckRunStatus.v ~url `Queued
-    | Error (`Msg m)    -> Github.Api.CheckRunStatus.v ~url (`Completed (`Failure m)) ~summary:m
+    | Error (`Msg m)    -> Github.Api.CheckRunStatus.v ~url (`Completed (`Failure m)) ~summary:m *)
 
   let repo ?channels ~web_ui ~org:(org, github) ?additional_build_args ~name build_specs =
     let repo_name = Printf.sprintf "%s/%s" org name in
     let repo = { Github.Repo_id.owner = org; name } in
     let root = Current.return ~label:repo_name () in      (* Group by repo in the diagram *)
     Current.with_context root @@ fun () ->
-    let builds = github |> Option.map @@ fun github ->
+    (* let builds = github |> Option.map @@ fun github ->
       let refs = Github.Api.ci_refs github repo in
       let collapse_value = repo_name ^ "-builds" in
       let url = web_ui collapse_value in
@@ -88,8 +88,8 @@ module Make(T : S.T) = struct
         |> status_of_build ~url
         |> Github.Api.CheckRun.set_status commit "deployability"
       in
-      Current.collapse ~key:"repo" ~value:collapse_value ~input:refs pipeline
-    and deployment =
+      Current.collapse ~key:"repo" ~value:collapse_value ~input:refs pipeline *)
+    let deployment =
       Logs.err (fun m -> m "Starting deployment current");
       let root = label "deployments" root in
       Current.with_context root @@ fun () ->
@@ -99,7 +99,12 @@ module Make(T : S.T) = struct
               deploys |> List.map (fun (branch, deploy_info) ->
                 let service = T.name deploy_info in
                 let commit, src = head_of ?github repo branch in
-                let deploy = T.deploy build_info deploy_info ?additional_build_args src in
+                (* let deploy = T.deploy build_info deploy_info ?additional_build_args src in *)
+                (* let deploy = Current.return () in *)
+                let deploy = Current.fail "Massive and catastrophic failure, very sad!" in
+                ignore src;
+                ignore build_info;
+                ignore additional_build_args;
                 match channels, commit with
                 | Some channels, Some commit ->
                     List.map
@@ -114,5 +119,6 @@ module Make(T : S.T) = struct
           )
         ) |> Current.collapse ~key:"repo" ~value:repo_name ~input:root
     in
-    Current.all (deployment :: Option.to_list builds)
+    (* Current.all (deployment :: Option.to_list builds) *)
+    deployment
 end
