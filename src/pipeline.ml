@@ -476,7 +476,6 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
         "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam4 "infra_opam_live"; `Ocamlorg_opam5 "infra_opam_live"]
                      ; "live-staging", "ocurrent/opam.ocaml.org:staging", [`Ocamlorg_opam4 "infra_opam_staging"; `Ocamlorg_opam5 "infra_opam_staging"]]
         ~options:(include_git |> build_kit)
-        ~archs:[`Linux_arm64; `Linux_x86_64]
     ]
   ]
   in
