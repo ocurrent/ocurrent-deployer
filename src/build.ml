@@ -67,6 +67,18 @@ module Make(T : S.T) = struct
     | Error (`Active _) -> Github.Api.CheckRunStatus.v ~url `Queued
     | Error (`Msg m)    -> Github.Api.CheckRunStatus.v ~url (`Completed (`Failure m)) ~summary:m *)
 
+  let send_slack_message ~web_ui ~service ~commit ~repo_name deploy channels =
+    let f Slack_channel.{ uri; mode; repositories } =
+      match repositories with
+      | All_repos -> notify ~channel:(uri, mode) ~web_ui ~service ~commit ~repo:repo_name deploy
+      | Some_repos repositories ->
+        if List.exists (String.equal repo_name) repositories then
+          notify ~channel:(uri, mode) ~web_ui ~service ~commit ~repo:repo_name deploy
+        else
+          Current.return ()
+    in
+    List.map f channels
+
   let repo ?channels ~web_ui ~org:(org, github) ?additional_build_args ~name build_specs =
     let repo_name = Printf.sprintf "%s/%s" org name in
     let repo = { Github.Repo_id.owner = org; name } in
@@ -107,10 +119,7 @@ module Make(T : S.T) = struct
                 ignore additional_build_args;
                 match channels, commit with
                 | Some channels, Some commit ->
-                    List.map
-                      (fun Slack_channel.{ uri; mode } ->
-                        notify ~channel:(uri, mode) ~web_ui ~service ~commit ~repo:repo_name deploy)
-                      channels
+                    send_slack_message ~web_ui ~service ~commit ~repo_name deploy channels
                 | Some _, _ -> Logs.err (fun m -> m "channels");[ deploy ]
                 | _, Some _ -> Logs.err (fun m -> m "commit");[ deploy ]
                 | _ -> [ deploy ]
