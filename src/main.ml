@@ -82,7 +82,10 @@ let has_role_ocaml user role =
 
 let main () config mode app slack auth staging_password_file flavour =
   let vat = Capnp_rpc_unix.client_only_vat () in
-  let channels = Slack_channel.parse_json @@ read_file slack in
+  let channels =
+    Option.(map (fun s -> Slack_channel.parse_json @@ read_file s) slack
+    |> value ~default:[])
+  in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let engine = match flavour with
     | Tarides sched ->
@@ -120,7 +123,7 @@ let main () config mode app slack auth staging_password_file flavour =
 open Cmdliner
 
 let slack =
-  Arg.required @@
+  Arg.value @@
   Arg.opt Arg.(some file) None @@
   Arg.info
     ~doc:"A file containing the URI of the endpoint for status updates."

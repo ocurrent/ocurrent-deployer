@@ -21,7 +21,10 @@ let read_file path =
 
 let main () config mode app slack sched staging_password_file repo flavour =
   Logs.info (fun f -> f "Is this thing on?");
-  let channels = Slack_channel.parse_json @@ read_file slack in
+  let channels =
+    Option.(map (fun s -> Slack_channel.parse_json @@ read_file s) slack
+    |> value ~default:[])
+  in
   let filter = Option.map (=) repo in
   let vat = Capnp_rpc_unix.client_only_vat () in
 
@@ -49,7 +52,7 @@ let main () config mode app slack sched staging_password_file repo flavour =
 open Cmdliner
 
 let slack =
-  Arg.required @@
+  Arg.value @@
   Arg.opt Arg.(some file) None @@
   Arg.info
     ~doc:"A file containing the URI of the endpoint for status updates."
