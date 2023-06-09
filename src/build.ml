@@ -29,7 +29,7 @@ let head_of ?github repo name =
 let notify ?channel ~web_ui ~service ~commit ~repo x =
   match channel with
   | None -> x
-  | Some (channel, mode) ->
+  | Some { Slack_channel.uri; mode; repositories = _ } ->
     let s =
       let+ state = Current.state x
       and+ commit in
@@ -42,14 +42,13 @@ let notify ?channel ~web_ui ~service ~commit ~repo x =
             service
             (Uri.to_string (web_ui repo)) (Current_term.Output.pp Current.Unit.pp) state
           in
-          Logs.err (fun m -> m "Message: %s" s);
           Some s)
       | _ -> None
     in
     Current.(option_iter
       (fun s -> all [
-          Current_slack.post channel ~key:("deploy-" ^ service) s;
-          x   (* If [x] fails, the whole pipeline should fail too. *)
+          Current_slack.post uri ~key:("deploy-" ^ service) s;
+          x (* If [x] fails, the whole pipeline should fail too. *)
         ]
       )) s
 
@@ -60,22 +59,22 @@ let label l x =
 
 module Make(T : S.T) = struct
   (* TODO Summarise build results. *)
-  (* let status_of_build ~url build =
+  let status_of_build ~url build =
     let+ state = Current.state build in
     match state with
     | Ok _              -> Github.Api.CheckRunStatus.v ~url (`Completed `Success) ~summary:"Passed"
     | Error (`Active _) -> Github.Api.CheckRunStatus.v ~url `Queued
-    | Error (`Msg m)    -> Github.Api.CheckRunStatus.v ~url (`Completed (`Failure m)) ~summary:m *)
+    | Error (`Msg m)    -> Github.Api.CheckRunStatus.v ~url (`Completed (`Failure m)) ~summary:m
 
   let send_slack_message ~web_ui ~service ~commit ~repo_name deploy channels =
-    let f Slack_channel.{ uri; mode; repositories } =
-      match repositories with
-      | All_repos -> notify ~channel:(uri, mode) ~web_ui ~service ~commit ~repo:repo_name deploy
+    let f channel =
+      match channel.Slack_channel.repositories with
+      | All_repos -> notify ~channel ~web_ui ~service ~commit ~repo:repo_name deploy
       | Some_repos repositories ->
         if List.exists (String.equal repo_name) repositories then
-          notify ~channel:(uri, mode) ~web_ui ~service ~commit ~repo:repo_name deploy
+          notify ~channel ~web_ui ~service ~commit ~repo:repo_name deploy
         else
-          Current.return ()
+          deploy
     in
     List.map f channels
 
@@ -84,7 +83,7 @@ module Make(T : S.T) = struct
     let repo = { Github.Repo_id.owner = org; name } in
     let root = Current.return ~label:repo_name () in      (* Group by repo in the diagram *)
     Current.with_context root @@ fun () ->
-    (* let builds = github |> Option.map @@ fun github ->
+    let builds = github |> Option.map @@ fun github ->
       let refs = Github.Api.ci_refs github repo in
       let collapse_value = repo_name ^ "-builds" in
       let url = web_ui collapse_value in
@@ -93,41 +92,32 @@ module Make(T : S.T) = struct
         |> Current.list_iter (module Github.Api.Commit) @@ fun commit ->
         let src = Current.map Github.Api.Commit.id commit in
         Current.all (
-            List.map (fun (build_info, _) ->
-                T.build ?additional_build_args build_info repo src
-              ) build_specs
+          List.map (fun (build_info, _) ->
+              T.build ?additional_build_args build_info repo src
+            ) build_specs
         )
         |> status_of_build ~url
         |> Github.Api.CheckRun.set_status commit "deployability"
       in
-      Current.collapse ~key:"repo" ~value:collapse_value ~input:refs pipeline *)
-    let deployment =
-      Logs.err (fun m -> m "Starting deployment current");
+      Current.collapse ~key:"repo" ~value:collapse_value ~input:refs pipeline
+    and deployment =
       let root = label "deployments" root in
       Current.with_context root @@ fun () ->
       Current.all (
         build_specs |> List.map (fun (build_info, deploys) ->
-            Current.all (
-              deploys |> List.map (fun (branch, deploy_info) ->
-                let service = T.name deploy_info in
-                let commit, src = head_of ?github repo branch in
-                (* let deploy = T.deploy build_info deploy_info ?additional_build_args src in *)
-                (* let deploy = Current.return () in *)
-                let deploy = Current.fail "Massive and catastrophic failure, very sad!" in
-                ignore src;
-                ignore build_info;
-                ignore additional_build_args;
-                match channels, commit with
-                | Some channels, Some commit ->
-                    send_slack_message ~web_ui ~service ~commit ~repo_name deploy channels
-                | Some _, _ -> Logs.err (fun m -> m "channels");[ deploy ]
-                | _, Some _ -> Logs.err (fun m -> m "commit");[ deploy ]
-                | _ -> [ deploy ]
-              ) |> List.flatten
-            )
+          Current.all (
+            deploys |> List.map (fun (branch, deploy_info) ->
+              let service = T.name deploy_info in
+              let commit, src = head_of ?github repo branch in
+              let deploy = T.deploy build_info deploy_info ?additional_build_args src in
+              match channels, commit with
+              | Some channels, Some commit ->
+                  send_slack_message ~web_ui ~service ~commit ~repo_name deploy channels
+              | _ -> [ deploy ]
+            ) |> List.flatten
           )
-        ) |> Current.collapse ~key:"repo" ~value:repo_name ~input:root
+        )
+      ) |> Current.collapse ~key:"repo" ~value:repo_name ~input:root
     in
-    (* Current.all (deployment :: Option.to_list builds) *)
-    deployment
+    Current.all (deployment :: Option.to_list builds)
 end

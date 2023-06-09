@@ -260,7 +260,7 @@ module Cluster = struct
     in
     let images = List.map build_arch archs in
     match auth with
-    | None -> Current.all ((*Current.fail "No auth configured; can't push final image" ::*) List.map Current.ignore_value images)
+    | None -> Current.all (Current.fail "No auth configured; can't push final image" :: List.map Current.ignore_value images)
     | Some auth ->
       let multi_hash = Current_docker.push_manifest ~auth images ~tag:(Cluster_api.Docker.Image_id.to_string hub_id) in
       match services with
@@ -335,9 +335,8 @@ let tarides ?app ?notify:channels ?filter ~sched ~staging_auth () =
     fun repo -> Uri.with_query' base ["repo", repo] in
 
   (* GitHub organisations to monitor. *)
-  (* let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in *)
-  let ocurrent = Build.org ?app ~account:"benmandrew" 29914802 in
-  (* let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in *)
+  let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
+  let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
 
   let build (org, name, builds) = Cluster_build.repo ?channels ~web_ui ~org ~name builds in
   let docker ?archs =
@@ -349,9 +348,9 @@ let tarides ?app ?notify:channels ?filter ~sched ~staging_auth () =
   in
 
   Current.all @@ List.map build @@ filter_list filter [
-    (* ocurrent, "ocurrent-deployer", [
+    ocurrent, "ocurrent-deployer", [
       docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3 "deployer_deployer"]];
-    ]; *)
+    ];
     ocurrent, "ocaml-ci", [
       docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Ci "ocaml-ci_ci"]]
         ~archs:[`Linux_x86_64; `Linux_arm64];
@@ -361,7 +360,7 @@ let tarides ?app ?notify:channels ?filter ~sched ~staging_auth () =
                                "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Ci "test-www"]]
         ~archs:[`Linux_x86_64; `Linux_arm64];
     ];
-    (* ocurrent, "ocluster", [
+    ocurrent, "ocluster", [
       docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []]
         ~archs:[`Linux_x86_64; `Linux_arm64] ~options:include_git;
       docker "Dockerfile.worker" ["live-worker",    "ocurrent/ocluster-worker:live", []]
@@ -396,7 +395,7 @@ let tarides ?app ?notify:channels ?filter ~sched ~staging_auth () =
     ];
     ocurrent, "multicoretests-ci", [
       docker "Dockerfile" ["live", "ocurrent/multicoretests-ci:live", [`Ci4 "infra_multicoretests-ci"]];
-    ]; *)
+    ];
   ]
 
 (* This is a list of GitHub repositories to monitor.
@@ -441,19 +440,19 @@ let ocaml_org ?app ?notify:channels ?filter ~sched ~staging_auth () =
     ];
 
     ocurrent, "docker-base-images", [
-        (* Docker base images @ images.ci.ocaml.org *)
-        docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Ocamlorg_images "base-images_builder"]];
-      ];
+      (* Docker base images @ images.ci.ocaml.org *)
+      docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Ocamlorg_images "base-images_builder"]];
+    ];
 
     ocurrent, "ocaml-docs-ci", [
-        docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Docs "infra_docs-ci"]];
-        docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Docs "infra_init"]];
-        docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Docs "infra_storage-server"]];
-        docker "Dockerfile"                 ["staging", "ocurrent/docs-ci:staging", [`Staging_docs "infra_docs-ci"]];
-        docker "docker/init/Dockerfile"     ["staging", "ocurrent/docs-ci-init:staging", [`Staging_docs "infra_init"]];
-        docker "docker/storage/Dockerfile"  ["staging", "ocurrent/docs-ci-storage-server:staging", [`Staging_docs "infra_storage-server"]];
-      ];
-    ]  in
+      docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Docs "infra_docs-ci"]];
+      docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Docs "infra_init"]];
+      docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Docs "infra_storage-server"]];
+      docker "Dockerfile"                 ["staging", "ocurrent/docs-ci:staging", [`Staging_docs "infra_docs-ci"]];
+      docker "docker/init/Dockerfile"     ["staging", "ocurrent/docs-ci-init:staging", [`Staging_docs "infra_init"]];
+      docker "docker/storage/Dockerfile"  ["staging", "ocurrent/docs-ci-storage-server:staging", [`Staging_docs "infra_storage-server"]];
+    ];
+  ] in
 
   let head_of repo id =
     match Build.api ocaml_opam with
@@ -525,7 +524,7 @@ let mirage ?app ?notify:channels ~sched ~staging_auth () =
   Current.all @@ (List.map build_unikernel [
     mirage, "mirage-www", [
       unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["master", "www"];
-      unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
+      unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] []; (* (no deployments) *)
       unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["next", "next"];
     ];
   ] @ List.map build_docker [
