@@ -31,7 +31,7 @@ let notify ?channel ~web_ui ~service ~commit ~repo x =
   | None -> x
   | Some { Slack_channel.uri; mode; repositories = _ } ->
     let s =
-      let+ state = Current.state x
+      let+ state = Current.state ~hidden:true x
       and+ commit in
       match state, mode with
       | Error (`Msg _), Slack_channel.Failure

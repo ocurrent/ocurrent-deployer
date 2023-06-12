@@ -40,5 +40,7 @@ let parse_json s =
   in
   try
     from_string s |> Util.to_list |> List.map read_channel
-  with ex ->
-    Fmt.failwith "Failed to parse slack URIs '%S': %a" s Fmt.exn ex
+  with _ ->
+    let uri = Current_slack.channel @@ Uri.of_string @@ String.trim s in
+    [ { uri; mode = All; repositories = All_repos } ]
+    (* Fmt.failwith "Failed to parse slack URIs '%S': %a" s Fmt.exn e *)
