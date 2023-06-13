@@ -2,49 +2,51 @@
  (public_names ocurrent-deployer ocurrent-deployer-local)
  (names main local)
  (libraries
-   capnp-rpc-unix
-   current
-   current.cache
-   current_git
-   current_github
-   current_docker
-   current_ocluster
-   current_slack
-   current_web
-   current_ssh
-   cmdliner
-   deployer
-   fmt.tty
-   fmt.cli
-   logs.fmt
-   logs.cli
-   str
-   lwt
-   lwt.unix)
+  capnp-rpc-unix
+  current
+  current.cache
+  current_git
+  current_github
+  current_docker
+  current_ocluster
+  current_slack
+  current_web
+  current_ssh
+  cmdliner
+  deployer
+  fmt.tty
+  fmt.cli
+  logs.fmt
+  logs.cli
+  str
+  lwt
+  lwt.unix)
  (modules main local)
- (preprocess (pps ppx_deriving.std ppx_deriving_yojson)))
+ (preprocess
+  (pps ppx_deriving.std ppx_deriving_yojson)))
 
 (library
  (name deployer)
  (public_name deployer)
  (libraries
-   capnp-rpc-unix
-   current
-   current.cache
-   current_git
-   current_github
-   current_docker
-   current_ocluster
-   current_slack
-   current_web
-   current_ssh
-   cmdliner
-   fmt.tty
-   fmt.cli
-   logs.fmt
-   logs.cli
-   str
-   lwt
-   lwt.unix)
+  capnp-rpc-unix
+  current
+  current.cache
+  current_git
+  current_github
+  current_docker
+  current_ocluster
+  current_slack
+  current_web
+  current_ssh
+  cmdliner
+  fmt.tty
+  fmt.cli
+  logs.fmt
+  logs.cli
+  str
+  lwt
+  lwt.unix)
  (modules index pipeline aws caddy logging mirage s build)
- (preprocess (pps ppx_deriving.std ppx_deriving_yojson)))
+ (preprocess
+  (pps ppx_deriving.std ppx_deriving_yojson)))
