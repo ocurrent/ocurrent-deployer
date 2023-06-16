@@ -116,7 +116,7 @@ module Cluster = struct
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4.ocamllabs.io" end)
   module Docs_docker = Current_docker.Make(struct let docker_context = Some "docs.ci.ocaml.org" end)
   module Staging_docs_docker = Current_docker.Make(struct let docker_context = Some "staging.docs.ci.ocaml.org" end)
-  module Toxis_docker = Current_docker.Make(struct let docker_context = Some "ci.ocamllabs.io" end)
+  module Ci_docker = Current_docker.Make(struct let docker_context = Some "opam-repo-ci.sw.ocaml.org" end)
   module Watch_docker = Current_docker.Make(struct let docker_context = Some "watch.ocaml.org" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirage.io" end)
@@ -124,7 +124,6 @@ module Cluster = struct
   module Opam5_docker = Current_docker.Make(struct let docker_context = Some "opam-5.ocaml.org" end)
   module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2.ocaml.org" end)
   module Ocamlorg_images = Current_docker.Make(struct let docker_context = Some "ci3.ocamllabs.io" end)
-  module Dev1_docker = Current_docker.Make(struct let docker_context = Some "dev1.ocamllabs.io" end)
   module Docker_aws = Current_docker.Make(struct let docker_context = Some "awsecs" end)
   module V3b_docker = Current_docker.Make(struct let docker_context = Some "v3b.ocaml.org" end)
   module V3c_docker = Current_docker.Make(struct let docker_context = Some "v3c.ocaml.org" end)
@@ -139,10 +138,9 @@ module Cluster = struct
 
   type service = [
     (* Services on deploy.ci3.ocamllabs.io *)
-    | `Toxis of string
+    | `Ci of string
     | `Ci3 of string
     | `Ci4 of string
-    | `Dev1 of string
     | `Docs of string
     | `Staging_docs of string
 
@@ -273,10 +271,9 @@ module Cluster = struct
             (* deploy.ci.dev *)
             | `Ci3 name -> pull_and_serve (module Ci3_docker) ~name `Service multi_hash
             | `Ci4 name -> pull_and_serve (module Ci4_docker) ~name `Service multi_hash
-            | `Dev1 name -> pull_and_serve (module Dev1_docker) ~name `Service multi_hash
             | `Docs name -> pull_and_serve (module Docs_docker) ~name `Service multi_hash
             | `Staging_docs name -> pull_and_serve (module Staging_docs_docker) ~name `Service multi_hash
-            | `Toxis name -> pull_and_serve (module Toxis_docker) ~name `Service multi_hash
+            | `Ci name -> pull_and_serve (module Ci_docker) ~name `Service multi_hash
 
             (* deploy.mirage.io *)
             | `Cimirage name -> pull_and_serve (module Cimirage_docker) ~name `Service multi_hash
@@ -355,10 +352,13 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile"     ["live-ci3",   "ocurrent/ci.ocamllabs.io-deployer:live-ci3",   [`Ci3 "deployer_deployer"]];
     ];
     ocurrent, "ocaml-ci", [
-      docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Toxis "ocaml-ci_ci"]];
-      docker "Dockerfile.gitlab" ["live-engine", "ocurrent/ocaml-ci-gitlab-service:live", [`Toxis "ocaml-ci_gitlab"]];
-      docker "Dockerfile.web" ["live-www",    "ocurrent/ocaml-ci-web:live",     [`Toxis "ocaml-ci_web"];
-                               "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Toxis "test-www"]];
+      docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Ci "ocaml-ci_ci"]]
+        ~archs:[`Linux_x86_64; `Linux_arm64];
+      docker "Dockerfile.gitlab" ["live-engine", "ocurrent/ocaml-ci-gitlab-service:live", [`Ci "ocaml-ci_gitlab"]]
+        ~archs:[`Linux_x86_64; `Linux_arm64];
+      docker "Dockerfile.web" ["live-www",    "ocurrent/ocaml-ci-web:live",     [`Ci "ocaml-ci_web"];
+                               "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Ci "test-www"]]
+        ~archs:[`Linux_x86_64; `Linux_arm64];
     ];
     ocurrent, "ocluster", [
       docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []]
@@ -373,8 +373,10 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
           ~archs:[`Linux_x86_64; `Linux_arm64] ~options:include_git;
       ];
     ocurrent, "opam-repo-ci", [
-      docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Toxis "opam-repo-ci_opam-repo-ci"]];
-      docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Toxis "opam-repo-ci_opam-repo-ci-web"]];
+      docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Ci "opam-repo-ci_opam-repo-ci"]]
+        ~archs:[`Linux_arm64];
+      docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Ci "opam-repo-ci_opam-repo-ci-web"]]
+        ~archs:[`Linux_arm64];
     ];
     ocurrent, "ocaml-multicore-ci", [
       docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4 "infra_multicore-ci"]];
@@ -383,16 +385,17 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ocurrent, "ocurrent.org", [
       docker "Dockerfile"     ["live-engine", "ocurrent/ocurrent.org:live-engine", [`Ci3 "ocurrent_org_watcher"]];
     ];
-
     ocaml_bench, "sandmark-nightly", [
       docker "Dockerfile" ["main", "ocurrent/sandmark-nightly:live", [`Ci3 "sandmark_sandmark"]]
       ~options:include_git;
     ];
-
     ocurrent, "solver-service", [
       docker "Dockerfile" ["live", "ocurrent/solver-service:live", []]
         ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64] ~options:include_git
-    ]
+    ];
+    ocurrent, "multicoretests-ci", [
+      docker "Dockerfile" ["live", "ocurrent/multicoretests-ci:live", [`Ci4 "infra_multicoretests-ci"]];
+    ];
   ]
 
 (* This is a list of GitHub repositories to monitor.
@@ -480,7 +483,6 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
         "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam4 "infra_opam_live"; `Ocamlorg_opam5 "infra_opam_live"]
                      ; "live-staging", "ocurrent/opam.ocaml.org:staging", [`Ocamlorg_opam4 "infra_opam_staging"; `Ocamlorg_opam5 "infra_opam_staging"]]
         ~options:(include_git |> build_kit)
-        ~archs:[`Linux_arm64; `Linux_x86_64]
     ]
   ]
   in

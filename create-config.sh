@@ -9,14 +9,13 @@ docker context create "deploy.ci.ocaml.org" --description "OCaml - deploy.ci.oca
 docker context create "dev1.ocamllabs.io" --description "OCaml - opam-repo-ci" --docker "host=ssh://root@dev1.ocamllabs.io"
 docker context create "docs.ci.ocaml.org" --description "OCaml - docs.ci.ocaml.org" --docker "host=ssh://root@docs.ci.ocaml.org"
 docker context create "staging.docs.ci.ocaml.org" --description "Staging for docs.ci.ocaml.org" --docker "host=ssh://root@staging.docs.ci.ocaml.org"
-docker context create "opam-3.ocaml.org" --description "OPAM - opam-3.ocaml.org" --docker "host=ssh://root@opam-3.ocaml.org"
 docker context create "opam-4.ocaml.org" --description "OPAM - opam-4.ocaml.org" --docker "host=ssh://root@opam-4.ocaml.org"
 docker context create "opam-5.ocaml.org" --description "OPAM - opam-5.ocaml.org" --docker "host=ssh://root@opam-5.ocaml.org"
 docker context create "v2.ocaml.org" --description "OCaml - v2.ocaml.org" --docker "host=ssh://root@v2.ocaml.org"
 docker context create "v3b.ocaml.org" --description "OCaml - www.ocaml.org" --docker "host=ssh://root@v3b.ocaml.org"
 docker context create "v3c.ocaml.org" --description "OCaml - staging.ocaml.org" --docker "host=ssh://root@v3c.ocaml.org"
 docker context create "watch.ocaml.org" --description "OCaml - watch.ocaml.org" --docker "host=ssh://root@watch.ocaml.org"
-docker context create "staging.tarides.com" --description "Tarides - staging.tarides.com" --docker "host=ssh://root@staging.tarides.com"
+docker context create "opam-repo-ci.sw.ocaml.org" --description "Tarides/OCaml - Opam Repo CI / OCaml CI" --docker "host=ssh://root@opam-repo-ci.sw.ocaml.org"
 
 # Create AWS context
 mkdir ~/.aws
@@ -35,14 +34,13 @@ for host in \
   dev1.ocamllabs.io \
   docs.ci.ocaml.org \
   staging.docs.ci.ocaml.org \
-  opam-3.ocaml.org \
   opam-4.ocaml.org \
   opam-5.ocaml.org \
   v2.ocaml.org \
   v3b.ocaml.org \
   v3c.ocaml.org \
   watch.ocaml.org \
-  staging.tarides.com \
+  opam-repo-ci.sw.ocaml.org \
   147.75.84.37 ; do
   ssh-keyscan -H -t ecdsa-sha2-nistp256 $host >> ~/.ssh/known_hosts
 done
