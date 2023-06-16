@@ -143,11 +143,13 @@ module Cluster = struct
     | `Ci4 of string
     | `Docs of string
     | `Staging_docs of string
+
+    (* Services on deploy.mirage.io *)
     | `Cimirage of string
 
     (* Services on deploy.ci.ocaml.org. *)
     | `Ocamlorg_deployer of string             (* OCurrent deployer @ deploy.ci.ocaml.org *)
-    | `OCamlorg_v2 of (string * string) list   (* OCaml website @ v2.ocaml.org *)
+    | `OCamlorg_v2 of (string * string option) list   (* OCaml website @ v2.ocaml.org *)
     | `Ocamlorg_opam4 of string                (* Opam website @ opam-4.ocaml.org *)
     | `Ocamlorg_opam5 of string                (* Opam website @ opam-5.ocaml.org *)
     | `Ocamlorg_images of string               (* Base Image builder @ images.ci.ocaml.org *)
@@ -266,12 +268,14 @@ module Cluster = struct
       | services ->
         services
         |> List.map (function
-            (* ci3.ocamllabs.io *)
+            (* deploy.ci.dev *)
             | `Ci3 name -> pull_and_serve (module Ci3_docker) ~name `Service multi_hash
             | `Ci4 name -> pull_and_serve (module Ci4_docker) ~name `Service multi_hash
             | `Docs name -> pull_and_serve (module Docs_docker) ~name `Service multi_hash
             | `Staging_docs name -> pull_and_serve (module Staging_docs_docker) ~name `Service multi_hash
             | `Ci name -> pull_and_serve (module Ci_docker) ~name `Service multi_hash
+
+            (* deploy.mirage.io *)
             | `Cimirage name -> pull_and_serve (module Cimirage_docker) ~name `Service multi_hash
 
             (* ocaml.org *)
@@ -432,7 +436,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
     ocaml, "v2.ocaml.org", [
       (* Backup of existing ocaml.org website. *)
-      docker "Dockerfile.deploy"  ["master", "ocurrent/v2.ocaml.org:live", [`OCamlorg_v2 ["v2.ocaml.org", "10.197.242.33"]]] ~options:include_git;
+      docker "Dockerfile.deploy"  ["master", "ocurrent/v2.ocaml.org:live", [`OCamlorg_v2 ["v2.ocaml.org", None]]] ~options:include_git;
     ];
 
     ocurrent, "docker-base-images", [

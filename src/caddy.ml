@@ -2,44 +2,51 @@
 
 type t = {
   name: string;
-  domains: (string * string) list; (* domain ip *)
+  domains: (string * string option) list; (* domain ip *)
 }
 
 let caddy_service name (domain, ip) =
   let service_name = Fmt.str "%s_%s" name (Re.Str.(global_replace (regexp_string ".") "_" domain)) in
+  let net = match ip with
+    | None -> ""
+    | Some _ -> Fmt.str {|    networks:
+    - %s_network
+|} service_name in
   let service = Fmt.str {|
   %s:
     image: $IMAGE_HASH
     command: --domain %s --root /usr/share/caddy
     restart: always
-    networks:
-    - %s_network
-    ports:
+%s    ports:
     - target: 80
       published: 80
       protocol: tcp
     - target: 443
       published: 443
       protocol: tcp
-|} service_name domain service_name
+|} service_name domain net
   in
-  let network = Fmt.str {|
+  let network = match ip with
+  | None -> None
+  | Some ip -> Some (Fmt.str {|
   %s_network:
     driver_opts:
         com.docker.network.bridge.host_binding_ipv4: "%s"
-|} service_name ip
+|} service_name ip)
   in
   service, network
 
 let compose sites =
-  sites.domains |>
-  List.map (caddy_service sites.name) |>
-  List.fold_left (fun (s,n) (service, network) -> (s ^ service), (n ^ network)) ("","") |>
-  fun (services, networks) ->
+  let services, networks = sites.domains |>
+    List.map (caddy_service sites.name) |>
+    List.split in
+  let services = List.fold_left (String.cat) "" services in
+  let networks = List.fold_left (fun net n -> match n with | Some n -> net ^ n | None -> net) "" networks |>
+    function "" -> "" | n -> "networks:" ^ n in
   Fmt.str {|
 version: "3.7"
 services:%s
-networks:%s
+%s
 |} services networks
 
 (* Replace $IMAGE_HASH in the compose file with the fixed (hash) image id *)
