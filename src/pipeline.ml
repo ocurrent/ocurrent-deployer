@@ -349,12 +349,12 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ];
     ocurrent, "ocaml-ci", [
       docker "Dockerfile"     ["live-engine", "ocurrent/ocaml-ci-service:live", [`Ci "ocaml-ci_ci"]]
-        ~archs:[`Linux_arm64];
+        ~archs:[`Linux_x86_64; `Linux_arm64];
       docker "Dockerfile.gitlab" ["live-engine", "ocurrent/ocaml-ci-gitlab-service:live", [`Ci "ocaml-ci_gitlab"]]
-        ~archs:[`Linux_arm64];
+        ~archs:[`Linux_x86_64; `Linux_arm64];
       docker "Dockerfile.web" ["live-www",    "ocurrent/ocaml-ci-web:live",     [`Ci "ocaml-ci_web"];
                                "staging-www", "ocurrent/ocaml-ci-web:staging",  [`Ci "test-www"]]
-        ~archs:[`Linux_arm64];
+        ~archs:[`Linux_x86_64; `Linux_arm64];
     ];
     ocurrent, "ocluster", [
       docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []]
