@@ -79,6 +79,7 @@ let has_role_ocaml user role =
       |"github:AltGr"
       |"github:moyodiallo"
       |"github:novemberkilo"
+      |"github:benmandrew"
       ), _ -> true        (* These users have all roles *)
     | _ -> role = `Viewer
 
