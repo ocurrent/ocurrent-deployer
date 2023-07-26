@@ -16,6 +16,7 @@ docker context create "v3b.ocaml.org" --description "OCaml - www.ocaml.org" --do
 docker context create "v3c.ocaml.org" --description "OCaml - staging.ocaml.org" --docker "host=ssh://root@v3c.ocaml.org"
 docker context create "watch.ocaml.org" --description "OCaml - watch.ocaml.org" --docker "host=ssh://root@watch.ocaml.org"
 docker context create "opam-repo-ci.sw.ocaml.org" --description "Tarides/OCaml - Opam Repo CI / OCaml CI" --docker "host=ssh://root@opam-repo-ci.sw.ocaml.org"
+docker context create "check.ci.ocaml.org" --description "OCaml - Opam Health Check" --docker "host=ssh://root@check.ci.ocaml.org"
 
 # Create AWS context
 mkdir ~/.aws
