@@ -117,6 +117,7 @@ module Cluster = struct
   module Docs_docker = Current_docker.Make(struct let docker_context = Some "docs.ci.ocaml.org" end)
   module Staging_docs_docker = Current_docker.Make(struct let docker_context = Some "staging.docs.ci.ocaml.org" end)
   module Ci_docker = Current_docker.Make(struct let docker_context = Some "opam-repo-ci.sw.ocaml.org" end)
+  module Check_docker = Current_docker.Make(struct let docker_context = Some "check.ci.ocaml.org" end)
   module Watch_docker = Current_docker.Make(struct let docker_context = Some "watch.ocaml.org" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirage.io" end)
@@ -139,6 +140,7 @@ module Cluster = struct
   type service = [
     (* Services on deploy.ci3.ocamllabs.io *)
     | `Ci of string
+    | `Check of string
     | `Ci3 of string
     | `Ci4 of string
     | `Docs of string
@@ -274,6 +276,7 @@ module Cluster = struct
             | `Docs name -> pull_and_serve (module Docs_docker) ~name `Service multi_hash
             | `Staging_docs name -> pull_and_serve (module Staging_docs_docker) ~name `Service multi_hash
             | `Ci name -> pull_and_serve (module Ci_docker) ~name `Service multi_hash
+            | `Check name -> pull_and_serve (module Check_docker) ~name `Service multi_hash
 
             (* deploy.mirage.io *)
             | `Cimirage name -> pull_and_serve (module Cimirage_docker) ~name `Service multi_hash
@@ -377,6 +380,9 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
         ~archs:[`Linux_arm64];
       docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Ci "opam-repo-ci_opam-repo-ci-web"]]
         ~archs:[`Linux_arm64];
+    ];
+    ocurrent, "opam-health-check", [
+      docker "Dockerfile" ["dockerfile", "ocurrent/opam-health-check:live", [`Check "infra_opam-health-check"]];
     ];
     ocurrent, "ocaml-multicore-ci", [
       docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4 "infra_multicore-ci"]];
