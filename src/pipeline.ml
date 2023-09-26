@@ -382,7 +382,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
         ~archs:[`Linux_arm64];
     ];
     ocurrent, "opam-health-check", [
-      docker "Dockerfile" ["dockerfile", "ocurrent/opam-health-check:live", [`Check "infra_opam-health-check"]];
+      docker "Dockerfile" ["live", "ocurrent/opam-health-check:live", [`Check "infra_opam-health-check"]];
     ];
     ocurrent, "ocaml-multicore-ci", [
       docker "Dockerfile"     ["live", "ocurrent/multicore-ci:live", [`Ci4 "infra_multicore-ci"]];
