@@ -8,7 +8,7 @@ docker context create "ci.ocamllabs.io" --description "Toxis - Tarides" --docker
 docker context create "deploy.ci.ocaml.org" --description "OCaml - deploy.ci.ocaml.org" --docker "host=ssh://root@deploy.ci.ocaml.org"
 docker context create "dev1.ocamllabs.io" --description "OCaml - opam-repo-ci" --docker "host=ssh://root@dev1.ocamllabs.io"
 docker context create "docs.ci.ocaml.org" --description "OCaml - docs.ci.ocaml.org" --docker "host=ssh://root@docs.ci.ocaml.org"
-docker context create "staging.docs.ci.ocaml.org" --description "Staging for docs.ci.ocaml.org" --docker "host=ssh://root@staging.docs.ci.ocaml.org"
+docker context create "staging.docs.ci.ocamllabs.io" --description "Staging for docs.ci.ocaml.org" --docker "host=ssh://root@staging.docs.ci.ocamllabs.io"
 docker context create "opam-4.ocaml.org" --description "OPAM - opam-4.ocaml.org" --docker "host=ssh://root@opam-4.ocaml.org"
 docker context create "opam-5.ocaml.org" --description "OPAM - opam-5.ocaml.org" --docker "host=ssh://root@opam-5.ocaml.org"
 docker context create "v2.ocaml.org" --description "OCaml - v2.ocaml.org" --docker "host=ssh://root@v2.ocaml.org"
@@ -34,7 +34,7 @@ for host in \
   deploy.ci.ocaml.org \
   dev1.ocamllabs.io \
   docs.ci.ocaml.org \
-  staging.docs.ci.ocaml.org \
+  staging.docs.ci.ocamllabs.io \
   opam-4.ocaml.org \
   opam-5.ocaml.org \
   v2.ocaml.org \
