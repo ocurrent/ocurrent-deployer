@@ -116,7 +116,8 @@ module Cluster = struct
   module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4.ocamllabs.io" end)
   module Docs_docker = Current_docker.Make(struct let docker_context = Some "docs.ci.ocaml.org" end)
   module Staging_docs_docker = Current_docker.Make(struct let docker_context = Some "staging.docs.ci.ocamllabs.io" end)
-  module Ci_docker = Current_docker.Make(struct let docker_context = Some "opam-repo-ci.sw.ocaml.org" end)
+  module Ci_docker = Current_docker.Make(struct let docker_context = Some "ocaml.ci.dev" end)
+  module Opamrepo_docker = Current_docker.Make(struct let docker_context = Some "opam.ci.ocaml.org" end)
   module Check_docker = Current_docker.Make(struct let docker_context = Some "check.ci.ocaml.org" end)
   module Watch_docker = Current_docker.Make(struct let docker_context = Some "watch.ocaml.org" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
@@ -138,8 +139,9 @@ module Cluster = struct
   }
 
   type service = [
-    (* Services on deploy.ci3.ocamllabs.io *)
+    (* Services on deploy.ci.dev *)
     | `Ci of string
+    | `Opamrepo of string
     | `Check of string
     | `Ci3 of string
     | `Ci4 of string
@@ -276,6 +278,7 @@ module Cluster = struct
             | `Docs name -> pull_and_serve (module Docs_docker) ~name `Service multi_hash
             | `Staging_docs name -> pull_and_serve (module Staging_docs_docker) ~name `Service multi_hash
             | `Ci name -> pull_and_serve (module Ci_docker) ~name `Service multi_hash
+            | `Opamrepo name -> pull_and_serve (module Opamrepo_docker) ~name `Service multi_hash
             | `Check name -> pull_and_serve (module Check_docker) ~name `Service multi_hash
 
             (* deploy.mirage.io *)
@@ -376,10 +379,10 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
           ~archs:[`Linux_x86_64; `Linux_arm64] ~options:include_git;
       ];
     ocurrent, "opam-repo-ci", [
-      docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Ci "opam-repo-ci_opam-repo-ci"]]
-        ~archs:[`Linux_arm64];
-      docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Ci "opam-repo-ci_opam-repo-ci-web"]]
-        ~archs:[`Linux_arm64];
+      docker "Dockerfile"     ["live", "ocurrent/opam-repo-ci:live", [`Opamrepo "opam-repo-ci_opam-repo-ci"]]
+        ~archs:[`Linux_x86_64; `Linux_arm64];
+      docker "Dockerfile.web" ["live-web", "ocurrent/opam-repo-ci-web:live", [`Opamrepo "opam-repo-ci_opam-repo-ci-web"]]
+        ~archs:[`Linux_x86_64; `Linux_arm64];
     ];
     ocurrent, "opam-health-check", [
       docker "Dockerfile" ["live", "ocurrent/opam-health-check:live", [`Check "infra_opam-health-check"]];
