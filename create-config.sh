@@ -15,7 +15,8 @@ docker context create "v2.ocaml.org" --description "OCaml - v2.ocaml.org" --dock
 docker context create "v3b.ocaml.org" --description "OCaml - www.ocaml.org" --docker "host=ssh://root@v3b.ocaml.org"
 docker context create "v3c.ocaml.org" --description "OCaml - staging.ocaml.org" --docker "host=ssh://root@v3c.ocaml.org"
 docker context create "watch.ocaml.org" --description "OCaml - watch.ocaml.org" --docker "host=ssh://root@watch.ocaml.org"
-docker context create "opam-repo-ci.sw.ocaml.org" --description "Tarides/OCaml - Opam Repo CI / OCaml CI" --docker "host=ssh://root@opam-repo-ci.sw.ocaml.org"
+docker context create "opam.ci.ocaml.org" --description "OCaml - Opam Repo CI" --docker "host=ssh://root@opam.ci.ocaml.org"
+docker context create "ocaml.ci.dev" --description "Tarides - OCaml CI" --docker "host=ssh://root@ocaml.ci.dev"
 docker context create "check.ci.ocaml.org" --description "OCaml - Opam Health Check" --docker "host=ssh://root@check.ci.ocaml.org"
 
 # Create AWS context
@@ -41,7 +42,8 @@ for host in \
   v3b.ocaml.org \
   v3c.ocaml.org \
   watch.ocaml.org \
-  opam-repo-ci.sw.ocaml.org \
+  opam.ci.ocaml.org \
+  ocaml.ci.dev \
   147.75.84.37 ; do
   ssh-keyscan -H -t ecdsa-sha2-nistp256 $host >> ~/.ssh/known_hosts
 done
