@@ -21,6 +21,7 @@
   ocluster-api
   ; Opam dependencies
   capnp-rpc-unix
+  sexplib
   fmt
   ppx_deriving_yojson
   ppx_deriving

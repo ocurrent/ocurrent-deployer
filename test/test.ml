@@ -5,4 +5,4 @@ let () =
   Unix.putenv "EMAIL" "test@example.com";
   Lwt_main.run
   @@ Alcotest_lwt.run "deployer"
-       [ ("index", Test_index.tests); ]
+      [ ("index", Test_index.tests); ]

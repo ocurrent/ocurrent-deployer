@@ -35,6 +35,7 @@ depends: [
   "current_ssh"
   "ocluster-api"
   "capnp-rpc-unix"
+  "sexplib"
   "fmt"
   "ppx_deriving_yojson"
   "ppx_deriving"
