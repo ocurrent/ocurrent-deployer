@@ -370,7 +370,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
       docker "Dockerfile"        ["live-scheduler", "ocurrent/ocluster-scheduler:live", []]
         ~archs:[`Linux_x86_64; `Linux_arm64] ~options:include_git;
       docker "Dockerfile.worker" ["live-worker",    "ocurrent/ocluster-worker:live", []]
-        ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64; `Linux_s390x; `Linux_riscv64] ~options:include_git;
+        ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64; `Linux_s390x; `Linux_riscv64] ~options:(include_git |> fun v ->  { v with build_args =  ["--ulimit stack=1000000000:1000000000"]});
       docker "Dockerfile.worker.alpine" ["live-worker",    "ocurrent/ocluster-worker:alpine", []]
         ~archs:[`Linux_x86_64; `Linux_arm64] ~options:include_git;
       ];
