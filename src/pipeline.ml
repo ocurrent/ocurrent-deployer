@@ -110,6 +110,85 @@ module Packet_unikernel = struct
 end
 module Build_unikernel = Build.Make(Packet_unikernel)
 
+module Docker_registry = struct
+  (* Build Docker images on registry.ci.dev *)
+
+  let host = "registry.ci.dev"
+
+  module Docker = Current_docker.Make(struct let docker_context = Some host end)
+
+  type build_info = {
+    dockerfile : string;
+    timeout : int64;
+  }
+
+  type service = [
+    | `Ocamlorg_opam4 of string
+    | `Ocamlorg_opam5 of string
+  ]
+
+  type deploy_info = {
+    tag : string;
+    services : service list;
+  }
+
+  let auth = match auth with
+    | Some (user, pass) -> Some (user ^ "@" ^ host, pass)
+    | None -> None
+
+  let build_image { dockerfile; timeout } additional_build_args src =
+    let src = Current_git.fetch src in
+    let dockerfile = Current.return (`File (Fpath.v dockerfile)) in
+    Current.component "commit SHA" |>
+    let** additional_build_args = additional_build_args in
+    let build_args = List.map (fun x -> ["--build-arg"; x]) additional_build_args |> List.concat in
+    Docker.build (`Git src)
+      ~build_args
+      ~buildx:true
+      ~dockerfile
+      ~pull:true
+      ~timeout
+
+  let build { dockerfile; timeout } ?(additional_build_args=Current.return []) _repo src =
+    Current.ignore_value (build_image { dockerfile; timeout } additional_build_args src)
+
+  let name info = info.tag
+
+  (* Deployment *)
+
+  module Opam4_docker = Current_docker.Make(struct let docker_context = Some "opam-4.ocaml.org" end)
+  module Opam5_docker = Current_docker.Make(struct let docker_context = Some "opam-5.ocaml.org" end)
+
+  let no_schedule = Current_cache.Schedule.v ()
+
+  let pull_and_serve (module D : Current_docker.S.DOCKER) ~name repo_id =
+    let image =
+      Current.component "pull" |>
+      let> repo_id in
+      Current_docker.Raw.pull repo_id
+      ?auth
+      ~docker_context:D.docker_context
+      ~schedule:no_schedule
+      |> Current.Primitive.map_result (Result.map (fun raw_image ->
+          D.Image.of_hash (Current_docker.Raw.Image.hash raw_image)
+        ))
+    in
+    D.service ~name ~image ()
+
+  let deploy build_info { tag; services } ?(additional_build_args=Current.return []) src =
+    let image = build_image build_info additional_build_args src in
+    let tag = host ^ "/" ^ tag in
+    let repo_id = Docker.push ~tag image ?auth in
+    Current.all (
+      List.map (fun service ->
+        match service with
+        | `Ocamlorg_opam4 name -> pull_and_serve ~name (module Opam4_docker) repo_id
+        | `Ocamlorg_opam5 name -> pull_and_serve ~name (module Opam5_docker) repo_id
+      ) services
+    )
+end
+module Build_registry = Build.Make(Docker_registry)
+
 module Cluster = struct
   (* Strings here represent the docker context to use. *)
   module Ci3_docker = Current_docker.Default
@@ -122,8 +201,6 @@ module Cluster = struct
   module Watch_docker = Current_docker.Make(struct let docker_context = Some "watch.ocaml.org" end)
   module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
   module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirage.io" end)
-  module Opam4_docker = Current_docker.Make(struct let docker_context = Some "opam-4.ocaml.org" end)
-  module Opam5_docker = Current_docker.Make(struct let docker_context = Some "opam-5.ocaml.org" end)
   module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2.ocaml.org" end)
   module Ocamlorg_images = Current_docker.Make(struct let docker_context = Some "ci3.ocamllabs.io" end)
   module Docker_aws = Current_docker.Make(struct let docker_context = Some "awsecs" end)
@@ -154,8 +231,6 @@ module Cluster = struct
     (* Services on deploy.ci.ocaml.org. *)
     | `Ocamlorg_deployer of string             (* OCurrent deployer @ deploy.ci.ocaml.org *)
     | `OCamlorg_v2 of (string * string option) list   (* OCaml website @ v2.ocaml.org *)
-    | `Ocamlorg_opam4 of string                (* Opam website @ opam-4.ocaml.org *)
-    | `Ocamlorg_opam5 of string                (* Opam website @ opam-5.ocaml.org *)
     | `Ocamlorg_images of string               (* Base Image builder @ images.ci.ocaml.org *)
     | `OCamlorg_v3b of string                  (* OCaml website @ v3b.ocaml.org aka www.ocaml.org *)
     | `OCamlorg_v3c of string                  (* Staging OCaml website @ staging.ocaml.org *)
@@ -290,10 +365,6 @@ module Cluster = struct
               let name = Cluster_api.Docker.Image_id.tag hub_id in
               let contents = Caddy.compose {Caddy.name; domains} in
               pull_and_serve (module V2ocamlorg_docker) ~name (`Compose contents) multi_hash
-            | `Ocamlorg_opam4 name ->
-              pull_and_serve (module Opam4_docker) ~name `Service multi_hash
-            | `Ocamlorg_opam5 name ->
-              pull_and_serve (module Opam5_docker) ~name `Service multi_hash
             | `Ocamlorg_images name -> pull_and_serve (module Ocamlorg_images) ~name `Service multi_hash
             | `OCamlorg_v3b name -> pull_and_serve (module V3b_docker) ~name `Service multi_hash
             | `OCamlorg_v3c name -> pull_and_serve (module V3c_docker) ~name `Service multi_hash
@@ -316,6 +387,11 @@ let docker ?(archs=[`Linux_x86_64]) ?(options=Cluster_api.Docker.Spec.defaults) 
                 }
       )
   in
+  (build_info, deploys)
+
+let docker_registry timeout dockerfile targets =
+  let build_info = { Docker_registry.dockerfile; timeout } in
+  let deploys = List.map (fun (branch, tag, services) -> branch, { Docker_registry.tag; services }) targets in
   (build_info, deploys)
 
 let filter_list filter items =
@@ -428,8 +504,8 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let build ?additional_build_args (org, name, builds) =
     Cluster_build.repo ?channel ?additional_build_args ~web_ui ~org ~name builds in
 
-  let docker_with_timeout timeout =
-    docker ~sched:(Current_ocluster.v ~timeout ?push_auth:staging_auth sched) in
+  let build_for_registry ?additional_build_args (org, name, builds) =
+    Build_registry.repo ?channel ?additional_build_args ~web_ui ~org ~name builds in
 
   let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
   let docker = docker ~sched in
@@ -490,11 +566,10 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
   let opam_repository_pipeline = filter_list filter [
     ocaml_opam, "opam2web", [
-      docker_with_timeout (Duration.of_min 360)
-        "Dockerfile" [ "live", "ocurrent/opam.ocaml.org:live", [`Ocamlorg_opam4 "infra_opam_live"; `Ocamlorg_opam5 "infra_opam_live"]
-                     ; "live-staging", "ocurrent/opam.ocaml.org:staging", [`Ocamlorg_opam4 "infra_opam_staging"; `Ocamlorg_opam5 "infra_opam_staging"]]
-        ~options:(include_git |> build_kit)
-    ]
+      docker_registry (Duration.of_min 360) "Dockerfile"
+      ["live", "opam.ocaml.org:live", [`Ocamlorg_opam4 "infra_opam_live"; `Ocamlorg_opam5 "infra_opam_live"];
+       "live-staging", "opam.ocaml.org:staging", [`Ocamlorg_opam4 "infra_opam_staging"; `Ocamlorg_opam5 "infra_opam_staging"]]
+    ];
   ]
   in
 
@@ -508,7 +583,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
 
   in
   Current.all ((List.append
-                 (List.map (build ~additional_build_args) opam_repository_pipeline)
+                 (List.map (build_for_registry ~additional_build_args) opam_repository_pipeline)
                  (List.map build pipelines)) @ [tarsnap; peertube])
 
 let unikernel dockerfile ~target args services =
