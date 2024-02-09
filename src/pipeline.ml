@@ -117,6 +117,8 @@ module Docker_registry = struct
 
   module Docker = Current_docker.Make(struct let docker_context = Some host end)
 
+  let pool = Current.Pool.create ~label:"registry-build-pool" 1
+
   type build_info = {
     dockerfile : string;
     timeout : int64;
@@ -143,6 +145,7 @@ module Docker_registry = struct
     let** additional_build_args = additional_build_args in
     let build_args = List.map (fun x -> ["--build-arg"; x]) additional_build_args |> List.concat in
     Docker.build (`Git src)
+      ~pool
       ~build_args
       ~buildx:true
       ~dockerfile
