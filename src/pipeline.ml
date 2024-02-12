@@ -147,7 +147,6 @@ module Docker_registry = struct
     Docker.build (`Git src)
       ~pool
       ~build_args
-      ~buildx:true
       ~dockerfile
       ~pull:true
       ~timeout
