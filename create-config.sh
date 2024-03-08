@@ -18,6 +18,7 @@ docker context create "watch.ocaml.org" --description "OCaml - watch.ocaml.org" 
 docker context create "opam.ci.ocaml.org" --description "OCaml - Opam Repo CI" --docker "host=ssh://root@opam.ci.ocaml.org"
 docker context create "ocaml.ci.dev" --description "Tarides - OCaml CI" --docker "host=ssh://root@ocaml.ci.dev"
 docker context create "check.ci.ocaml.org" --description "OCaml - Opam Health Check" --docker "host=ssh://root@check.ci.ocaml.org"
+docker context create "registry.ci.dev" --description "Docker Registry" --docker "host=ssh://root@registry.ci.dev"
 
 # Create AWS context
 mkdir ~/.aws
@@ -44,6 +45,8 @@ for host in \
   watch.ocaml.org \
   opam.ci.ocaml.org \
   ocaml.ci.dev \
+  check.ci.ocaml.org \
+  registry.ci.dev \
   147.75.84.37 ; do
   ssh-keyscan -H -t ecdsa-sha2-nistp256 $host >> ~/.ssh/known_hosts
 done
