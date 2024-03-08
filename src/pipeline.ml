@@ -503,7 +503,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   in
   let peertube =
     let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) () in
-    let image = Cluster.Watch_docker.pull ~schedule:weekly "chocobozzz/peertube:production-bullseye" in
+    let image = Cluster.Watch_docker.pull ~schedule:weekly "chocobozzz/peertube:production-bookworm" in
     Cluster.Watch_docker.service ~name:"infra_peertube" ~image ()
 
   in
