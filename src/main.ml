@@ -16,12 +16,10 @@ let read_first_line path =
   Fun.protect (fun () -> input_line ch)
     ~finally:(fun () -> close_in ch)
 
-let read_channel_uri path =
-  try
-    let uri = read_first_line path in
-    Current_slack.channel (Uri.of_string (String.trim uri))
-  with ex ->
-    Fmt.failwith "Failed to read slack URI from %S: %a" path Fmt.exn ex
+let read_file path =
+  let ch = open_in path in
+  Fun.protect (fun () -> really_input_string ch (in_channel_length ch))
+    ~finally:(fun () -> close_in ch)
 
 (* Access control policy for Tarides. *)
 let has_role_tarides user role =
@@ -84,18 +82,21 @@ let has_role_ocaml user role =
 
 let main () config mode app slack auth staging_password_file flavour =
   let vat = Capnp_rpc_unix.client_only_vat () in
-  let channel = read_channel_uri slack in
+  let channels =
+    Option.(map (fun s -> Slack_channel.parse_json @@ read_file s) slack
+    |> value ~default:[])
+  in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let engine = match flavour with
     | Tarides sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-       Current.Engine.create ~config (Pipeline.tarides ~app ~notify:channel ~sched ~staging_auth)
+       Current.Engine.create ~config (Pipeline.tarides ~app ~notify:channels ~sched ~staging_auth)
     | OCaml sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-       Current.Engine.create ~config (Pipeline.ocaml_org ~app ~notify:channel ~sched ~staging_auth)
+       Current.Engine.create ~config (Pipeline.ocaml_org ~app ~notify:channels ~sched ~staging_auth)
     | Mirage sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-       Current.Engine.create ~config (Pipeline.mirage ~app ~notify:channel ~sched ~staging_auth)
+       Current.Engine.create ~config (Pipeline.mirage ~app ~notify:channels ~sched ~staging_auth)
   in
   let authn = Option.map Current_github.Auth.make_login_uri auth in
   let webhook_secret = Current_github.App.webhook_secret app in
@@ -122,7 +123,7 @@ let main () config mode app slack auth staging_password_file flavour =
 open Cmdliner
 
 let slack =
-  Arg.required @@
+  Arg.value @@
   Arg.opt Arg.(some file) None @@
   Arg.info
     ~doc:"A file containing the URI of the endpoint for status updates."

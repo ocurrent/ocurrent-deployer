@@ -411,7 +411,7 @@ let build_kit (v : Cluster_api.Docker.Spec.options) = { v with buildkit = true }
    For each one, it lists the builds that are made from that repository.
    For each build, it says which which branch gives the desired live version of
    the service, and where to deploy it. *)
-let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
+let tarides ?app ?notify:channels ?filter ~sched ~staging_auth () =
   (* [web_ui collapse_value] is a URL back to the deployment service, for links
      in status messages. *)
   let web_ui =
@@ -422,7 +422,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
   let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
 
-  let build (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
+  let build (org, name, builds) = Cluster_build.repo ?channels ~web_ui ~org ~name builds in
   let docker ?archs =
     let timeout = match archs with
       | Some archs when List.mem `Linux_riscv64 archs -> Int64.mul timeout 2L
@@ -491,7 +491,7 @@ let tarides ?app ?notify:channel ?filter ~sched ~staging_auth () =
    For each one, it lists the builds that are made from that repository.
    For each build, it says which which branch gives the desired live version of
    the service, and where to deploy it. *)
-let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
+let ocaml_org ?app ?notify:channels ?filter ~sched ~staging_auth () =
   (* [web_ui collapse_value] is a URL back to the deployment service, for links
      in status messages. *)
   let web_ui =
@@ -504,7 +504,7 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
   let ocaml_opam = Build.org ?app ~account:"ocaml-opam" 23690708 in
 
   let build ?additional_build_args (org, name, builds) =
-    Cluster_build.repo ?channel ?additional_build_args ~web_ui ~org ~name builds in
+    Cluster_build.repo ?channels ?additional_build_args ~web_ui ~org ~name builds in
 
   let build_for_registry ?additional_build_args (org, name, builds) =
     Build_registry.repo ?channel ?additional_build_args ~web_ui ~org ~name builds in
@@ -529,19 +529,19 @@ let ocaml_org ?app ?notify:channel ?filter ~sched ~staging_auth () =
     ];
 
     ocurrent, "docker-base-images", [
-        (* Docker base images @ images.ci.ocaml.org *)
-        docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Ocamlorg_images "base-images_builder"]];
-      ];
+      (* Docker base images @ images.ci.ocaml.org *)
+      docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Ocamlorg_images "base-images_builder"]];
+    ];
 
     ocurrent, "ocaml-docs-ci", [
-        docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Docs "infra_docs-ci"]];
-        docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Docs "infra_init"]];
-        docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Docs "infra_storage-server"]];
-        docker "Dockerfile"                 ["staging", "ocurrent/docs-ci:staging", [`Staging_docs "infra_docs-ci"]];
-        docker "docker/init/Dockerfile"     ["staging", "ocurrent/docs-ci-init:staging", [`Staging_docs "infra_init"]];
-        docker "docker/storage/Dockerfile"  ["staging", "ocurrent/docs-ci-storage-server:staging", [`Staging_docs "infra_storage-server"]];
-      ];
-    ]  in
+      docker "Dockerfile"                 ["live", "ocurrent/docs-ci:live", [`Docs "infra_docs-ci"]];
+      docker "docker/init/Dockerfile"     ["live", "ocurrent/docs-ci-init:live", [`Docs "infra_init"]];
+      docker "docker/storage/Dockerfile"  ["live", "ocurrent/docs-ci-storage-server:live", [`Docs "infra_storage-server"]];
+      docker "Dockerfile"                 ["staging", "ocurrent/docs-ci:staging", [`Staging_docs "infra_docs-ci"]];
+      docker "docker/init/Dockerfile"     ["staging", "ocurrent/docs-ci-init:staging", [`Staging_docs "infra_init"]];
+      docker "docker/storage/Dockerfile"  ["staging", "ocurrent/docs-ci-storage-server:staging", [`Staging_docs "infra_storage-server"]];
+    ];
+  ] in
 
   let head_of repo id =
     match Build.api ocaml_opam with
@@ -595,7 +595,7 @@ let unikernel dockerfile ~target args services =
     |> List.map (fun (branch, service) -> branch, { Packet_unikernel.service }) in
   (build_info, deploys)
 
-let mirage ?app ?notify:channel ~sched ~staging_auth () =
+let mirage ?app ?notify:channels ~sched ~staging_auth () =
   (* [web_ui collapse_value] is a URL back to the deployment service, for links
      in status messages. *)
   let web_ui =
@@ -605,14 +605,14 @@ let mirage ?app ?notify:channel ~sched ~staging_auth () =
   (* GitHub organisations to monitor. *)
   let mirage = Build.org ?app ~account:"mirage" 7175142 in
   let ocurrent = Build.org ?app ~account:"ocurrent" 6853813 in
-  let build_unikernel (org, name, builds) = Build_unikernel.repo ?channel ~web_ui ~org ~name builds in
-  let build_docker (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
+  let build_unikernel (org, name, builds) = Build_unikernel.repo ?channels ~web_ui ~org ~name builds in
+  let build_docker (org, name, builds) = Cluster_build.repo ?channels ~web_ui ~org ~name builds in
   let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
   let docker = docker ~sched in
   Current.all @@ (List.map build_unikernel [
     mirage, "mirage-www", [
       unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["master", "www"];
-      unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
+      unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] []; (* (no deployments) *)
       unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["next", "next"];
     ];
   ] @ List.map build_docker [
