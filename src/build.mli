@@ -1,5 +1,8 @@
 type org
 
+(** Maximum build time *)
+val timeout : int64
+
 val org :
   ?app:Current_github.App.t ->
   account:string -> int -> org

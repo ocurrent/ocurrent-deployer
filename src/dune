@@ -47,6 +47,6 @@
   str
   lwt
   lwt.unix)
- (modules index pipeline aws caddy logging mirage s build)
+ (modules index pipeline aws caddy logging mirage s build cluster packet_unikernel docker_registry)
  (preprocess
   (pps ppx_deriving.std ppx_deriving_yojson)))

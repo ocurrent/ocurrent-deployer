@@ -2,6 +2,8 @@ open Current.Syntax
 
 module Github = Current_github
 
+let timeout = Duration.of_min 50
+
 type org = string * Current_github.Api.t option
 
 let account = fst
