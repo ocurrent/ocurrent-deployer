@@ -1,7 +1,15 @@
 type org
 
-(** Maximum build time *)
 val timeout : int64
+(** Maximum build time *)
+
+val password_path : string
+
+val push_repo : string
+(** Docker hub tag for the repo we push to *)
+
+val auth : (string * string) option
+(** The username and password for logging in, if found *)
 
 val org :
   ?app:Current_github.App.t ->

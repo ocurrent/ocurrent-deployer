@@ -23,7 +23,7 @@ type deploy_info = {
   services : service list;
 }
 
-let auth = match Cluster.auth with
+let auth = match Build.auth with
   | Some (user, pass) -> Some (user ^ "@" ^ host, pass)
   | None -> None
 

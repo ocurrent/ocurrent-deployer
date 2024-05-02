@@ -3,6 +3,20 @@ open Current.Syntax
 module Github = Current_github
 
 let timeout = Duration.of_min 50
+let password_path = "/run/secrets/ocurrent-hub"
+let push_repo = "ocurrentbuilder/staging"
+
+let auth =
+  if Sys.file_exists password_path then (
+    let ch = open_in_bin password_path in
+    let len = in_channel_length ch in
+    let password = really_input_string ch len |> String.trim in
+    close_in ch;
+    Some ("ocurrent", password)
+  ) else (
+    Fmt.pr "Password file %S not found; images will not be pushed to hub@." password_path;
+    None
+  )
 
 type org = string * Current_github.Api.t option
 
