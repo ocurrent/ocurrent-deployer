@@ -82,7 +82,7 @@ let has_role_ocaml user role =
       ), _ -> true        (* These users have all roles *)
     | _ -> role = `Viewer
 
-let main () config mode app slack auth staging_password_file flavour =
+let main () config mode app slack auth staging_password_file flavour prometheus_config =
   let vat = Capnp_rpc_unix.client_only_vat () in
   let channel = read_channel_uri slack in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
@@ -111,11 +111,14 @@ let main () config mode app slack auth staging_password_file flavour =
     Routes.(s "webhooks" / s "github" /? nil @--> Current_github.webhook ~engine ~get_job_ids:Index.get_job_ids ~webhook_secret) ::
     Current_web.routes engine in
   let site = Current_web.Site.v ?authn ~has_role ~name:"OCurrent Deployer" routes in
+  let prometheus =
+    List.map (Lwt.map @@ Result.ok) (Prometheus_unix.serve prometheus_config)
+  in
   Logging.run begin
-    Lwt.choose [
+    Lwt.choose ([
       Current.Engine.thread engine;  (* The main thread evaluating the pipeline. *)
       Current_web.run ~mode site;
-    ]
+    ] @ prometheus)
   end
 
 (* Command-line parsing *)
@@ -159,7 +162,8 @@ let staging_password =
 let cmd =
   let doc = "build and deploy services from Git" in
   let cmd_t = Term.(term_result (const main $ Logging.cmdliner $ Current.Config.cmdliner $ Current_web.cmdliner $
-        Current_github.App.cmdliner $ slack $ Current_github.Auth.cmdliner $ staging_password $ flavour_opt)) in
+        Current_github.App.cmdliner $ slack $ Current_github.Auth.cmdliner $ staging_password $ flavour_opt
+        $ Prometheus_unix.opts)) in
   let info = Cmd.info "deploy" ~doc in
   Cmd.v info cmd_t
 

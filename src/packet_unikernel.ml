@@ -24,7 +24,9 @@ let build_image { dockerfile; target; args } src =
     ~pull:true
     ~timeout:Build.timeout
 
-let build info ?additional_build_args:_ _repo src  = Current.ignore_value (build_image info src)
+let build info ?additional_build_args:_ repo src =
+Metrics.Build.inc_builds "packetunikernel" repo;
+Current.ignore_value (build_image info src)
 
 let name { service } = service
 
@@ -40,6 +42,7 @@ let deploy build_info { service } ?additional_build_args:_ src =
      Otherwise, if we later deploy a new (bad) version and need to roll back quickly,
      we may find the old version isn't around any longer. *)
   let tag = "mirage-" ^ service in
+  Metrics.Build.inc_deployments "packetunikernel" tag;
   Current.all [
     Docker.tag ~tag image;
     Mirage_m1_a.deploy ~name:service ~ssh_host:mirage_host_ssh image;

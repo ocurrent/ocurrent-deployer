@@ -100,6 +100,7 @@ let build { sched; dockerfile; options; archs } ?(additional_build_args=Current.
     let+ additional_build_args = additional_build_args in
     { options with build_args = additional_build_args @ options.build_args }
   in
+  Metrics.Build.inc_builds "cluster" repo;
   let hash = Current.map Current_git.Commit_id.hash src in
   let build_arch arch =
     let src = Current.map (fun x -> [x]) src in
@@ -176,7 +177,9 @@ let pull_and_serve multi_hash hub_id = function
 
 let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(additional_build_args=Current.return []) src =
   let src = Current.map (fun x -> [x]) src in
-  let target_label = Cluster_api.Docker.Image_id.repo hub_id |> String.map (function '/' | ':' -> '-' | c -> c) in
+  let image_label = Cluster_api.Docker.Image_id.repo hub_id in
+  Metrics.Build.inc_deployments "cluster" image_label;
+  let target_label = String.map (function '/' | ':' -> '-' | c -> c) image_label in
   let options =
     let+ additional_build_args = additional_build_args in
     { options with build_args = additional_build_args @ options.build_args }
