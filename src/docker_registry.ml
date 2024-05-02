@@ -40,7 +40,8 @@ let build_image { dockerfile; timeout } additional_build_args src =
     ~pull:true
     ~timeout
 
-let build { dockerfile; timeout } ?(additional_build_args=Current.return []) _repo src =
+let build { dockerfile; timeout } ?(additional_build_args=Current.return []) repo src =
+  Metrics.Build.inc_builds "dockerregistry" repo;
   Current.ignore_value (build_image { dockerfile; timeout } additional_build_args src)
 
 let name info = info.tag
@@ -69,6 +70,7 @@ let pull_and_serve (module D : Current_docker.S.DOCKER) ~name repo_id =
 let deploy build_info { tag; services } ?(additional_build_args=Current.return []) src =
   let image = build_image build_info additional_build_args src in
   let tag = host ^ "/" ^ tag in
+  Metrics.Build.inc_deployments "dockerregistry" tag;
   let repo_id = Docker.push ~tag image ?auth in
   Current.all (
     List.map (fun service ->
