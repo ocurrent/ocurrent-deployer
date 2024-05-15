@@ -33,7 +33,7 @@ module Build = struct
   let inc_deployments =
     let help = "Number of deployments" in
     let c =
-      Counter.v_labels ~help ~label_names:[ "type"; "service" ] ~namespace ~subsystem "builds_total"
+      Counter.v_labels ~help ~label_names:[ "type"; "service" ] ~namespace ~subsystem "deployments_total"
     in
     fun t service ->
     Counter.inc_one @@ Counter.labels c [ t; service ]
