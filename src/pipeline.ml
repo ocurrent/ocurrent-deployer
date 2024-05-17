@@ -244,10 +244,10 @@ module Ocaml_org = struct
       Build_registry.repo ?channel ?additional_build_args ~web_ui ~org ~name builds
     in
     let pipelines = filter_list filter @@ services ?app ~sched ~staging_auth () in
-
     let opam_repository_pipelines, additional_build_args =
-      opam_repository ?app ()
-      |> (fun (pipelines, args) -> filter_list filter @@ pipelines, args)
+      let pipelines, args = opam_repository ?app () in
+      let filtered_pipelines = filter_list filter @@ pipelines in
+      filtered_pipelines, args
     in
     Current.all (
       (List.map (build_for_registry ~additional_build_args) opam_repository_pipelines)
