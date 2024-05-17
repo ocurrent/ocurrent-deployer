@@ -8,6 +8,13 @@ module Flavour : sig
 end
 
 module Tarides : sig
+  val services :
+    ?app:Current_github.App.t ->
+    sched:Current_ocluster.Connection.t ->
+    staging_auth:(string * string) option ->
+    unit ->
+    Cluster.service_info list
+
   val v :
     ?app:Current_github.App.t ->
     ?notify:Current_slack.channel ->
@@ -18,6 +25,13 @@ module Tarides : sig
 end
 
 module Ocaml_org : sig
+  val services :
+    ?app:Current_github.App.t ->
+    sched:Current_ocluster.Connection.t ->
+    staging_auth:(string * string) option ->
+    unit ->
+    Cluster.service_info list
+
   val v :
     ?app:Current_github.App.t ->
     ?notify:Current_slack.channel ->
@@ -28,6 +42,18 @@ module Ocaml_org : sig
 end
 
 module Mirage : sig
+  val unikernel_services :
+    ?app:Current_github.App.t ->
+    unit ->
+    Packet_unikernel.service_info list
+
+  val docker_services :
+    ?app:Current_github.App.t ->
+    sched:Current_ocluster.Connection.t ->
+    staging_auth:(string * string) option ->
+    unit ->
+    Cluster.service_info list
+
   val v :
     ?app:Current_github.App.t ->
     ?notify:Current_slack.channel ->

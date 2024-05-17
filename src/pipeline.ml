@@ -237,8 +237,8 @@ module Ocaml_org = struct
     (* [web_ui collapse_value] is a URL back to the deployment service, for links
       in status messages. *)
     let web_ui repo = Uri.with_query' base_url ["repo", repo] in
-    let build ?additional_build_args (org, name, builds) =
-      Cluster_build.repo ?channel ?additional_build_args ~web_ui ~org ~name builds
+    let build (org, name, builds) =
+      Cluster_build.repo ?channel ~web_ui ~org ~name builds
     in
     let build_for_registry ?additional_build_args (org, name, builds) =
       Build_registry.repo ?channel ?additional_build_args ~web_ui ~org ~name builds
@@ -276,7 +276,7 @@ module Mirage = struct
       ];
     ]
 
-  let docker_services ?app ~staging_auth ~sched () =
+  let docker_services ?app ~sched ~staging_auth () =
     (* GitHub organisations to monitor. *)
     let ocurrent = Build.org ?app ~account:"ocurrent" 6853813 in
     let sched = Current_ocluster.v ~timeout:Build.timeout ?push_auth:staging_auth sched in

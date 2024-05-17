@@ -71,6 +71,9 @@ type deploy_info = {
   services : service list;
 }
 
+type service_info =
+  Build.org * string * (build_info * (string * deploy_info) list) list
+
 let get_job_id x =
   let+ md = Current.Analysis.metadata x in
   match md with
