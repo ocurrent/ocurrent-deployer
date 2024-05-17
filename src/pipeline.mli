@@ -7,25 +7,31 @@ module Flavour : sig
   val cmdliner : t Cmdliner.Term.t
 end
 
-val tarides :
-  ?app:Current_github.App.t ->
-  ?notify:Current_slack.channel ->
-  ?filter:(Current_github.Repo_id.t -> bool) ->
-  sched:Current_ocluster.Connection.t ->
-  staging_auth:(string * string) option ->
-  unit -> unit Current.t
+module Tarides : sig
+  val v :
+    ?app:Current_github.App.t ->
+    ?notify:Current_slack.channel ->
+    ?filter:(Current_github.Repo_id.t -> bool) ->
+    sched:Current_ocluster.Connection.t ->
+    staging_auth:(string * string) option ->
+    unit -> unit Current.t
+end
 
-val ocaml_org :
-  ?app:Current_github.App.t ->
-  ?notify:Current_slack.channel ->
-  ?filter:(Current_github.Repo_id.t -> bool) ->
-  sched:Current_ocluster.Connection.t ->
-  staging_auth:(string * string) option ->
-  unit -> unit Current.t
+module Ocaml_org : sig
+  val v :
+    ?app:Current_github.App.t ->
+    ?notify:Current_slack.channel ->
+    ?filter:(Current_github.Repo_id.t -> bool) ->
+    sched:Current_ocluster.Connection.t ->
+    staging_auth:(string * string) option ->
+    unit -> unit Current.t
+end
 
-val mirage :
-  ?app:Current_github.App.t ->
-  ?notify:Current_slack.channel ->
-  sched:Current_ocluster.Connection.t ->
-  staging_auth:(string * string) option ->
-  unit -> unit Current.t
+module Mirage : sig
+  val v :
+    ?app:Current_github.App.t ->
+    ?notify:Current_slack.channel ->
+    sched:Current_ocluster.Connection.t ->
+    staging_auth:(string * string) option ->
+    unit -> unit Current.t
+end

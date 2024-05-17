@@ -21,9 +21,9 @@ let main () config mode app sched staging_password_file repo flavour =
   let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let engine = match flavour with
-    | `Tarides -> Current.Engine.create ~config (Pipeline.tarides ?app ~sched ~staging_auth ?filter)
-    | `OCaml -> Current.Engine.create ~config (Pipeline.ocaml_org ?app ~sched ~staging_auth ?filter)
-    | `Mirage -> Current.Engine.create ~config (Pipeline.mirage ?app ~sched ~staging_auth)
+    | `Tarides -> Current.Engine.create ~config (Pipeline.Tarides.v ?app ~sched ~staging_auth ?filter)
+    | `OCaml -> Current.Engine.create ~config (Pipeline.Ocaml_org.v ?app ~sched ~staging_auth ?filter)
+    | `Mirage -> Current.Engine.create ~config (Pipeline.Mirage.v ?app ~sched ~staging_auth)
   in
   let webhook_secret = Option.value ~default:webhook_secret @@ Option.map Current_github.App.webhook_secret app in
   let has_role = Current_web.Site.allow_all in
