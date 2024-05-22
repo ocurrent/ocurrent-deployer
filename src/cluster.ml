@@ -64,15 +64,25 @@ type service = [
   | `OCamlorg_v3b of string                  (* OCaml website @ v3b.ocaml.org aka www.ocaml.org *)
   | `OCamlorg_v3c of string                  (* Staging OCaml website @ staging.ocaml.org *)
   | `Aws_ecs of Aws.t                        (* Amazon Web Services - Elastic Container Service *)
-]
+] [@@deriving show]
 
 type deploy_info = {
   hub_id : Cluster_api.Docker.Image_id.t;
   services : service list;
 }
 
-type service_info =
-  Build.org * string * (build_info * (string * deploy_info) list) list
+(* type service_info =
+  Build.org * string * (build_info * (string * deploy_info) list) list *)
+
+let show_service (org, name, builds) =
+  let builds =
+    List.map
+      (fun (build, _deploys) ->
+        Printf.sprintf "%s" (Cluster_api.Docker.Image_id.to_string build))
+      builds
+    |> String.concat "\n"
+  in
+  Printf.sprintf "- %s/%s\n%s" (Build.account org) name builds
 
 let get_job_id x =
   let+ md = Current.Analysis.metadata x in

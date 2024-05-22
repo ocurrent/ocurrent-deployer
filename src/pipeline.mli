@@ -7,13 +7,23 @@ module Flavour : sig
   val cmdliner : t Cmdliner.Term.t
 end
 
+type deployment = {
+  branch : string;
+  target : string;
+  services : Cluster.service list;
+}
+
+type docker = {
+  dockerfile : string;
+  targets : deployment list;
+  archs : Cluster.Arch.t list;
+  options : Cluster_api.Docker.Spec.options;
+}
+
+type service = Build.org * string * docker list
+
 module Tarides : sig
-  val services :
-    ?app:Current_github.App.t ->
-    sched:Current_ocluster.Connection.t ->
-    staging_auth:(string * string) option ->
-    unit ->
-    Cluster.service_info list
+  val services : ?app:Current_github.App.t -> unit -> service list
 
   val v :
     ?app:Current_github.App.t ->
@@ -25,12 +35,7 @@ module Tarides : sig
 end
 
 module Ocaml_org : sig
-  val services :
-    ?app:Current_github.App.t ->
-    sched:Current_ocluster.Connection.t ->
-    staging_auth:(string * string) option ->
-    unit ->
-    Cluster.service_info list
+  val services : ?app:Current_github.App.t -> unit -> service list
 
   val v :
     ?app:Current_github.App.t ->
@@ -47,12 +52,7 @@ module Mirage : sig
     unit ->
     Packet_unikernel.service_info list
 
-  val docker_services :
-    ?app:Current_github.App.t ->
-    sched:Current_ocluster.Connection.t ->
-    staging_auth:(string * string) option ->
-    unit ->
-    Cluster.service_info list
+  val docker_services : ?app:Current_github.App.t -> unit -> service list
 
   val v :
     ?app:Current_github.App.t ->
