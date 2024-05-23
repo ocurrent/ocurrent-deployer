@@ -15,6 +15,13 @@ module Arch = struct
     | `Linux_ppc64 -> "linux-ppc64"
     | `Linux_s390x -> "linux-s390x"
     | `Linux_riscv64 -> "linux-riscv64"
+
+  let to_string : t -> string = function
+    | `Linux_arm64 -> "arm64"
+    | `Linux_x86_64 -> "x86_64"
+    | `Linux_ppc64 -> "ppc64"
+    | `Linux_s390x -> "s390x"
+    | `Linux_riscv64 -> "riscv64"
 end
 
 let push_repo = "ocurrentbuilder/staging"
@@ -70,9 +77,6 @@ type deploy_info = {
   hub_id : Cluster_api.Docker.Image_id.t;
   services : service list;
 }
-
-(* type service_info =
-  Build.org * string * (build_info * (string * deploy_info) list) list *)
 
 let show_service (org, name, builds) =
   let builds =

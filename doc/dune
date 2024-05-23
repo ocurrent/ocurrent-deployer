@@ -1,0 +1,13 @@
+(executable
+ (name doc)
+ (libraries deployer))
+
+(rule
+  (target services-new.md)
+  (action (run ./doc.exe -o %{target})))
+
+(rule
+ (alias doc)
+ (mode promote)
+ (action
+  (diff ./services.md ./services-new.md)))
