@@ -26,7 +26,6 @@ let output_service (org, name, dockers) =
     let dockers =
       List.map output_docker dockers
       |> List.flatten
-      (* |> List.map (fun x -> "  " ^ x) *)
     in
     Some (String.concat "\n" (header @ dockers))
 
