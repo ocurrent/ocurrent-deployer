@@ -144,7 +144,7 @@ let pull_and_serve (module D : Current_docker.S.DOCKER) ~name op repo_id =
   let image =
     Current.component "pull" |>
     let> repo_id in
-    Current_docker.Raw.pull repo_id ?auth:Build.auth ~docker_context:D.docker_context ~schedule:no_schedule
+    Current_docker.Raw.pull repo_id ?auth:(Build.get_auth ()) ~docker_context:D.docker_context ~schedule:no_schedule
     |> Current.Primitive.map_result (Result.map (fun raw_image ->
         D.Image.of_hash (Current_docker.Raw.Image.hash raw_image)
       ))
@@ -205,7 +205,7 @@ let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(addition
     build_and_push sched ~options ~push_target ~pool ~src dockerfile
   in
   let images = List.map build_arch archs in
-  match Build.auth with
+  match Build.get_auth () with
   | None -> Current.all (Current.fail "No auth configured; can't push final image" :: List.map Current.ignore_value images)
   | Some auth ->
     let multi_hash = Current_docker.push_manifest ~auth images ~tag:(Cluster_api.Docker.Image_id.to_string hub_id) in

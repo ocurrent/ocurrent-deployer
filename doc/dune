@@ -3,8 +3,9 @@
  (libraries deployer))
 
 (rule
-  (target services-new.md)
-  (action (run ./doc.exe -o %{target})))
+ (target services-new.md)
+ (action
+  (with-stdout-to %{target} (run ./doc.exe))))
 
 (rule
  (alias doc)
