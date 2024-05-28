@@ -5,7 +5,7 @@ various other pipelines we use. When a new commit is pushed to the
 `live` branch of a source repository, it builds a new Docker image
 for the project and upgrades the service to that version.
 
-> The list of deployed services is located in [services.md][].
+The list of deployed services is located in [doc/services.md][].
 
 The main configuration is in [pipeline.ml][]. For example, one entry is:
 
@@ -102,4 +102,4 @@ To update a deployment that is managed by ocurrent-deployer (which could be ocur
 [MirageOS]: https://mirage.io/
 [Albatross]: https://github.com/hannesm/albatross
 [pipeline.ml]: ./src/pipeline.ml
-[services.md]: ./doc/services.md
+[doc/services.md]: ./doc/services.md

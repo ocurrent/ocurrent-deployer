@@ -30,11 +30,11 @@ module Cluster_build = Build.Make(Cluster)
 
 type deployment = {
   branch : string;
-  target : string;
+  target : string; (* The docker tag of the image that the branch is built to *)
   services : Cluster.service list;
 }
 
-let make_deployment branch target services = { branch; target; services; }
+let make_deployment ~branch ~target services = { branch; target; services; }
 
 type docker = {
   dockerfile : string;
@@ -94,8 +94,8 @@ module Tarides = struct
           "Dockerfile"
           [
             make_deployment
-              "live-ci3"
-              "ocurrent/ci.ocamllabs.io-deployer:live-ci3"
+              ~branch:"live-ci3"
+              ~target:"ocurrent/ci.ocamllabs.io-deployer:live-ci3"
               [`Ci3 "deployer_deployer"];
           ]
       ];
@@ -104,8 +104,8 @@ module Tarides = struct
           "Dockerfile"
           [
             make_deployment
-              "live-engine"
-              "ocurrent/ocaml-ci-service:live"
+              ~branch:"live-engine"
+              ~target:"ocurrent/ocaml-ci-service:live"
               [`Ci "ocaml-ci_ci"];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64];
@@ -113,8 +113,8 @@ module Tarides = struct
           "Dockerfile.gitlab"
           [
             make_deployment
-              "live-engine"
-              "ocurrent/ocaml-ci-gitlab-service:live"
+              ~branch:"live-engine"
+              ~target:"ocurrent/ocaml-ci-gitlab-service:live"
               [`Ci "ocaml-ci_gitlab"];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64];
@@ -122,12 +122,12 @@ module Tarides = struct
           "Dockerfile.web"
           [
             make_deployment
-              "live-www"
-              "ocurrent/ocaml-ci-web:live"
+              ~branch:"live-www"
+              ~target:"ocurrent/ocaml-ci-web:live"
               [`Ci "ocaml-ci_web"];
             make_deployment
-              "staging-www"
-              "ocurrent/ocaml-ci-web:staging"
+              ~branch:"staging-www"
+              ~target:"ocurrent/ocaml-ci-web:staging"
               [`Ci "test-www"];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64];
@@ -137,8 +137,8 @@ module Tarides = struct
           "Dockerfile"
           [
             make_deployment
-              "live-scheduler"
-              "ocurrent/ocluster-scheduler:live"
+              ~branch:"live-scheduler"
+              ~target:"ocurrent/ocluster-scheduler:live"
               [];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64]
@@ -147,8 +147,8 @@ module Tarides = struct
           "Dockerfile.worker"
           [
             make_deployment
-              "live-worker"
-              "ocurrent/ocluster-worker:live"
+              ~branch:"live-worker"
+              ~target:"ocurrent/ocluster-worker:live"
               [];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64; `Linux_s390x; `Linux_riscv64]
@@ -157,8 +157,8 @@ module Tarides = struct
           "Dockerfile.worker.alpine"
           [
             make_deployment
-              "live-worker"
-              "ocurrent/ocluster-worker:alpine"
+              ~branch:"live-worker"
+              ~target:"ocurrent/ocluster-worker:alpine"
               [];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64] ~options:include_git;
@@ -168,8 +168,8 @@ module Tarides = struct
           "Dockerfile"
           [
             make_deployment
-              "live"
-              "ocurrent/clarke:live"
+              ~branch:"live"
+              ~target:"ocurrent/clarke:live"
               [];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64] ~options:include_git;
@@ -179,8 +179,8 @@ module Tarides = struct
           "Dockerfile"
           [
             make_deployment
-              "live"
-              "ocurrent/opam-repo-ci:live"
+              ~branch:"live"
+              ~target:"ocurrent/opam-repo-ci:live"
               [`Opamrepo "opam-repo-ci_opam-repo-ci"];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64];
@@ -188,8 +188,8 @@ module Tarides = struct
           "Dockerfile.web"
           [
             make_deployment
-              "live-web"
-              "ocurrent/opam-repo-ci-web:live"
+              ~branch:"live-web"
+              ~target:"ocurrent/opam-repo-ci-web:live"
               [`Opamrepo "opam-repo-ci_opam-repo-ci-web"];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64];
@@ -199,8 +199,8 @@ module Tarides = struct
           "Dockerfile"
           [
             make_deployment
-              "live"
-              "ocurrent/opam-health-check:live"
+              ~branch:"live"
+              ~target:"ocurrent/opam-health-check:live"
               [`Check "infra_opam-health-check"; `Check "infra_opam-health-check-freebsd"];
           ];
       ];
@@ -209,16 +209,16 @@ module Tarides = struct
           "Dockerfile"
           [
             make_deployment
-              "live"
-              "ocurrent/multicore-ci:live"
+              ~branch:"live"
+              ~target:"ocurrent/multicore-ci:live"
               [`Ci4 "infra_multicore-ci"];
           ];
         make_docker
           "Dockerfile.web"
           [
             make_deployment
-              "live-web"
-              "ocurrent/multicore-ci-web:live"
+              ~branch:"live-web"
+              ~target:"ocurrent/multicore-ci-web:live"
               [`Ci4 "infra_multicore-ci-web"];
           ];
       ];
@@ -227,8 +227,8 @@ module Tarides = struct
           "Dockerfile"
           [
             make_deployment
-              "live-engine"
-              "ocurrent/ocurrent.org:live-engine"
+              ~branch:"live-engine"
+              ~target:"ocurrent/ocurrent.org:live-engine"
               [`Ci3 "ocurrent_org_watcher"];
           ];
       ];
@@ -237,8 +237,8 @@ module Tarides = struct
           "Dockerfile"
           [
             make_deployment
-              "main"
-              "ocurrent/sandmark-nightly:live"
+              ~branch:"main"
+              ~target:"ocurrent/sandmark-nightly:live"
               [`Ci3 "sandmark_sandmark"];
           ]
           ~options:include_git;
@@ -248,8 +248,8 @@ module Tarides = struct
           "Dockerfile"
           [
             make_deployment
-              "live"
-              "ocurrent/solver-service:live"
+              ~branch:"live"
+              ~target:"ocurrent/solver-service:live"
               [];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64] ~options:include_git;
@@ -257,8 +257,8 @@ module Tarides = struct
           "Dockerfile"
           [
             make_deployment
-              "staging"
-              "ocurrent/solver-service:staging"
+              ~branch:"staging"
+              ~target:"ocurrent/solver-service:staging"
               [];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64] ~options:include_git;
@@ -268,8 +268,8 @@ module Tarides = struct
           "Dockerfile"
           [
             make_deployment
-              "live"
-              "ocurrent/multicoretests-ci:live"
+              ~branch:"live"
+              ~target:"ocurrent/multicoretests-ci:live"
               [`Ci4 "infra_multicoretests-ci"];
           ];
       ];
@@ -317,8 +317,8 @@ module Ocaml_org = struct
           "Dockerfile"
           [
             make_deployment
-              "live-ocaml-org"
-              "ocurrent/ci.ocamllabs.io-deployer:live-ocaml-org"
+              ~branch:"live-ocaml-org"
+              ~target:"ocurrent/ci.ocamllabs.io-deployer:live-ocaml-org"
               [`Ocamlorg_deployer "infra_deployer"];
           ];
       ];
@@ -328,8 +328,8 @@ module Ocaml_org = struct
           "Dockerfile"
           [
             make_deployment
-              "main"
-              "ocurrent/v3.ocaml.org-server:live"
+              ~branch:"main"
+              ~target:"ocurrent/v3.ocaml.org-server:live"
               [`OCamlorg_v3b "infra_www"]
           ]
           ~options:include_git;
@@ -338,8 +338,8 @@ module Ocaml_org = struct
           "Dockerfile"
           [
             make_deployment
-              "staging"
-              "ocurrent/v3.ocaml.org-server:staging"
+              ~branch:"staging"
+              ~target:"ocurrent/v3.ocaml.org-server:staging"
               [`OCamlorg_v3c "infra_www"]
           ]
           ~options:include_git
@@ -350,8 +350,8 @@ module Ocaml_org = struct
           "Dockerfile.deploy"
           [
             make_deployment
-              "master"
-              "ocurrent/v2.ocaml.org:live"
+              ~branch:"master"
+              ~target:"ocurrent/v2.ocaml.org:live"
               [`OCamlorg_v2 ["v2.ocaml.org", None]];
           ]
           ~options:include_git;
@@ -362,8 +362,8 @@ module Ocaml_org = struct
           "Dockerfile"
           [
             make_deployment
-              "live"
-              "ocurrent/base-images:live"
+              ~branch:"live"
+              ~target:"ocurrent/base-images:live"
               [`Ocamlorg_images "base-images_builder"];
           ];
       ];
@@ -372,48 +372,48 @@ module Ocaml_org = struct
           "Dockerfile"
           [
             make_deployment
-              "live"
-              "ocurrent/docs-ci:live"
+              ~branch:"live"
+              ~target:"ocurrent/docs-ci:live"
               [`Docs "infra_docs-ci"];
           ];
         make_docker
           "docker/init/Dockerfile"
           [
             make_deployment
-              "live"
-              "ocurrent/docs-ci-init:live"
+              ~branch:"live"
+              ~target:"ocurrent/docs-ci-init:live"
               [`Docs "infra_init"];
           ];
         make_docker
           "docker/storage/Dockerfile"
           [
             make_deployment
-              "live"
-              "ocurrent/docs-ci-storage-server:live"
+              ~branch:"live"
+              ~target:"ocurrent/docs-ci-storage-server:live"
               [`Docs "infra_storage-server"];
           ];
         make_docker
           "Dockerfile"
           [
             make_deployment
-              "staging"
-              "ocurrent/docs-ci:staging"
+              ~branch:"staging"
+              ~target:"ocurrent/docs-ci:staging"
               [`Staging_docs "infra_docs-ci"];
           ];
         make_docker
           "docker/init/Dockerfile"
           [
             make_deployment
-              "staging"
-              "ocurrent/docs-ci-init:staging"
+              ~branch:"staging"
+              ~target:"ocurrent/docs-ci-init:staging"
               [`Staging_docs "infra_init"];
           ];
         make_docker
           "docker/storage/Dockerfile"
           [
             make_deployment
-              "staging"
-              "ocurrent/docs-ci-storage-server:staging"
+              ~branch:"staging"
+              ~target:"ocurrent/docs-ci-storage-server:staging"
               [`Staging_docs "infra_storage-server"];
           ];
       ];
@@ -530,8 +530,8 @@ module Mirage = struct
           "Dockerfile"
           [
             make_deployment
-              "live"
-              "ocurrent/mirage-ci:live"
+              ~branch:"live"
+              ~target:"ocurrent/mirage-ci:live"
               [`Cimirage "infra_mirage-ci"]
           ]
           ~options:(include_git |> build_kit)
@@ -541,8 +541,8 @@ module Mirage = struct
           "Dockerfile"
           [
             make_deployment
-              "live-mirage"
-              "ocurrent/deploy.mirage.io:live"
+              ~branch:"live-mirage"
+              ~target:"ocurrent/deploy.mirage.io:live"
               [`Cimirage "infra_deployer"]
           ];
       ];
@@ -551,8 +551,8 @@ module Mirage = struct
           "Dockerfile"
           [
             make_deployment
-              "master"
-              "ocurrent/caddy-rfc2136:live"
+              ~branch:"master"
+              ~target:"ocurrent/caddy-rfc2136:live"
               [`Cimirage "infra_caddy"]
           ];
       ];
