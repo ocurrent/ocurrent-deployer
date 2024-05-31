@@ -31,7 +31,7 @@ let has_role_tarides user role =
     match Current_web.User.id user, role with
     | ("github:talex5"
       |"github:avsm"
-      |"github:kit-ty-kate"
+      |"github:shonfeder"
       |"github:samoht"
       |"github:tmcgilchrist"
       |"github:mtelvers"
@@ -52,7 +52,7 @@ let has_role_mirage user role =
     | ("github:talex5"
       |"github:hannesm"
       |"github:avsm"
-      |"github:kit-ty-kate"
+      |"github:shonfeder"
       |"github:samoht"
       |"github:tmcgilchrist"
       |"github:mtelvers"
@@ -69,7 +69,7 @@ let has_role_ocaml user role =
     match Current_web.User.id user, role with
     | ("github:talex5"
       |"github:avsm"
-      |"github:kit-ty-kate"
+      |"github:shonfeder"
       |"github:samoht"
       |"github:tmcgilchrist"
       |"github:mtelvers"
