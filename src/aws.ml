@@ -12,6 +12,12 @@ type t = {
   certificate: string;
 }
 
+let show t = t.name
+
+let pp ppf t =
+  Format.pp_print_string ppf @@
+  Printf.sprintf "%s/%s" t.name t.branch
+
 let command_colon = function
   | None -> ""
   | Some cmd -> "    command: " ^ cmd ^ "\n"

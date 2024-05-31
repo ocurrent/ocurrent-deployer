@@ -31,7 +31,7 @@ let has_role_tarides user role =
     match Current_web.User.id user, role with
     | ("github:talex5"
       |"github:avsm"
-      |"github:kit-ty-kate"
+      |"github:shonfeder"
       |"github:samoht"
       |"github:tmcgilchrist"
       |"github:mtelvers"
@@ -52,7 +52,7 @@ let has_role_mirage user role =
     | ("github:talex5"
       |"github:hannesm"
       |"github:avsm"
-      |"github:kit-ty-kate"
+      |"github:shonfeder"
       |"github:samoht"
       |"github:tmcgilchrist"
       |"github:mtelvers"
@@ -69,7 +69,7 @@ let has_role_ocaml user role =
     match Current_web.User.id user, role with
     | ("github:talex5"
       |"github:avsm"
-      |"github:kit-ty-kate"
+      |"github:shonfeder"
       |"github:samoht"
       |"github:tmcgilchrist"
       |"github:mtelvers"
@@ -89,13 +89,13 @@ let main () config mode app slack auth staging_password_file flavour prometheus_
   let engine = match flavour with
     | Tarides sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-       Current.Engine.create ~config (Pipeline.tarides ~app ~notify:channel ~sched ~staging_auth)
+       Current.Engine.create ~config (Pipeline.Tarides.v ~app ~notify:channel ~sched ~staging_auth)
     | OCaml sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-       Current.Engine.create ~config (Pipeline.ocaml_org ~app ~notify:channel ~sched ~staging_auth)
+       Current.Engine.create ~config (Pipeline.Ocaml_org.v ~app ~notify:channel ~sched ~staging_auth)
     | Mirage sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-       Current.Engine.create ~config (Pipeline.mirage ~app ~notify:channel ~sched ~staging_auth)
+       Current.Engine.create ~config (Pipeline.Mirage.v ~app ~notify:channel ~sched ~staging_auth)
   in
   let authn = Option.map Current_github.Auth.make_login_uri auth in
   let webhook_secret = Current_github.App.webhook_secret app in

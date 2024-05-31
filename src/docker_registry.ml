@@ -23,7 +23,7 @@ type deploy_info = {
   services : service list;
 }
 
-let auth = match Build.auth with
+let auth () = match Build.get_auth () with
   | Some (user, pass) -> Some (user ^ "@" ^ host, pass)
   | None -> None
 
@@ -58,7 +58,7 @@ let pull_and_serve (module D : Current_docker.S.DOCKER) ~name repo_id =
     Current.component "pull" |>
     let> repo_id in
     Current_docker.Raw.pull repo_id
-    ?auth
+    ?auth:(auth ())
     ~docker_context:D.docker_context
     ~schedule:no_schedule
     |> Current.Primitive.map_result (Result.map (fun raw_image ->
@@ -71,7 +71,7 @@ let deploy build_info { tag; services } ?(additional_build_args=Current.return [
   let image = build_image build_info additional_build_args src in
   let tag = host ^ "/" ^ tag in
   Metrics.Build.inc_deployments "dockerregistry" tag;
-  let repo_id = Docker.push ~tag image ?auth in
+  let repo_id = Docker.push ~tag image ?auth:(auth ()) in
   Current.all (
     List.map (fun service ->
       match service with

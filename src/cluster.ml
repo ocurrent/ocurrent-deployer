@@ -15,6 +15,13 @@ module Arch = struct
     | `Linux_ppc64 -> "linux-ppc64"
     | `Linux_s390x -> "linux-s390x"
     | `Linux_riscv64 -> "linux-riscv64"
+
+  let to_string : t -> string = function
+    | `Linux_arm64 -> "arm64"
+    | `Linux_x86_64 -> "x86_64"
+    | `Linux_ppc64 -> "ppc64"
+    | `Linux_s390x -> "s390x"
+    | `Linux_riscv64 -> "riscv64"
 end
 
 let push_repo = "ocurrentbuilder/staging"
@@ -64,12 +71,22 @@ type service = [
   | `OCamlorg_v3b of string                  (* OCaml website @ v3b.ocaml.org aka www.ocaml.org *)
   | `OCamlorg_v3c of string                  (* Staging OCaml website @ staging.ocaml.org *)
   | `Aws_ecs of Aws.t                        (* Amazon Web Services - Elastic Container Service *)
-]
+] [@@deriving show]
 
 type deploy_info = {
   hub_id : Cluster_api.Docker.Image_id.t;
   services : service list;
 }
+
+let show_service (org, name, builds) =
+  let builds =
+    List.map
+      (fun (build, _deploys) ->
+        Printf.sprintf "%s" (Cluster_api.Docker.Image_id.to_string build))
+      builds
+    |> String.concat "\n"
+  in
+  Printf.sprintf "- %s/%s\n%s" (Build.account org) name builds
 
 let get_job_id x =
   let+ md = Current.Analysis.metadata x in
@@ -128,7 +145,7 @@ let pull_and_serve (module D : Current_docker.S.DOCKER) ~name op repo_id =
   let image =
     Current.component "pull" |>
     let> repo_id in
-    Current_docker.Raw.pull repo_id ?auth:Build.auth ~docker_context:D.docker_context ~schedule:no_schedule
+    Current_docker.Raw.pull repo_id ?auth:(Build.get_auth ()) ~docker_context:D.docker_context ~schedule:no_schedule
     |> Current.Primitive.map_result (Result.map (fun raw_image ->
         D.Image.of_hash (Current_docker.Raw.Image.hash raw_image)
       ))
@@ -191,7 +208,7 @@ let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(addition
     build_and_push sched ~options ~push_target ~pool ~src dockerfile
   in
   let images = List.map build_arch archs in
-  match Build.auth with
+  match Build.get_auth () with
   | None -> Current.all (Current.fail "No auth configured; can't push final image" :: List.map Current.ignore_value images)
   | Some auth ->
     let multi_hash = Current_docker.push_manifest ~auth images ~tag:(Cluster_api.Docker.Image_id.to_string hub_id) in

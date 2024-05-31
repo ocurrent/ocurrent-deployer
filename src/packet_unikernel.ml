@@ -12,6 +12,9 @@ type deploy_info = {
   service : string;
 }
 
+type service_info =
+  Build.org * string * (build_info * (string * deploy_info) list) list
+
 let build_image { dockerfile; target; args } src =
   let src = Current_git.fetch src in
   let args = ("TARGET=" ^ target) :: args in
