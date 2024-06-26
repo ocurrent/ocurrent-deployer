@@ -36,14 +36,14 @@ For the `master` branch, the `hvt` unikernel is deployed as the `www` [Albatross
 See [VM-host.md](./VM-host.md) for instructions about setting up a host for unikernels.
 
 There are 3 different flavours of pipelines:
- * Tarides - existing Tarides/OCamlLabs pipelines on deploy.ci3.ocamlabs.io.
+ * Tarides - existing Tarides/OCamlLabs pipelines on deploy.ci.dev.
  * OCaml - pipelines for deploying ocaml.org services.
  * Mirage - existing Mirage piplines on deploy.mirage.io.
 
 Each pipeline flavour is connected to a different GitHub Application:
- * [deploy.ci.ocaml.org]() @ https://github.com/apps/deploy-ci-ocaml-org on branch live-ocaml-org
- * [deploy.ci3.ocamllabs.io]() @ https://github.com/apps/deploy-ci3-ocamllabs-io on branch live-ci3
- * [deploy.mirage.io]() @ https://github.com/apps/deploy-mirage-io on branch live-mirage
+ * [deploy.ci.ocaml.org](https://deploy.ci.ocaml.org/) @ https://github.com/apps/deploy-ci-ocaml-org on branch live-ocaml-org
+ * [deploy.ci.dev](https://deploy.ci.dev/) @ https://github.com/apps/deploy-ci-dev on branch live-ci3
+ * [deploy.mirage.io](https://deploy.mirage.io/) @ https://github.com/apps/deploy-mirage-io on branch live-mirage
 
 ## Testing locally
 
