@@ -35,7 +35,6 @@ RUN apt-get update && apt-get install libffi-dev libev4 openssh-client curl gnup
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 RUN echo 'deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable' >> /etc/apt/sources.list
 RUN apt-get update && apt-get install docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin -y --no-install-recommends
-RUN curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
 WORKDIR /var/lib/ocurrent
 ENTRYPOINT ["dumb-init", "/usr/local/bin/ocurrent-deployer"]
 COPY create-config.sh create-config.sh
