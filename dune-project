@@ -20,6 +20,7 @@
   current_ssh
   ocluster-api
   ; Opam dependencies
+  (prometheus-app (>= 1.2))
   capnp-rpc-unix
   fmt
   ppx_deriving_yojson
