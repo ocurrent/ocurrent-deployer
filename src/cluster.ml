@@ -37,7 +37,6 @@ module Check_docker = Current_docker.Make(struct let docker_context = Some "chec
 module Watch_docker = Current_docker.Make(struct let docker_context = Some "watch.ocaml.org" end)
 module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
 module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirage.io" end)
-module V2ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "v2.ocaml.org" end)
 module Ocamlorg_images = Current_docker.Make(struct let docker_context = Some "ci3.ocamllabs.io" end)
 module Docker_aws = Current_docker.Make(struct let docker_context = Some "awsecs" end)
 module V3b_docker = Current_docker.Make(struct let docker_context = Some "v3b.ocaml.org" end)
@@ -66,7 +65,6 @@ type service = [
 
   (* Services on deploy.ci.ocaml.org. *)
   | `Ocamlorg_deployer of string             (* OCurrent deployer @ deploy.ci.ocaml.org *)
-  | `OCamlorg_v2 of (string * string option) list   (* OCaml website @ v2.ocaml.org *)
   | `Ocamlorg_images of string               (* Base Image builder @ images.ci.ocaml.org *)
   | `OCamlorg_v3b of string                  (* OCaml website @ v3b.ocaml.org aka www.ocaml.org *)
   | `OCamlorg_v3c of string                  (* Staging OCaml website @ staging.ocaml.org *)
@@ -168,7 +166,7 @@ let build_and_push ?level ?label ?cache_hint t ~push_target ~pool ~src ~options 
   and> src in
   Current_ocluster.Raw.build_and_push ?level ?cache_hint t ~push_target ~pool ~src ~options dockerfile
 
-let pull_and_serve multi_hash hub_id = function
+let pull_and_serve multi_hash = function
   (* deploy.ci.dev *)
   | `Ci3 name -> pull_and_serve (module Ci3_docker) ~name `Service multi_hash
   | `Ci4 name -> pull_and_serve (module Ci4_docker) ~name `Service multi_hash
@@ -181,10 +179,6 @@ let pull_and_serve multi_hash hub_id = function
   | `Cimirage name -> pull_and_serve (module Cimirage_docker) ~name `Service multi_hash
   (* ocaml.org *)
   | `Ocamlorg_deployer name -> pull_and_serve (module Deploycamlorg_docker) ~name `Service multi_hash
-  | `OCamlorg_v2 domains ->
-    let name = Cluster_api.Docker.Image_id.tag hub_id in
-    let contents = Caddy.compose {Caddy.name; domains} in
-    pull_and_serve (module V2ocamlorg_docker) ~name (`Compose contents) multi_hash
   | `Ocamlorg_images name -> pull_and_serve (module Ocamlorg_images) ~name `Service multi_hash
   | `OCamlorg_v3b name -> pull_and_serve (module V3b_docker) ~name `Service multi_hash
   | `OCamlorg_v3c name -> pull_and_serve (module V3c_docker) ~name `Service multi_hash
@@ -216,5 +210,5 @@ let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(addition
     | [] -> Current.ignore_value multi_hash
     | services ->
       services
-      |> List.map (pull_and_serve multi_hash hub_id)
+      |> List.map (pull_and_serve multi_hash)
       |> Current.all

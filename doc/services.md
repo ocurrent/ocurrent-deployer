@@ -57,10 +57,6 @@ For a given service, the specified Dockerfile is pulled from the specified branc
 - `Dockerfile` on arches: x86_64
   - branch [`staging`](https://github.com/ocaml/ocaml.org/tree/staging) built at [`ocurrent/v3.ocaml.org-server:staging`](https://hub.docker.com/r/ocurrent/v3.ocaml.org-server)
 
-### [ocaml/v2.ocaml.org](https://github.com/ocaml/v2.ocaml.org)
-- `Dockerfile.deploy` on arches: x86_64
-  - branch [`master`](https://github.com/ocaml/v2.ocaml.org/tree/master) built at [`ocurrent/v2.ocaml.org:live`](https://hub.docker.com/r/ocurrent/v2.ocaml.org)
-
 ### [ocurrent/docker-base-images](https://github.com/ocurrent/docker-base-images)
 - `Dockerfile` on arches: x86_64
   - branch [`live`](https://github.com/ocurrent/docker-base-images/tree/live) built at [`ocurrent/base-images:live`](https://hub.docker.com/r/ocurrent/base-images)

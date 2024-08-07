@@ -344,18 +344,6 @@ module Ocaml_org = struct
           ]
           ~options:include_git
       ];
-      ocaml, "v2.ocaml.org", [
-        (* Backup of existing ocaml.org website. *)
-        make_docker
-          "Dockerfile.deploy"
-          [
-            make_deployment
-              ~branch:"master"
-              ~target:"ocurrent/v2.ocaml.org:live"
-              [`OCamlorg_v2 ["v2.ocaml.org", None]];
-          ]
-          ~options:include_git;
-      ];
       ocurrent, "docker-base-images", [
         (* Docker base images @ images.ci.ocaml.org *)
         make_docker
