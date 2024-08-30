@@ -11,7 +11,6 @@ docker context create "docs.ci.ocaml.org" --description "OCaml - docs.ci.ocaml.o
 docker context create "staging.docs.ci.ocamllabs.io" --description "Staging for docs.ci.ocaml.org" --docker "host=ssh://root@staging.docs.ci.ocamllabs.io"
 docker context create "opam-4.ocaml.org" --description "OPAM - opam-4.ocaml.org" --docker "host=ssh://root@opam-4.ocaml.org"
 docker context create "opam-5.ocaml.org" --description "OPAM - opam-5.ocaml.org" --docker "host=ssh://root@opam-5.ocaml.org"
-docker context create "v2.ocaml.org" --description "OCaml - v2.ocaml.org" --docker "host=ssh://root@v2.ocaml.org"
 docker context create "v3b.ocaml.org" --description "OCaml - www.ocaml.org" --docker "host=ssh://root@v3b.ocaml.org"
 docker context create "v3c.ocaml.org" --description "OCaml - staging.ocaml.org" --docker "host=ssh://root@v3c.ocaml.org"
 docker context create "watch.ocaml.org" --description "OCaml - watch.ocaml.org" --docker "host=ssh://root@watch.ocaml.org"
@@ -39,7 +38,6 @@ for host in \
   staging.docs.ci.ocamllabs.io \
   opam-4.ocaml.org \
   opam-5.ocaml.org \
-  v2.ocaml.org \
   v3b.ocaml.org \
   v3c.ocaml.org \
   watch.ocaml.org \
