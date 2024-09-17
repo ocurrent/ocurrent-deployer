@@ -38,7 +38,6 @@ let has_role_tarides user role =
       |"github:dra27"
       |"github:moyodiallo"
       |"github:punchagan"
-      |"github:benmandrew"
       |"github:MisterDA"
       ), _ -> true        (* These users have all roles *)
     | _ -> role = `Viewer
@@ -58,6 +57,7 @@ let has_role_mirage user role =
       |"github:mtelvers"
       |"github:dra27"
       |"github:moyodiallo"
+      |"github:punchagan"
       ), _ -> true        (* These users have all roles *)
     | _ -> role = `Viewer
 
@@ -78,7 +78,6 @@ let has_role_ocaml user role =
       |"github:AltGr"
       |"github:moyodiallo"
       |"github:punchagan"
-      |"github:benmandrew"
       ), _ -> true        (* These users have all roles *)
     | _ -> role = `Viewer
 
