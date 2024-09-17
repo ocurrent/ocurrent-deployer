@@ -23,87 +23,32 @@ let read_channel_uri path =
   with ex ->
     Fmt.failwith "Failed to read slack URI from %S: %a" path Fmt.exn ex
 
-(* Access control policy for Tarides. *)
-let has_role_tarides user role =
-  match user with
-  | None -> role = `Viewer || role = `Monitor         (* Unauthenticated users can only look at things. *)
-  | Some user ->
-    match Current_web.User.id user, role with
-    | ("github:talex5"
-      |"github:avsm"
-      |"github:shonfeder"
-      |"github:samoht"
-      |"github:tmcgilchrist"
-      |"github:mtelvers"
-      |"github:dra27"
-      |"github:moyodiallo"
-      |"github:punchagan"
-      |"github:MisterDA"
-      ), _ -> true        (* These users have all roles *)
-    | _ -> role = `Viewer
-
-(* Access control policy for Mirage. *)
-let has_role_mirage user role =
-  match user with
-  | None -> role = `Viewer || role = `Monitor         (* Unauthenticated users can only look at things. *)
-  | Some user ->
-    match Current_web.User.id user, role with
-    | ("github:talex5"
-      |"github:hannesm"
-      |"github:avsm"
-      |"github:shonfeder"
-      |"github:samoht"
-      |"github:tmcgilchrist"
-      |"github:mtelvers"
-      |"github:dra27"
-      |"github:moyodiallo"
-      |"github:punchagan"
-      ), _ -> true        (* These users have all roles *)
-    | _ -> role = `Viewer
-
-(* Access control policy for OCaml. *)
-let has_role_ocaml user role =
-  match user with
-  | None -> role = `Viewer || role = `Monitor         (* Unauthenticated users can only look at things. *)
-  | Some user ->
-    match Current_web.User.id user, role with
-    | ("github:talex5"
-      |"github:avsm"
-      |"github:shonfeder"
-      |"github:samoht"
-      |"github:tmcgilchrist"
-      |"github:mtelvers"
-      |"github:dra27"
-      |"github:rjbou"
-      |"github:AltGr"
-      |"github:moyodiallo"
-      |"github:punchagan"
-      ), _ -> true        (* These users have all roles *)
-    | _ -> role = `Viewer
-
 let main () config mode app slack auth staging_password_file flavour prometheus_config =
   let vat = Capnp_rpc_unix.client_only_vat () in
   let channel = read_channel_uri slack in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
-  let engine = match flavour with
+  let engine, admins = match flavour with
     | Tarides sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-       Current.Engine.create ~config (Pipeline.Tarides.v ~app ~notify:channel ~sched ~staging_auth)
+       Current.Engine.create ~config (Pipeline.Tarides.v ~app ~notify:channel ~sched ~staging_auth),
+       Pipeline.Tarides.admins
     | OCaml sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-       Current.Engine.create ~config (Pipeline.Ocaml_org.v ~app ~notify:channel ~sched ~staging_auth)
+       Current.Engine.create ~config (Pipeline.Ocaml_org.v ~app ~notify:channel ~sched ~staging_auth),
+       Pipeline.Ocaml_org.admins
     | Mirage sched ->
        let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-       Current.Engine.create ~config (Pipeline.Mirage.v ~app ~notify:channel ~sched ~staging_auth)
+       Current.Engine.create ~config (Pipeline.Mirage.v ~app ~notify:channel ~sched ~staging_auth),
+       Pipeline.Mirage.admins
   in
   let authn = Option.map Current_github.Auth.make_login_uri auth in
   let webhook_secret = Current_github.App.webhook_secret app in
   let has_role =
-    if auth = None then Current_web.Site.allow_all
-    else match flavour with
-      | Tarides _ -> has_role_tarides
-      | Mirage _ -> has_role_mirage
-      | OCaml _ -> has_role_ocaml
+    if auth = None then
+      Current_web.Site.allow_all
+    else
+      fun user role ->
+        Access.user_has_role ~admins (Option.map Current_web.User.id user) role
   in
   let routes =
     Routes.(s "login" /? nil @--> Current_github.Auth.login auth) ::
