@@ -273,6 +273,28 @@ module Tarides = struct
               [`Ci4 "infra_multicoretests-ci"];
           ];
       ];
+      ocurrent, "ocurrent-observer", [
+        make_docker
+          "Dockerfile"
+          [
+            make_deployment
+              ~branch:"live"
+              ~target:"ocurrent/ocurrent-observer:live"
+              [];
+          ]
+          ~archs:[`Linux_riscv64] ~options:include_git;
+      ];
+      ocurrent, "ocurrent-configurator", [
+        make_docker
+          "Dockerfile"
+          [
+            make_deployment
+              ~branch:"live"
+              ~target:"ocurrent/ocurrent-configurator:live"
+              [];
+          ]
+          ~archs:[`Linux_riscv64] ~options:include_git;
+      ];
     ]
 
   let docker ~sched ~staging_auth t =
