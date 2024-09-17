@@ -25,6 +25,8 @@ type service = Build.org * string * docker list
 module Tarides : sig
   val services : ?app:Current_github.App.t -> unit -> service list
 
+  val admins : string list
+
   val v :
     ?app:Current_github.App.t ->
     ?notify:Current_slack.channel ->
@@ -36,6 +38,8 @@ end
 
 module Ocaml_org : sig
   val services : ?app:Current_github.App.t -> unit -> service list
+
+  val admins : string list
 
   val v :
     ?app:Current_github.App.t ->
@@ -51,6 +55,8 @@ module Mirage : sig
     ?app:Current_github.App.t ->
     unit ->
     Packet_unikernel.service_info list
+
+  val admins : string list
 
   val docker_services : ?app:Current_github.App.t -> unit -> service list
 

@@ -80,6 +80,19 @@ let build_kit (v : Cluster_api.Docker.Spec.options) = { v with buildkit = true }
 module Tarides = struct
   let base_url = Uri.of_string "https://deploy.ci.dev/"
 
+  let admins = [
+    "github:avsm";
+    "github:dra27";
+    "github:moyodiallo";
+    "github:MisterDA";
+    "github:mtelvers";
+    "github:punchagan";
+    "github:samoht";
+    "github:shonfeder";
+    "github:talex5";
+    "github:tmcgilchrist";
+  ]
+
   (* This is a list of GitHub repositories to monitor.
     For each one, it lists the builds that are made from that repository.
     For each build, it says which which branch gives the desired live version of
@@ -325,6 +338,20 @@ end
 module Ocaml_org = struct
   let base_url = Uri.of_string "https://deploy.ci.ocaml.org"
 
+  let admins = [
+    "github:AltGr";
+    "github:avsm";
+    "github:dra27";
+    "github:moyodiallo";
+    "github:mtelvers";
+    "github:punchagan";
+    "github:rjbou";
+    "github:samoht";
+    "github:shonfeder";
+    "github:talex5";
+    "github:tmcgilchrist";
+  ]
+
   (* This is a list of GitHub repositories to monitor.
     For each one, it lists the builds that are made from that repository.
     For each build, it says which which branch gives the desired live version of
@@ -511,7 +538,20 @@ module Ocaml_org = struct
 end
 
 module Mirage = struct
-  let base_url = Uri.of_string "https://deploy.mirage.io/" 
+  let base_url = Uri.of_string "https://deploy.mirage.io/"
+
+  let admins = [
+    "github:avsm";
+    "github:dra27";
+    "github:hannesm";
+    "github:moyodiallo";
+    "github:mtelvers";
+    "github:punchagan";
+    "github:samoht";
+    "github:shonfeder";
+    "github:talex5";
+    "github:tmcgilchrist";
+  ]
 
   let unikernel dockerfile ~target args services =
     let build_info = { Packet_unikernel.dockerfile; target; args } in
