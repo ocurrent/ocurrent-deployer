@@ -48,6 +48,19 @@
   lwt
   lwt.unix
   prometheus-app.unix)
- (modules index pipeline aws caddy logging mirage s build cluster packet_unikernel docker_registry metrics)
+ (modules
+  index
+  pipeline
+  aws
+  caddy
+  logging
+  mirage
+  s
+  build
+  cluster
+  packet_unikernel
+  docker_registry
+  metrics
+  access)
  (preprocess
   (pps ppx_deriving.std ppx_deriving_yojson)))
