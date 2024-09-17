@@ -48,6 +48,22 @@ let make_docker ?(archs=[`Linux_x86_64]) ?(options=Cluster_api.Docker.Spec.defau
 
 type service = Build.org * string * docker list
 
+module type Constellation = sig
+  (** The interface for a pipelines that deploys a constellation of services *)
+
+  val services : ?app:Current_github.App.t -> unit -> service list
+
+  val admins : string list
+
+  val v :
+    ?app:Current_github.App.t ->
+    ?notify:Current_slack.channel ->
+    ?filter:(Current_github.Repo_id.t -> bool) ->
+    sched:Current_ocluster.Connection.t ->
+    staging_auth:(string * string) option ->
+    unit -> unit Current.t
+end
+
 let docker ~sched { dockerfile; targets; archs; options } =
   let build_info = { Cluster.sched; dockerfile = `Path dockerfile; options; archs } in
   let deploys =
@@ -571,7 +587,7 @@ module Mirage = struct
       ];
     ]
 
-  let docker_services ?app () =
+  let services ?app () =
     (* GitHub organisations to monitor. *)
     let ocurrent = Build.org ?app ~account:"ocurrent" 6853813 in
     [
@@ -608,7 +624,7 @@ module Mirage = struct
       ];
     ]
 
-  let v ?app ?notify:channel ~sched ~staging_auth () =
+  let v ?app ?notify:channel ?filter:_ ~sched ~staging_auth () =
     (* [web_ui collapse_value] is a URL back to the deployment service, for links
       in status messages. *)
     let web_ui repo = Uri.with_query' base_url ["repo", repo] in
@@ -617,7 +633,7 @@ module Mirage = struct
     let sched = Current_ocluster.v ~timeout:Build.timeout ?push_auth:staging_auth sched in
     let docker = docker ~sched in
     let docker_services =
-      docker_services ?app ()
+      services ?app ()
       |> List.map (fun (org, name, deployments) ->
         let deployments = List.map docker deployments in
         (org, name, deployments))

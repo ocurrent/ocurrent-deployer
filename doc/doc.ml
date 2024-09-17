@@ -61,4 +61,4 @@ let () =
   in
   f "Tarides services" @@ Pipeline.Tarides.services ();
   f "OCaml Org services" @@ Pipeline.Ocaml_org.services ();
-  f "Mirage Docker services" @@ Pipeline.Mirage.docker_services ()
+  f "Mirage Docker services" @@ Pipeline.Mirage.services ()
