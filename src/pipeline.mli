@@ -22,7 +22,9 @@ type docker = {
 
 type service = Build.org * string * docker list
 
-module Tarides : sig
+module type Constellation = sig
+  (** The interface for a pipelines that can be deployed *)
+
   val services : ?app:Current_github.App.t -> unit -> service list
 
   val admins : string list
@@ -36,34 +38,6 @@ module Tarides : sig
     unit -> unit Current.t
 end
 
-module Ocaml_org : sig
-  val services : ?app:Current_github.App.t -> unit -> service list
-
-  val admins : string list
-
-  val v :
-    ?app:Current_github.App.t ->
-    ?notify:Current_slack.channel ->
-    ?filter:(Current_github.Repo_id.t -> bool) ->
-    sched:Current_ocluster.Connection.t ->
-    staging_auth:(string * string) option ->
-    unit -> unit Current.t
-end
-
-module Mirage : sig
-  val unikernel_services :
-    ?app:Current_github.App.t ->
-    unit ->
-    Packet_unikernel.service_info list
-
-  val admins : string list
-
-  val docker_services : ?app:Current_github.App.t -> unit -> service list
-
-  val v :
-    ?app:Current_github.App.t ->
-    ?notify:Current_slack.channel ->
-    sched:Current_ocluster.Connection.t ->
-    staging_auth:(string * string) option ->
-    unit -> unit Current.t
-end
+module Tarides : Constellation
+module Ocaml_org : Constellation
+module Mirage : Constellation
