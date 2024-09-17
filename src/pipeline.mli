@@ -24,20 +24,21 @@ type docker = {
 
 type service = Build.org * string * docker list
 
+type pipeline =
+  ?app:Current_github.App.t ->
+  ?notify:Current_slack.channel ->
+  ?filter:(Current_github.Repo_id.t -> bool) ->
+  sched:Current_ocluster.Connection.t ->
+  staging_auth:(string * string) option ->
+  unit ->
+  unit Current.t
+
 module type Constellation = sig
   (** The interface for a pipelines that can be deployed *)
 
   val services : ?app:Current_github.App.t -> unit -> service list
-
   val admins : string list
-
-  val v :
-    ?app:Current_github.App.t ->
-    ?notify:Current_slack.channel ->
-    ?filter:(Current_github.Repo_id.t -> bool) ->
-    sched:Current_ocluster.Connection.t ->
-    staging_auth:(string * string) option ->
-    unit -> unit Current.t
+  val v : pipeline
 end
 
 module Tarides : Constellation
