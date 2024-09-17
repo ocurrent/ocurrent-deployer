@@ -1,9 +1,11 @@
+(* TODO: This sould not live in the pipeline *)
 (* Different deployer pipelines. *)
 module Flavour : sig
   type t = [ `OCaml   (* for deploy.ci.ocaml.org *)
            | `Tarides (* for deploy.ci3.ocamllabs.io *)
            | `Mirage ] (* for deploy.mirage.io *)
 
+  val to_string : t -> string
   val cmdliner : t Cmdliner.Term.t
 end
 

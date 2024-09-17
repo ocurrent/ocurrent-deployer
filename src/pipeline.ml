@@ -1,6 +1,12 @@
 (* Different Deployer pipelines available. *)
 module Flavour = struct
   type t = [`Tarides | `OCaml | `Mirage]
+
+  let to_string = function
+    | `Tarides -> "tarides"
+    | `OCaml -> "ocaml"
+    | `Mirage -> "mirage"
+
   let cmdliner =
     let open Cmdliner in
     let flavours = ["tarides", `Tarides
