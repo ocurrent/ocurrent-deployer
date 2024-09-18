@@ -1,27 +1,3 @@
-(* Different Deployer pipelines available. *)
-module Flavour = struct
-  type t = [`Tarides | `OCaml | `Mirage]
-
-  let to_string = function
-    | `Tarides -> "tarides"
-    | `OCaml -> "ocaml"
-    | `Mirage -> "mirage"
-
-  let cmdliner =
-    let open Cmdliner in
-    let flavours = ["tarides", `Tarides
-                   ; "ocaml", `OCaml
-                   ; "mirage", `Mirage
-                   ]
-    in
-    let enum_alts = Arg.doc_alts_enum flavours in
-    let doc = Format.asprintf "Pipeline flavour to run. $(docv) must be %s." enum_alts
-    in
-    Arg.(required & opt (some & enum flavours) None &
-         info ["flavour"] ~doc ~docv:"FLAVOUR"
-      )
-end
-
 open Current.Syntax
 
 module Github = Current_github
@@ -63,12 +39,15 @@ type pipeline =
   unit ->
   unit Current.t
 
-module type Constellation = sig
-  (** The interface for a pipelines that deploys a constellation of services *)
+type deployer =
+  { pipeline: pipeline
+  ; admins: string list
+  }
+
+module type Deployer = sig
+  (** The interface for a pipelines that deploys a set of services *)
 
   val services : ?app:Current_github.App.t -> unit -> service list
-  val admins : string list
-  val v : pipeline
 end
 
 let docker ~sched { dockerfile; targets; archs; options } =
@@ -356,6 +335,8 @@ module Tarides = struct
     |> filter_list filter
     |> List.map build
     |> Current.all
+
+  let deployer = {pipeline = v; admins}
 end
 
 module Ocaml_org = struct
@@ -558,6 +539,8 @@ module Ocaml_org = struct
       (List.map (build_for_registry ~additional_build_args) opam_repository_pipelines)
       @ pipelines
       @ extras ())
+
+  let deployer = {pipeline = v; admins}
 end
 
 module Mirage = struct
@@ -649,4 +632,29 @@ module Mirage = struct
     Current.all @@
       ((List.map build_unikernel @@ unikernel_services ?app ())
       @ docker_services)
+
+  let deployer = {pipeline = v; admins}
 end
+
+(* cmdliner term to select the deployer to run *)
+let cmdliner =
+  let flavours =
+    [ "tarides", `Tarides
+    ; "ocaml", `OCaml
+    ; "mirage", `Mirage
+    ]
+  in
+  let pipeline_data = function
+    | `Tarides -> Tarides.deployer
+    | `OCaml -> Ocaml_org.deployer
+    | `Mirage -> Mirage.deployer
+  in
+  let open Cmdliner in
+  let enum_alts = Arg.doc_alts_enum flavours in
+  let doc = Format.asprintf "Pipeline flavour to run. $(docv) must be %s." enum_alts in
+  let flavour =
+    Arg.(required
+         & opt (some & enum flavours) None
+         & info ["flavour"] ~doc ~docv:"FLAVOUR")
+  in
+  Term.(const pipeline_data $ flavour)
