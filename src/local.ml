@@ -14,17 +14,13 @@ let read_first_line path =
   Fun.protect (fun () -> input_line ch)
     ~finally:(fun () -> close_in ch)
 
-let main () config mode app sched staging_password_file repo flavour =
+let main () config mode app sched staging_password_file repo (deployer: Pipeline.deployer) =
   Logs.info (fun f -> f "Is this thing on?");
   let filter = Option.map (=) repo in
   let vat = Capnp_rpc_unix.client_only_vat () in
   let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
-  let engine = match flavour with
-    | `Tarides -> Current.Engine.create ~config (Pipeline.Tarides.v ?app ~sched ~staging_auth ?filter)
-    | `OCaml -> Current.Engine.create ~config (Pipeline.Ocaml_org.v ?app ~sched ~staging_auth ?filter)
-    | `Mirage -> Current.Engine.create ~config (Pipeline.Mirage.v ?app ~sched ~staging_auth)
-  in
+  let engine = Current.Engine.create ~config (deployer.pipeline ?app ~sched ~staging_auth ?filter) in
   let webhook_secret = Option.value ~default:webhook_secret @@ Option.map Current_github.App.webhook_secret app in
   let has_role = Current_web.Site.allow_all in
   let routes =
@@ -68,7 +64,7 @@ let repo =
 let cmd =
   let doc = "build and deploy services from Git" in
   let cmd_t = Term.(term_result (const main $ Logging.cmdliner $ Current.Config.cmdliner $ Current_web.cmdliner
-                    $ Current_github.App.cmdliner_opt $ submission_service $ staging_password $ repo $ Pipeline.Flavour.cmdliner)) in
+                    $ Current_github.App.cmdliner_opt $ submission_service $ staging_password $ repo $ Pipeline.cmdliner)) in
   let info = Cmd.info "deploy" ~doc in
   Cmd.v info cmd_t
 

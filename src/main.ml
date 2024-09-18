@@ -18,25 +18,20 @@ let read_channel_uri path =
   with ex ->
     Fmt.failwith "Failed to read slack URI from %S: %a" path Fmt.exn ex
 
-let main () config mode app slack auth staging_password_file (flavour, sched) prometheus_config =
+let main () config mode app slack auth staging_password_file ((deployer : Pipeline.deployer), sched) prometheus_config =
   let vat = Capnp_rpc_unix.client_only_vat () in
   let channel = read_channel_uri slack in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let authn = Option.map Current_github.Auth.make_login_uri auth in
   let webhook_secret = Current_github.App.webhook_secret app in
   let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-  let pipeline, admins = match flavour with
-    | `Tarides -> Pipeline.Tarides.(v, admins)
-    | `OCaml -> Pipeline.Ocaml_org.(v, admins)
-    | `Mirage -> Pipeline.Mirage.(v, admins)
-  in
-  let engine = Current.Engine.create ~config (pipeline ~app ~notify:channel ~sched ~staging_auth) in
+  let engine = Current.Engine.create ~config (fun () -> deployer.pipeline ~app ~notify:channel ~sched ~staging_auth ()) in
   let has_role =
     if auth = None then
       Current_web.Site.allow_all
     else
       fun user role ->
-        Access.user_has_role ~admins (Option.map Current_web.User.id user) role
+        Access.user_has_role ~admins:deployer.admins (Option.map Current_web.User.id user) role
   in
   let routes =
     Routes.(s "login" /? nil @--> Current_github.Auth.login auth) ::
@@ -72,13 +67,12 @@ let submission_service =
     ~docv:"FILE"
     ["submission-service"]
 
-let flavour_and_sub_service =
-  let f sub_service flavor : (Pipeline.Flavour.t * Uri.t) Term.ret = match sub_service with
-    | Some s -> `Ok (flavor, s)
-    | None ->
-      `Error (true, "--submission-service required for --flavour " ^ (Pipeline.Flavour.to_string flavor))
+let deployer_and_schedular =
+  let f schedular deployer = match schedular with
+    | Some sched -> `Ok (deployer, sched)
+    | None -> `Error (true, "--submission-service is required with --flavour")
   in
-  Term.(ret (const f $ submission_service $ Pipeline.Flavour.cmdliner))
+  Term.(ret (const f $ submission_service $ Pipeline.cmdliner))
 
 let staging_password =
   Arg.value @@
@@ -91,7 +85,7 @@ let staging_password =
 let cmd =
   let doc = "build and deploy services from Git" in
   let cmd_t = Term.(term_result (const main $ Logging.cmdliner $ Current.Config.cmdliner $ Current_web.cmdliner $
-        Current_github.App.cmdliner $ slack $ Current_github.Auth.cmdliner $ staging_password $ flavour_and_sub_service
+        Current_github.App.cmdliner $ slack $ Current_github.Auth.cmdliner $ staging_password $ deployer_and_schedular
         $ Prometheus_unix.opts)) in
   let info = Cmd.info "deploy" ~doc in
   Cmd.v info cmd_t
