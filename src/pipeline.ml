@@ -189,36 +189,6 @@ module Tarides = struct
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64] ~options:include_git;
       ];
-      ocurrent, "opam-repo-ci", [
-        make_docker
-          "Dockerfile"
-          [
-            make_deployment
-              ~branch:"live"
-              ~target:"ocurrent/opam-repo-ci:live"
-              [`Opamrepo "opam-repo-ci_opam-repo-ci"];
-          ]
-          ~archs:[`Linux_x86_64; `Linux_arm64];
-        make_docker
-          "Dockerfile.web"
-          [
-            make_deployment
-              ~branch:"live-web"
-              ~target:"ocurrent/opam-repo-ci-web:live"
-              [`Opamrepo "opam-repo-ci_opam-repo-ci-web"];
-          ]
-          ~archs:[`Linux_x86_64; `Linux_arm64];
-      ];
-      ocurrent, "opam-health-check", [
-        make_docker
-          "Dockerfile"
-          [
-            make_deployment
-              ~branch:"live"
-              ~target:"ocurrent/opam-health-check:live"
-              [`Check "infra_opam-health-check"; `Check "infra_opam-health-check-freebsd"];
-          ];
-      ];
       ocurrent, "ocaml-multicore-ci", [
         make_docker
           "Dockerfile"
@@ -456,6 +426,36 @@ module Ocaml_org = struct
               ~branch:"staging"
               ~target:"ocurrent/docs-ci-storage-server:staging"
               [`Staging_docs "infra_storage-server"];
+          ];
+      ];
+      ocurrent, "opam-repo-ci", [
+        make_docker
+          "Dockerfile"
+          [
+            make_deployment
+              ~branch:"live"
+              ~target:"ocurrent/opam-repo-ci:live"
+              [`Opamrepo "opam-repo-ci_opam-repo-ci"];
+          ]
+          ~archs:[`Linux_x86_64; `Linux_arm64];
+        make_docker
+          "Dockerfile.web"
+          [
+            make_deployment
+              ~branch:"live-web"
+              ~target:"ocurrent/opam-repo-ci-web:live"
+              [`Opamrepo "opam-repo-ci_opam-repo-ci-web"];
+          ]
+          ~archs:[`Linux_x86_64; `Linux_arm64];
+      ];
+      ocurrent, "opam-health-check", [
+        make_docker
+          "Dockerfile"
+          [
+            make_deployment
+              ~branch:"live"
+              ~target:"ocurrent/opam-health-check:live"
+              [`Check "infra_opam-health-check"; `Check "infra_opam-health-check-freebsd"];
           ];
       ];
     ]

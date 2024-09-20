@@ -17,16 +17,6 @@ For a given service, the specified Dockerfile is pulled from the specified branc
   - branch [`live-www`](https://github.com/ocurrent/ocaml-ci/tree/live-www) built at [`ocurrent/ocaml-ci-web:live`](https://hub.docker.com/r/ocurrent/ocaml-ci-web)
   - branch [`staging-www`](https://github.com/ocurrent/ocaml-ci/tree/staging-www) built at [`ocurrent/ocaml-ci-web:staging`](https://hub.docker.com/r/ocurrent/ocaml-ci-web)
 
-### [ocurrent/opam-repo-ci](https://github.com/ocurrent/opam-repo-ci)
-- `Dockerfile` on arches: x86_64, arm64
-  - branch [`live`](https://github.com/ocurrent/opam-repo-ci/tree/live) built at [`ocurrent/opam-repo-ci:live`](https://hub.docker.com/r/ocurrent/opam-repo-ci)
-- `Dockerfile.web` on arches: x86_64, arm64
-  - branch [`live-web`](https://github.com/ocurrent/opam-repo-ci/tree/live-web) built at [`ocurrent/opam-repo-ci-web:live`](https://hub.docker.com/r/ocurrent/opam-repo-ci-web)
-
-### [ocurrent/opam-health-check](https://github.com/ocurrent/opam-health-check)
-- `Dockerfile` on arches: x86_64
-  - branch [`live`](https://github.com/ocurrent/opam-health-check/tree/live) built at [`ocurrent/opam-health-check:live`](https://hub.docker.com/r/ocurrent/opam-health-check)
-
 ### [ocurrent/ocaml-multicore-ci](https://github.com/ocurrent/ocaml-multicore-ci)
 - `Dockerfile` on arches: x86_64
   - branch [`live`](https://github.com/ocurrent/ocaml-multicore-ci/tree/live) built at [`ocurrent/multicore-ci:live`](https://hub.docker.com/r/ocurrent/multicore-ci)
@@ -74,6 +64,16 @@ For a given service, the specified Dockerfile is pulled from the specified branc
   - branch [`staging`](https://github.com/ocurrent/ocaml-docs-ci/tree/staging) built at [`ocurrent/docs-ci-init:staging`](https://hub.docker.com/r/ocurrent/docs-ci-init)
 - `docker/storage/Dockerfile` on arches: x86_64
   - branch [`staging`](https://github.com/ocurrent/ocaml-docs-ci/tree/staging) built at [`ocurrent/docs-ci-storage-server:staging`](https://hub.docker.com/r/ocurrent/docs-ci-storage-server)
+
+### [ocurrent/opam-repo-ci](https://github.com/ocurrent/opam-repo-ci)
+- `Dockerfile` on arches: x86_64, arm64
+  - branch [`live`](https://github.com/ocurrent/opam-repo-ci/tree/live) built at [`ocurrent/opam-repo-ci:live`](https://hub.docker.com/r/ocurrent/opam-repo-ci)
+- `Dockerfile.web` on arches: x86_64, arm64
+  - branch [`live-web`](https://github.com/ocurrent/opam-repo-ci/tree/live-web) built at [`ocurrent/opam-repo-ci-web:live`](https://hub.docker.com/r/ocurrent/opam-repo-ci-web)
+
+### [ocurrent/opam-health-check](https://github.com/ocurrent/opam-health-check)
+- `Dockerfile` on arches: x86_64
+  - branch [`live`](https://github.com/ocurrent/opam-health-check/tree/live) built at [`ocurrent/opam-health-check:live`](https://hub.docker.com/r/ocurrent/opam-health-check)
 
 ## Mirage Docker services
 
