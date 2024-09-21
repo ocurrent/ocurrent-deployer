@@ -47,6 +47,8 @@ type deployer =
 module type Deployer = sig
   (** The interface for a pipelines that deploys a set of services *)
 
+  val base_url : Uri.t
+
   val services : ?app:Current_github.App.t -> unit -> service list
 end
 
