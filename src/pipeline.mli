@@ -33,6 +33,9 @@ type deployer =
 module type Deployer = sig
   (** A definition of a {!type:deployer}. *)
 
+  val base_url : Uri.t
+  (* The URL from which the deployer is served *)
+
   val services : ?app:Current_github.App.t -> unit -> service list
   (** The list of services deployed *)
 end
