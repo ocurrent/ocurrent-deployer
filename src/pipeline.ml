@@ -50,7 +50,12 @@ module type Deployer = sig
   val services : ?app:Current_github.App.t -> unit -> service list
 end
 
-let docker ~sched { dockerfile; targets; archs; options } =
+let docker ~sched ~push_auth { dockerfile; targets; archs; options } =
+  let timeout =
+    if List.mem `Linux_riscv64 archs then Int64.mul Build.timeout 2L
+    else Build.timeout
+  in
+  let sched = Current_ocluster.v ~timeout ?push_auth sched in
   let build_info = { Cluster.sched; dockerfile = `Path dockerfile; options; archs } in
   let deploys =
     targets
@@ -95,6 +100,7 @@ module Tarides = struct
     "github:tmcgilchrist";
   ]
 
+  (* URLs whence the services is served, which is also used as the docker context *)
   let ocaml_ci_dev = "ocaml.ci.dev"
   let ci4_ocamllabs_io = "ci4.ocamllabs.io"
   let ci3_ocamllabs_io= "ci3.ocamllabs.io"
@@ -286,14 +292,6 @@ module Tarides = struct
       ];
     ]
 
-  let docker ~sched ~staging_auth t =
-    let timeout =
-      if List.mem `Linux_riscv64 t.archs then Int64.mul Build.timeout 2L
-      else Build.timeout
-    in
-    let sched = Current_ocluster.v ~timeout ?push_auth:staging_auth sched in
-    docker ~sched t
-
   let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
     (* [web_ui collapse_value] is a URL back to the deployment service, for links
       in status messages. *)
@@ -301,10 +299,9 @@ module Tarides = struct
     let build (org, name, builds) =
       Cluster_build.repo ?channel ~web_ui ~org ~name builds
     in
-    let docker = docker ~sched ~staging_auth in
     services ?app ()
     |> List.map (fun (org, name, deployments) ->
-      let deployments = List.map docker deployments in
+      let deployments = List.map (docker ~sched ~push_auth:staging_auth) deployments in
       (org, name, deployments))
     |> filter_list filter
     |> List.map build
@@ -330,6 +327,7 @@ module Ocaml_org = struct
     "github:tmcgilchrist";
   ]
 
+  (* URLs whence the services is served, which is also used as the docker context *)
   let v3b_ocaml_org = "v3b.ocaml.org"
   let v3c_ocaml_org = "v3c.ocaml.org"
   let docs_ci_ocaml_org = "docs.ci.ocaml.org"
@@ -535,10 +533,9 @@ module Ocaml_org = struct
           Build_registry.repo ?channel ~additional_build_args:args ~web_ui ~org ~name builds)
     in
     let services_pipelines =
-      let sched = Current_ocluster.v ~timeout:Build.timeout ?push_auth:staging_auth sched in
       services ?app ()
       |> List.map (fun (org, name, deployments) ->
-        let deployments = List.map (docker ~sched) deployments in
+        let deployments = List.map (docker ~sched ~push_auth:staging_auth) deployments in
         (org, name, deployments))
       |> filter_list filter
       |> List.map (fun (org, name, builds) ->
@@ -595,6 +592,7 @@ module Mirage = struct
       ];
     ]
 
+  (* URLs whence the services is served, which is also used as the docker context *)
   let ci_mirage_io = "ci.mirage.io"
 
   let services ?app () =
@@ -640,12 +638,10 @@ module Mirage = struct
     let web_ui repo = Uri.with_query' base_url ["repo", repo] in
     let build_unikernel (org, name, builds) = Build_unikernel.repo ?channel ~web_ui ~org ~name builds in
     let build_docker (org, name, builds) = Cluster_build.repo ?channel ~web_ui ~org ~name builds in
-    let sched = Current_ocluster.v ~timeout:Build.timeout ?push_auth:staging_auth sched in
-    let docker = docker ~sched in
     let docker_services =
       services ?app ()
       |> List.map (fun (org, name, deployments) ->
-        let deployments = List.map docker deployments in
+        let deployments = List.map (docker ~sched ~push_auth:staging_auth) deployments in
         (org, name, deployments))
       |> List.map build_docker
     in
