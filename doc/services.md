@@ -115,7 +115,7 @@ For a given service, the specified Dockerfile is pulled from the specified branc
   - branch: [`live`](https://github.com/ocurrent/docker-base-images/tree/live)
   - registered image: [`ocurrent/base-images:live`](https://hub.docker.com/r/ocurrent/base-images)
   - services:
-    - `base-images_builder` @ <https://v3c.ocaml.org>
+    - `base-images_builder` @ <https://images.ci.ocaml.org>
 
 
 ### [ocurrent/ocaml-docs-ci](https://github.com/ocurrent/ocaml-docs-ci)

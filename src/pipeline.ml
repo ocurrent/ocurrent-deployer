@@ -336,6 +336,7 @@ module Ocaml_org = struct
   let staging_docs_ci_ocaml_org = "staging.docs.ci.ocaml.org"
   let opam_ci_ocaml_org = "opam.ci.ocaml.org"
   let check_ci_ocaml_org = "check.ci.ocaml.org"
+  let images_ci_ocaml_org = "images.ci.ocaml.org"
 
   (* This is a list of GitHub repositories to monitor.
     For each one, it lists the builds that are made from that repository.
@@ -386,7 +387,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/base-images:live"
-              [{name = "base-images_builder"; docker_context = Some v3c_ocaml_org}];
+              [{name = "base-images_builder"; docker_context = Some images_ci_ocaml_org}];
           ];
       ];
       ocurrent, "ocaml-docs-ci", [
