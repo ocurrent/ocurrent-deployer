@@ -333,7 +333,7 @@ module Ocaml_org = struct
   let v3b_ocaml_org = "v3b.ocaml.org"
   let v3c_ocaml_org = "v3c.ocaml.org"
   let docs_ci_ocaml_org = "docs.ci.ocaml.org"
-  let staging_docs_ci_ocamllabs_io = "staging.docs.ci.ocamllabs.io"
+  let staging_docs_ci_ocaml_org = "staging.docs.ci.ocaml.org"
   let opam_ci_ocaml_org = "opam.ci.ocaml.org"
   let check_ci_ocaml_org = "check.ci.ocaml.org"
 
@@ -421,7 +421,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"staging"
               ~target:"ocurrent/docs-ci:staging"
-              [{name = "infra_docs-ci"; docker_context = Some staging_docs_ci_ocamllabs_io}];
+              [{name = "infra_docs-ci"; docker_context = Some staging_docs_ci_ocaml_org}];
           ];
         make_docker
           "docker/init/Dockerfile"
@@ -429,7 +429,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"staging"
               ~target:"ocurrent/docs-ci-init:staging"
-              [{name = "infra_init"; docker_context = Some staging_docs_ci_ocamllabs_io}];
+              [{name = "infra_init"; docker_context = Some staging_docs_ci_ocaml_org}];
           ];
         make_docker
           "docker/storage/Dockerfile"
@@ -437,7 +437,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"staging"
               ~target:"ocurrent/docs-ci-storage-server:staging"
-              [{name = "infra_storage-server"; docker_context = Some staging_docs_ci_ocamllabs_io}];
+              [{name = "infra_storage-server"; docker_context = Some staging_docs_ci_ocaml_org}];
           ];
       ];
       ocurrent, "opam-repo-ci", [
