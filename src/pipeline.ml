@@ -109,7 +109,7 @@ module Tarides = struct
     For each one, it lists the builds that are made from that repository.
     For each build, it says which which branch gives the desired live version of
     the service, and where to deploy it. *)
-  let services ?app () =
+  let services ?app () : service list =
     (* GitHub organisations to monitor. *)
     let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
     let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
@@ -339,7 +339,7 @@ module Ocaml_org = struct
     For each one, it lists the builds that are made from that repository.
     For each build, it says which which branch gives the desired live version of
     the service, and where to deploy it. *)
-  let services ?app () =
+  let services ?app () : service list =
     (* GitHub organisations to monitor. *)
     let ocurrent = Build.org ?app ~account:"ocurrent" 23342906 in
     let ocaml = Build.org ?app ~account:"ocaml" 23711648 in
@@ -595,7 +595,7 @@ module Mirage = struct
   (* URLs whence the services is served, which is also used as the docker context *)
   let ci_mirage_io = "ci.mirage.io"
 
-  let services ?app () =
+  let services ?app () : service list =
     (* GitHub organisations to monitor. *)
     let ocurrent = Build.org ?app ~account:"ocurrent" 6853813 in
     [
