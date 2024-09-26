@@ -209,16 +209,6 @@ module Tarides = struct
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64];
       ];
-      ocurrent, "opam-health-check", [
-        make_docker
-          "Dockerfile"
-          [
-            make_deployment
-              ~branch:"live"
-              ~target:"ocurrent/opam-health-check:live"
-              [`Check "infra_opam-health-check"; `Check "infra_opam-health-check-freebsd"];
-          ];
-      ];
       ocurrent, "ocaml-multicore-ci", [
         make_docker
           "Dockerfile"
@@ -456,6 +446,16 @@ module Ocaml_org = struct
               ~branch:"staging"
               ~target:"ocurrent/docs-ci-storage-server:staging"
               [`Staging_docs "infra_storage-server"];
+          ];
+      ];
+      ocurrent, "opam-health-check", [
+        make_docker
+          "Dockerfile"
+          [
+            make_deployment
+              ~branch:"live"
+              ~target:"ocurrent/opam-health-check:live"
+              [`Check "infra_opam-health-check"; `Check "infra_opam-health-check-freebsd"];
           ];
       ];
     ]
