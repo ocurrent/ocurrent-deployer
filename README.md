@@ -10,16 +10,28 @@ The list of deployed services is located in [doc/services.md][].
 The main configuration is in [pipeline.ml][]. For example, one entry is:
 
 ```ocaml
-ocurrent, "docker-base-images", [
-  docker "Dockerfile"     ["live", "ocurrent/base-images:live", [`Toxis, "base-images_builder"]];
-];
+      ocurrent, "docker-base-images", [
+        (* Docker base images @ images.ci.ocaml.org *)
+        make_docker
+          "Dockerfile"
+          [
+            make_deployment
+              ~branch:"live"
+              ~target:"ocurrent/base-images:live"
+              [`Ocamlorg_images "base-images_builder"];
+          ];
+      ];
 ```
 
 This says that for the <https://github.com/ocurrent/docker-base-images> repository:
 
-- We should use Docker to build the project's `Dockerfile` (and report the status on GitHub for each branch and PR).
-- For the `live` branch, we should also publish the image on Docker Hub as `ocurrent/base-images:live`
-  and deploy it as the image for the `base-images_builder` Docker service on `toxis`.
+- A deployment is registered monitoring the branch `live`.
+- The deployment will use Docker to build the project's `Dockerfile` (and report
+  the status on GitHub for each branch and PR). 
+- The deployments will publish the build image on Docker Hub as
+  `ocurrent/base-images:live`.
+- It will deploy the image as a service according to `Ocamlorg_images
+  "base-images_builder"` (see [cluster.ml](src/cluster.ml)).
 
 The pipeline also deploys some [MirageOS][] unikernels, e.g.
 
@@ -35,15 +47,16 @@ For the `master` branch, the `hvt` unikernel is deployed as the `www` [Albatross
 
 See [VM-host.md](./VM-host.md) for instructions about setting up a host for unikernels.
 
-There are 3 different flavours of pipelines:
- * Tarides - existing Tarides/OCamlLabs pipelines on deploy.ci.dev.
- * OCaml - pipelines for deploying ocaml.org services.
- * Mirage - existing Mirage piplines on deploy.mirage.io.
+There are 3 different deployer pipelines defined in this project, each deploying
+a related set of services. Each is configured to deploy itself from its own
+branch, serves a web UI from its own URL, and is registered with its own GitHub
+Application. These relations are summarized in the following table:
 
-Each pipeline flavour is connected to a different GitHub Application:
- * [deploy.ci.ocaml.org](https://deploy.ci.ocaml.org/) @ https://github.com/apps/deploy-ci-ocaml-org on branch live-ocaml-org
- * [deploy.ci.dev](https://deploy.ci.dev/) @ https://github.com/apps/deploy-ci-dev on branch live-ci3
- * [deploy.mirage.io](https://deploy.mirage.io/) @ https://github.com/apps/deploy-mirage-io on branch live-mirage
+| Deployer    | Branch           | URL                           | GitHub App                                    |
+|-------------|------------------|-------------------------------|-----------------------------------------------|
+| `Tarides`   | `live-ci3`       | <https://deploy.ci.dev>       | <https://github.com/apps/deploy-ci-dev>       |
+| `Ocaml_org` | `live-ocaml-org` | <https://deploy.ci.ocaml.org> | <https://github.com/apps/deploy-ci-ocaml-org> |
+| `Mirage`    | `live-mirage`    | <https://deploy.mirage.io>    | <https://github.com/apps/deploy-mirage-io>    |
 
 ## Testing locally
 
@@ -73,9 +86,11 @@ You can supply `--github-app-id` and related options if you want to access GitHu
 
 ## Suggested workflows
 
+### Updating services
+
 To update a deployment that is managed by ocurrent-deployer (which could be ocurrent-deployer itself):
 
-1. Make a PR on that project's repository targetting its master branch as usual.
+1. Make a PR on that project's repository targeting its master branch as usual.
 2. Once it has passed CI/review, a project admin will `git push origin HEAD:live` to deploy it.
 3. If it works, the PR can be merged to master.
 
@@ -84,7 +99,7 @@ To update a deployment that is managed by ocurrent-deployer (which could be ocur
 1. Deploy the service(s) manually using `docker stack deploy` first.
 2. Once that's working, make a PR against the ocurrent-deployer repository adding a rule to keep the services up-to-date. 
    For the PR:
-	- Drop the id\_rsa.pub key in the ~/.ssh/authorized\_keys file on the machine where you want the deployer to deploy the container.
+	- Drop the `id_rsa.pub` key in the `~/.ssh/authorized_keys` file on the machine where you want the deployer to deploy the container.
 	- Add the machine where you want to have the deployments to the `context/meta` folder. eg to add `awesome.ocaml.org`
       ```
       docker --config config/docker context create \
