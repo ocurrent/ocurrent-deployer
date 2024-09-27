@@ -27,7 +27,7 @@ This says that for the <https://github.com/ocurrent/docker-base-images> reposito
 
 - A deployment is registered monitoring the branch `live`.
 - The deployment will use Docker to build the project's `Dockerfile` (and report
-  the status on GitHub for each branch and PR). 
+  the status on GitHub for each branch and PR).
 - The deployments will publish the build image on Docker Hub as
   `ocurrent/base-images:live`.
 - It will deploy the image as a service according to `Ocamlorg_images
@@ -58,6 +58,12 @@ Application. These relations are summarized in the following table:
 | `Ocaml_org` | `live-ocaml-org` | <https://deploy.ci.ocaml.org> | <https://github.com/apps/deploy-ci-ocaml-org> |
 | `Mirage`    | `live-mirage`    | <https://deploy.mirage.io>    | <https://github.com/apps/deploy-mirage-io>    |
 
+The deployer's respective GitHub application is responsible for sending the
+deployer notifications about updates to the repositories being monitored. If the
+GitHub application is not updated to correspond to the repositories configured
+for a deployer, it will receive no updates, and consequently nothing will be
+deployed. See [Updating a deployer configuration](#updating-a-deployer-configuration).
+
 ## Testing locally
 
 To test changes to the pipeline, use:
@@ -84,6 +90,22 @@ Unlike the full pipeline, this:
 You can supply `--github-app-id` and related options if you want to access GitHub via an app
 (this gives a higher rate limit for queries, allows setting the result status and handling GitHub webhooks).
 
+## Updating a deployer configuration
+
+Each deployer is configured with a list of the repositories it monitors.
+Whenever a repository is added to or removed from a deployer's configuration,
+the respective GitHub App must also be updated. Once a configuration change has
+been made and deployed (see [Updating services](#updating-services)), update the
+GitHub App as follows:
+
+- Navigate to
+  <https://github.com/organizations/ocurrent/settings/installations>.
+- Click "Configure" for the deployer's corresponding app.
+- Under the "Repository access" panel, add or remove the relevant repository.
+
+<img alt="A picture of the GitHub Apps Repository access panel"
+    src="./github-app-config.png" width="450">
+
 ## Suggested workflows
 
 ### Updating services
@@ -91,13 +113,15 @@ You can supply `--github-app-id` and related options if you want to access GitHu
 To update a deployment that is managed by ocurrent-deployer (which could be ocurrent-deployer itself):
 
 1. Make a PR on that project's repository targeting its master branch as usual.
-2. Once it has passed CI/review, a project admin will `git push origin HEAD:live` to deploy it.
+2. Once it has passed CI/review, a project admin will `git push origin
+   HEAD:live` to deploy it (replacing `live` with the configured deployment
+   branch, as needed).
 3. If it works, the PR can be merged to master.
 
 ### Add a new service
 
 1. Deploy the service(s) manually using `docker stack deploy` first.
-2. Once that's working, make a PR against the ocurrent-deployer repository adding a rule to keep the services up-to-date. 
+2. Once that's working, make a PR against the ocurrent-deployer repository adding a rule to keep the services up-to-date.
    For the PR:
 	- Drop the `id_rsa.pub` key in the `~/.ssh/authorized_keys` file on the machine where you want the deployer to deploy the container.
 	- Add the machine where you want to have the deployments to the `context/meta` folder. eg to add `awesome.ocaml.org`
