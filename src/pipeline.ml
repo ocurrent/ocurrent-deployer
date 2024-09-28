@@ -438,6 +438,17 @@ module Ocaml_org = struct
               [{name = "infra_storage-server"; docker_context = Some staging_docs_ci_ocaml_org}];
           ];
       ];
+      ocurrent, "opam-health-check", [
+        make_docker
+          "Dockerfile"
+          [
+            make_deployment
+              ~branch:"live"
+              ~target:"ocurrent/opam-health-check:live"
+              [ {name = "infra_opam-health-check"; docker_context = Some check_ci_ocaml_org}
+              ; {name = "infra_opam-health-check-freebsd"; docker_context = Some check_ci_ocaml_org}];
+          ];
+      ];
       ocurrent, "opam-repo-ci", [
         make_docker
           "Dockerfile"
@@ -457,17 +468,6 @@ module Ocaml_org = struct
               [{name = "opam-repo-ci_opam-repo-ci-web"; docker_context = Some opam_ci_ocaml_org }];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64];
-      ];
-      ocurrent, "opam-health-check", [
-        make_docker
-          "Dockerfile"
-          [
-            make_deployment
-              ~branch:"live"
-              ~target:"ocurrent/opam-health-check:live"
-              [ {name = "infra_opam-health-check"; docker_context = Some check_ci_ocaml_org}
-              ; {name = "infra_opam-health-check-freebsd"; docker_context = Some check_ci_ocaml_org}];
-          ];
       ];
       ocaml_dune, "binary-distribution", [
         make_docker
