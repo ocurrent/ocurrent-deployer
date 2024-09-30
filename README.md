@@ -103,8 +103,14 @@ GitHub App as follows:
 - Click "Configure" for the deployer's corresponding app.
 - Under the "Repository access" panel, add or remove the relevant repository.
 
-<img alt="A picture of the GitHub Apps Repository access panel"
-    src="./github-app-config.png" width="450">
+   <img alt="A picture of the GitHub Apps Repository access panel"
+        src="./github-app-config.png" width="450">
+
+- The deployer runs deployability checks for repos it is monitoring and reports
+  the results as CI statuses on PRs. We recommend configuring branch protections
+  to make merges into development and production branches conditional on
+  successful deployability checks. After a configuration change, ensure that the
+  branch protection rules are up to date, and tracking the correct deployer.
 
 ## Suggested workflows
 
