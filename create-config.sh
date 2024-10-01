@@ -18,6 +18,7 @@ docker context create "opam.ci.ocaml.org" --description "OCaml - Opam Repo CI" -
 docker context create "ocaml.ci.dev" --description "Tarides - OCaml CI" --docker "host=ssh://root@ocaml.ci.dev"
 docker context create "check.ci.ocaml.org" --description "OCaml - Opam Health Check" --docker "host=ssh://root@check.ci.ocaml.org"
 docker context create "registry.ci.dev" --description "Docker Registry" --docker "host=ssh://root@registry.ci.dev"
+docker context create "get.dune.build" --description "Dune Binary Distribution" --docker "host=ssh://root@get.dune.build"
 
 # Create AWS context
 mkdir ~/.aws
@@ -45,6 +46,7 @@ for host in \
   ocaml.ci.dev \
   check.ci.ocaml.org \
   registry.ci.dev \
+  get.dune.build \
   147.75.84.37 ; do
   ssh-keyscan -H -t ecdsa-sha2-nistp256 $host >> ~/.ssh/known_hosts
 done
