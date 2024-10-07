@@ -336,6 +336,7 @@ module Ocaml_org = struct
   let staging_docs_ci_ocaml_org = "staging.docs.ci.ocaml.org"
   let opam_ci_ocaml_org = "opam.ci.ocaml.org"
   let check_ci_ocaml_org = "check.ci.ocaml.org"
+  let get_dune_build = "get.dune.build"
 
   (* This is a list of GitHub repositories to monitor.
     For each one, it lists the builds that are made from that repository.
@@ -478,7 +479,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"main"
               ~target:"ocurrent/dune-binary-distribution:live"
-              [`Dune_binary_distribution "infra_www"]
+              [{name = "infra_www"; docker_context = Some get_dune_build}]
           ]
       ];
     ]
