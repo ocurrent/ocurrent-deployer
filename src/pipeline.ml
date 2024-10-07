@@ -527,7 +527,8 @@ module Ocaml_org = struct
     in
     pipelines, additional_build_args
 
-  module Watch_docker = Current_docker.Make(struct let docker_context = Some "watch.ocaml.org" end)
+  let watch_ocaml_org = "watch.ocaml.org"
+  module Watch_docker = Current_docker.Make(struct let docker_context = Some watch_ocaml_org end)
 
   let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
     (* [web_ui collapse_value] is a URL back to the deployment service, for links
@@ -551,7 +552,7 @@ module Ocaml_org = struct
     in
     let tarsnap =
       let monthly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 30) () in
-      Current_ssh.run ~schedule:monthly "watch.ocaml.org" ~key:"tarsnap" (Current.return ["./tarsnap-backup.sh"])
+      Current_ssh.run ~schedule:monthly watch_ocaml_org ~key:"tarsnap" (Current.return ["./tarsnap-backup.sh"])
     in
     let peertube =
       let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) () in
