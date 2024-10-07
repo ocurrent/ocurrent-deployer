@@ -102,7 +102,8 @@ module Tarides = struct
     "github:tmcgilchrist";
   ]
 
-  (* URLs whence the services is served, which is also used as the docker context *)
+  (* The docker context for the services, which mostly (but not always)
+     corresponds with the URL whence it is served *)
   let ocaml_ci_dev = "ocaml.ci.dev"
   let ci4_ocamllabs_io = "ci4.ocamllabs.io"
   let ci3_ocamllabs_io= "ci3.ocamllabs.io"
@@ -329,7 +330,8 @@ module Ocaml_org = struct
     "github:tmcgilchrist";
   ]
 
-  (* URLs whence the services is served, which is also used as the docker context *)
+  (* The docker context for the services, which mostly (but not always)
+     corresponds with the URL whence it is served *)
   let v3b_ocaml_org = "v3b.ocaml.org"
   let v3c_ocaml_org = "v3c.ocaml.org"
   let docs_ci_ocaml_org = "docs.ci.ocaml.org"
@@ -595,7 +597,8 @@ module Mirage = struct
       ];
     ]
 
-  (* URLs whence the services is served, which is also used as the docker context *)
+  (* The docker context for the services, which mostly (but not always)
+     corresponds with the URL whence it is served *)
   let ci_mirage_io = "ci.mirage.io"
 
   let services ?app () : service list =
