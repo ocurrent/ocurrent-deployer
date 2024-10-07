@@ -334,6 +334,7 @@ module Ocaml_org = struct
     (* GitHub organisations to monitor. *)
     let ocurrent = Build.org ?app ~account:"ocurrent" 23342906 in
     let ocaml = Build.org ?app ~account:"ocaml" 23711648 in
+    let ocaml_dune = Build.org ?app ~account:"ocaml-dune" 55475870 in
     [
       ocurrent, "ocurrent-deployer", [
         make_docker
@@ -457,6 +458,16 @@ module Ocaml_org = struct
               [`Opamrepo "opam-repo-ci_opam-repo-ci-web"];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64];
+      ];
+      ocaml_dune, "binary-distribution", [
+        make_docker
+          "Dockerfile"
+          [
+            make_deployment
+              ~branch:"main"
+              ~target:"ocurrent/dune-binary-distribution:live"
+              [`Dune_binary_distribution "infra_www"]
+          ]
       ];
     ]
 

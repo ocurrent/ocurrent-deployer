@@ -75,6 +75,10 @@ For a given service, the specified Dockerfile is pulled from the specified branc
 - `Dockerfile.web` on arches: x86_64, arm64
   - branch [`live-web`](https://github.com/ocurrent/opam-repo-ci/tree/live-web) built at [`ocurrent/opam-repo-ci-web:live`](https://hub.docker.com/r/ocurrent/opam-repo-ci-web)
 
+### [ocaml-dune/binary-distribution](https://github.com/ocaml-dune/binary-distribution)
+- `Dockerfile` on arches: x86_64
+  - branch [`main`](https://github.com/ocaml-dune/binary-distribution/tree/main) built at [`ocurrent/dune-binary-distribution:live`](https://hub.docker.com/r/ocurrent/dune-binary-distribution)
+
 ## Mirage Docker services
 
 ### [ocurrent/mirage-ci](https://github.com/ocurrent/mirage-ci)

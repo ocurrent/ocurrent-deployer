@@ -41,6 +41,7 @@ module Ocamlorg_images = Current_docker.Make(struct let docker_context = Some "c
 module Docker_aws = Current_docker.Make(struct let docker_context = Some "awsecs" end)
 module V3b_docker = Current_docker.Make(struct let docker_context = Some "v3b.ocaml.org" end)
 module V3c_docker = Current_docker.Make(struct let docker_context = Some "v3c.ocaml.org" end)
+module Dune_binary_docker = Current_docker.Make(struct let docker_context = Some "get.dune.build" end)
 module Deploycamlorg_docker = Current_docker.Default
 
 type build_info = {
@@ -68,6 +69,7 @@ type service = [
   | `Ocamlorg_images of string               (* Base Image builder @ images.ci.ocaml.org *)
   | `OCamlorg_v3b of string                  (* OCaml website @ v3b.ocaml.org aka www.ocaml.org *)
   | `OCamlorg_v3c of string                  (* Staging OCaml website @ staging.ocaml.org *)
+  | `Dune_binary_distribution of string      (* Dune binary distribution website *)
   | `Aws_ecs of Aws.t                        (* Amazon Web Services - Elastic Container Service *)
 ] [@@deriving show]
 
@@ -182,6 +184,7 @@ let pull_and_serve multi_hash = function
   | `Ocamlorg_images name -> pull_and_serve (module Ocamlorg_images) ~name `Service multi_hash
   | `OCamlorg_v3b name -> pull_and_serve (module V3b_docker) ~name `Service multi_hash
   | `OCamlorg_v3c name -> pull_and_serve (module V3c_docker) ~name `Service multi_hash
+  | `Dune_binary_distribution name -> pull_and_serve (module Dune_binary_docker) ~name `Service multi_hash
   | `Aws_ecs project ->
     let contents = Aws.compose project in
     pull_and_serve (module Docker_aws) ~name:(project.name ^ "-" ^ project.branch) (`Compose_cli contents) multi_hash
