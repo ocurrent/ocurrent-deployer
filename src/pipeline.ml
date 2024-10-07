@@ -54,8 +54,11 @@ end
 
 let docker ~sched ~push_auth { dockerfile; targets; archs; options } =
   let timeout =
-    if List.mem `Linux_riscv64 archs then Int64.mul Build.timeout 2L
-    else Build.timeout
+    if List.mem `Linux_riscv64 archs then
+      (* The risc machines are very slow, so we need to increase the timeout *)
+      Int64.mul Build.timeout 2L
+    else
+      Build.timeout
   in
   let sched = Current_ocluster.v ~timeout ?push_auth sched in
   let build_info = { Cluster.sched; dockerfile = `Path dockerfile; options; archs } in
