@@ -183,8 +183,13 @@ For a given service, the specified Dockerfile is pulled from the specified branc
 
 
 ### [ocaml-dune/binary-distribution](https://github.com/ocaml-dune/binary-distribution)
+
 - `Dockerfile` on arches: x86_64
-  - branch [`main`](https://github.com/ocaml-dune/binary-distribution/tree/main) built at [`ocurrent/dune-binary-distribution:live`](https://hub.docker.com/r/ocurrent/dune-binary-distribution)
+  - branch: [`main`](https://github.com/ocaml-dune/binary-distribution/tree/main)
+  - registered image: [`ocurrent/dune-binary-distribution:live`](https://hub.docker.com/r/ocurrent/dune-binary-distribution)
+  - services:
+    - `infra_www` @ <https://get.dune.build>
+
 
 ## Mirage Docker services
 <https://deploy.mirage.io/>
