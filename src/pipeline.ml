@@ -603,7 +603,7 @@ module Mirage = struct
 
   (* The docker context for the services, which mostly (but not always)
      corresponds with the URL whence it is served *)
-  let ci_mirage_io = "ci.mirage.io"
+  let ci_mirage_org = "ci.mirageos.org"
 
   let services ?app () : service list =
     (* GitHub organisations to monitor. *)
@@ -616,7 +616,7 @@ module Mirage = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/mirage-ci:live"
-              [{name = "infra_mirage-ci"; docker_context = Some ci_mirage_io }]
+              [{name = "infra_mirage-ci"; docker_context = Some ci_mirage_org }]
           ]
           ~options:(include_git |> build_kit)
       ];
@@ -627,7 +627,7 @@ module Mirage = struct
             make_deployment
               ~branch:"live-mirage"
               ~target:"ocurrent/deploy.mirageos.org:live"
-              [{name = "infra_deployer"; docker_context = Some ci_mirage_io }]
+              [{name = "infra_deployer"; docker_context = Some ci_mirage_org }]
           ];
       ];
       ocurrent, "caddy-rfc2136", [
@@ -637,7 +637,7 @@ module Mirage = struct
             make_deployment
               ~branch:"master"
               ~target:"ocurrent/caddy-rfc2136:live"
-              [{name = "infra_caddy"; docker_context = Some ci_mirage_io }]
+              [{name = "infra_caddy"; docker_context = Some ci_mirage_org }]
           ];
       ];
     ]
