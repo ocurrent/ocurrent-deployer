@@ -56,7 +56,7 @@ Application. These relations are summarized in the following table:
 |-------------|------------------|-------------------------------|-----------------------------------------------|
 | `Tarides`   | `live-ci3`       | <https://deploy.ci.dev>       | <https://github.com/apps/deploy-ci-dev>       |
 | `Ocaml_org` | `live-ocaml-org` | <https://deploy.ci.ocaml.org> | <https://github.com/apps/deploy-ci-ocaml-org> |
-| `Mirage`    | `live-mirage`    | <https://deploy.mirage.io>    | <https://github.com/apps/deploy-mirage-io>    |
+| `Mirage`    | `live-mirage`    | <https://deploy.mirageos.org> | <https://github.com/apps/deploy-mirage-io>    |
 
 The deployer's respective GitHub application is responsible for sending the
 deployer notifications about updates to the repositories being monitored. If the
@@ -144,7 +144,7 @@ To update a deployment that is managed by ocurrent-deployer (which could be ocur
       ```
 
 [OCurrent]: https://github.com/ocurrent/ocurrent
-[MirageOS]: https://mirage.io/
+[MirageOS]: https://mirageos.org/
 [Albatross]: https://github.com/hannesm/albatross
 [pipeline.ml]: ./src/pipeline.ml
 [doc/services.md]: ./doc/services.md

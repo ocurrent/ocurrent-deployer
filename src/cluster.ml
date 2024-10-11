@@ -36,7 +36,7 @@ module Opamrepo_docker = Current_docker.Make(struct let docker_context = Some "o
 module Check_docker = Current_docker.Make(struct let docker_context = Some "check.ci.ocaml.org" end)
 module Watch_docker = Current_docker.Make(struct let docker_context = Some "watch.ocaml.org" end)
 module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
-module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirage.io" end)
+module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirageos.org" end)
 module Ocamlorg_images = Current_docker.Make(struct let docker_context = Some "ci3.ocamllabs.io" end)
 module Docker_aws = Current_docker.Make(struct let docker_context = Some "awsecs" end)
 module V3b_docker = Current_docker.Make(struct let docker_context = Some "v3b.ocaml.org" end)
@@ -61,7 +61,7 @@ type service = [
   | `Docs of string
   | `Staging_docs of string
 
-  (* Services on deploy.mirage.io *)
+  (* Services on deploy.mirageos.org *)
   | `Cimirage of string
 
   (* Services on deploy.ci.ocaml.org. *)
@@ -177,7 +177,7 @@ let pull_and_serve multi_hash = function
   | `Ci name -> pull_and_serve (module Ci_docker) ~name `Service multi_hash
   | `Opamrepo name -> pull_and_serve (module Opamrepo_docker) ~name `Service multi_hash
   | `Check name -> pull_and_serve (module Check_docker) ~name `Service multi_hash
-  (* deploy.mirage.io *)
+  (* deploy.mirageos.org *)
   | `Cimirage name -> pull_and_serve (module Cimirage_docker) ~name `Service multi_hash
   (* ocaml.org *)
   | `Ocamlorg_deployer name -> pull_and_serve (module Deploycamlorg_docker) ~name `Service multi_hash

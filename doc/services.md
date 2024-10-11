@@ -87,7 +87,7 @@ For a given service, the specified Dockerfile is pulled from the specified branc
 
 ### [ocurrent/ocurrent-deployer](https://github.com/ocurrent/ocurrent-deployer)
 - `Dockerfile` on arches: x86_64
-  - branch [`live-mirage`](https://github.com/ocurrent/ocurrent-deployer/tree/live-mirage) built at [`ocurrent/deploy.mirage.io:live`](https://hub.docker.com/r/ocurrent/deploy.mirage.io)
+  - branch [`live-mirage`](https://github.com/ocurrent/ocurrent-deployer/tree/live-mirage) built at [`ocurrent/deploy.mirageos.org:live`](https://hub.docker.com/r/ocurrent/deploy.mirageos.org)
 
 ### [ocurrent/caddy-rfc2136](https://github.com/ocurrent/caddy-rfc2136)
 - `Dockerfile` on arches: x86_64

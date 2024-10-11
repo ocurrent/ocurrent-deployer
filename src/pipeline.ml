@@ -555,7 +555,7 @@ module Ocaml_org = struct
 end
 
 module Mirage = struct
-  let base_url = Uri.of_string "https://deploy.mirage.io/"
+  let base_url = Uri.of_string "https://deploy.mirageos.org/"
 
   let admins = [
     "github:avsm";
@@ -609,7 +609,7 @@ module Mirage = struct
           [
             make_deployment
               ~branch:"live-mirage"
-              ~target:"ocurrent/deploy.mirage.io:live"
+              ~target:"ocurrent/deploy.mirageos.org:live"
               [`Cimirage "infra_deployer"]
           ];
       ];
