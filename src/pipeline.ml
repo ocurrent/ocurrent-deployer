@@ -348,6 +348,7 @@ module Ocaml_org = struct
   let opam_ci_ocaml_org = docker_context "opam.ci.ocaml.org"
   let check_ci_ocaml_org = docker_context "check.ci.ocaml.org"
   let get_dune_build = docker_context "get.dune.build"
+  let ci3_ocamllabs_io = docker_context "ci3.ocamllabs.io"
 
   (* This is a list of GitHub repositories to monitor.
     For each one, it lists the builds that are made from that repository.
@@ -399,7 +400,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/base-images:live"
-              [{name = "base-images_builder"; docker_context = v3c_ocaml_org; uri = Some "images.ci.ocaml.org"}];
+              [{name = "base-images_builder"; docker_context = ci3_ocamllabs_io; uri = Some "images.ci.ocaml.org"}];
           ];
       ];
       ocurrent, "ocaml-docs-ci", [
