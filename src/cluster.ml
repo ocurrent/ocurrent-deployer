@@ -107,11 +107,6 @@ let name info = Cluster_api.Docker.Image_id.to_string info.hub_id
 
 let no_schedule = Current_cache.Schedule.v ()
 
-let docker_module context : (module Current_docker.S.DOCKER) =
-  match context with
-  | None -> (module Current_docker.Default)
-  | Some _ -> (module Current_docker.Make(struct let docker_context = context end))
-
 let pull_and_serve op repo_id {docker_context; name; _} =
   let module D = (val docker_context) in
   let image =

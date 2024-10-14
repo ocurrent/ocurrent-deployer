@@ -2,6 +2,14 @@ open Current.Syntax
 
 module Github = Current_github
 
+(* A docker module parameterized by the docker context indicating the machine a service is a run on *)
+let docker_module context : (module Current_docker.S.DOCKER) =
+  (module Current_docker.Make(struct let docker_context = (Some context) end))
+
+(* The default docker module indicates the machine that the deployer service itself is run on *)
+let default_docker_module : (module Current_docker.S.DOCKER) =
+  (module Current_docker.Default)
+
 let or_fail = function
   | Ok x -> x
   | Error (`Msg m) -> failwith m
@@ -106,10 +114,9 @@ module Tarides = struct
   ]
 
   (* The docker context for the services *)
-  let default = Cluster.docker_module None
-  let ocaml_ci_dev = Cluster.docker_module (Some "ocaml.ci.dev")
-  let ci4_ocamllabs_io = Cluster.docker_module (Some "ci4.ocamllabs.io")
-  let ci3_ocamllabs_io = Cluster.docker_module (Some "ci3.ocamllabs.io")
+  let ocaml_ci_dev = docker_module "ocaml.ci.dev"
+  let ci4_ocamllabs_io = docker_module "ci4.ocamllabs.io"
+  let ci3_ocamllabs_io = docker_module "ci3.ocamllabs.io"
 
   (* This is a list of GitHub repositories to monitor.
     For each one, it lists the builds that are made from that repository.
@@ -127,7 +134,7 @@ module Tarides = struct
             make_deployment
               ~branch:"live-ci3"
               ~target:"ocurrent/ci.ocamllabs.io-deployer:live-ci3"
-              [{name = "deployer_deployer"; docker_context = default; uri = Some "deploy.ci.dev"}];
+              [{name = "deployer_deployer"; docker_context = default_docker_module; uri = Some "deploy.ci.dev"}];
           ]
       ];
       ocurrent, "ocaml-ci", [
@@ -334,15 +341,13 @@ module Ocaml_org = struct
   ]
 
   (* The docker context for the services *)
-  let default = Cluster.docker_module None
-  let v3b_ocaml_org = Cluster.docker_module (Some "v3b.ocaml.org")
-  let v3c_ocaml_org = Cluster.docker_module (Some "v3c.ocaml.org")
-  let ci3_ocamllabs_io = Cluster.docker_module (Some "ci3.ocamllabs.io")
-  let docs_ci_ocaml_org = Cluster.docker_module (Some "docs.ci.ocaml.org")
-  let staging_docs_ci_ocaml_org = Cluster.docker_module (Some "staging.docs.ci.ocaml.org")
-  let opam_ci_ocaml_org = Cluster.docker_module (Some "opam.ci.ocaml.org")
-  let check_ci_ocaml_org = Cluster.docker_module (Some "check.ci.ocaml.org")
-  let get_dune_build = Cluster.docker_module (Some "get.dune.build")
+  let v3b_ocaml_org = docker_module "v3b.ocaml.org"
+  let v3c_ocaml_org = docker_module "v3c.ocaml.org"
+  let docs_ci_ocaml_org = docker_module "docs.ci.ocaml.org"
+  let staging_docs_ci_ocaml_org = docker_module "staging.docs.ci.ocaml.org"
+  let opam_ci_ocaml_org = docker_module "opam.ci.ocaml.org"
+  let check_ci_ocaml_org = docker_module "check.ci.ocaml.org"
+  let get_dune_build = docker_module "get.dune.build"
 
   (* This is a list of GitHub repositories to monitor.
     For each one, it lists the builds that are made from that repository.
@@ -361,7 +366,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"live-ocaml-org"
               ~target:"ocurrent/ci.ocamllabs.io-deployer:live-ocaml-org"
-              [{name = "infra_deployer"; docker_context = default; uri = Some "deploy.ci.ocaml.org"}];
+              [{name = "infra_deployer"; docker_context = default_docker_module; uri = Some "deploy.ci.ocaml.org"}];
           ];
       ];
       ocaml, "ocaml.org", [
@@ -529,7 +534,7 @@ module Ocaml_org = struct
     pipelines, additional_build_args
 
   let watch_ocaml_org = "watch.ocaml.org"
-  module Watch_docker = (val Cluster.docker_module (Some watch_ocaml_org))
+  module Watch_docker = (val docker_module watch_ocaml_org)
 
   let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
     (* [web_ui collapse_value] is a URL back to the deployment service, for links
@@ -603,7 +608,7 @@ module Mirage = struct
     ]
 
   (* The docker context for the services *)
-  let ci_mirage_org = Cluster.docker_module (Some "ci.mirageos.org")
+  let ci_mirage_org = docker_module "ci.mirageos.org"
 
   let services ?app () : service list =
     (* GitHub organisations to monitor. *)
