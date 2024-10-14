@@ -35,7 +35,8 @@ type build_info = {
 
 type service = {
   name : string;
-  docker_context : string option;
+  docker_context : (module Current_docker.S.DOCKER);
+  uri : string option;
 }
 
 type deploy_info = {
@@ -111,8 +112,8 @@ let docker_module context : (module Current_docker.S.DOCKER) =
   | None -> (module Current_docker.Default)
   | Some _ -> (module Current_docker.Make(struct let docker_context = context end))
 
-let pull_and_serve op repo_id {docker_context; name} =
-  let module D = (val docker_module docker_context) in
+let pull_and_serve op repo_id {docker_context; name; _} =
+  let module D = (val docker_context) in
   let image =
     Current.component "pull" |>
     let> repo_id in

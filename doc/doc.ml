@@ -24,12 +24,12 @@ let show_docker_hub_link tag =
 
 let show_services services =
   services
-  |> List.map (fun ({name; docker_context} : Cluster.service) ->
-      let context = match docker_context with
+  |> List.map (fun ({name; docker_context = _; uri} : Cluster.service) ->
+      let uri = match uri with
         | None -> ""
-        | Some c -> Printf.sprintf (" @ <https://%s>") c
+        | Some uri -> Printf.sprintf (" @ <https://%s>") uri
       in
-      Printf.sprintf "    - `%s`%s" name  context
+      Printf.sprintf "    - `%s`%s" name uri
     )
   |> String.concat "\n"
 

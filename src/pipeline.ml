@@ -105,11 +105,11 @@ module Tarides = struct
     "github:tmcgilchrist";
   ]
 
-  (* The docker context for the services, which mostly (but not always)
-     corresponds with the URL whence it is served *)
-  let ocaml_ci_dev = "ocaml.ci.dev"
-  let ci4_ocamllabs_io = "ci4.ocamllabs.io"
-  let ci3_ocamllabs_io= "ci3.ocamllabs.io"
+  (* The docker context for the services *)
+  let default = Cluster.docker_module None
+  let ocaml_ci_dev = Cluster.docker_module (Some "ocaml.ci.dev")
+  let ci4_ocamllabs_io = Cluster.docker_module (Some "ci4.ocamllabs.io")
+  let ci3_ocamllabs_io = Cluster.docker_module (Some "ci3.ocamllabs.io")
 
   (* This is a list of GitHub repositories to monitor.
     For each one, it lists the builds that are made from that repository.
@@ -127,7 +127,7 @@ module Tarides = struct
             make_deployment
               ~branch:"live-ci3"
               ~target:"ocurrent/ci.ocamllabs.io-deployer:live-ci3"
-              [{name = "deployer_deployer"; docker_context = None}];
+              [{name = "deployer_deployer"; docker_context = default; uri = Some "deploy.ci.dev"}];
           ]
       ];
       ocurrent, "ocaml-ci", [
@@ -137,7 +137,7 @@ module Tarides = struct
             make_deployment
               ~branch:"live-engine"
               ~target:"ocurrent/ocaml-ci-service:live"
-              [{name = "ocaml-ci_ci"; docker_context = Some ocaml_ci_dev}];
+              [{name = "ocaml-ci_ci"; docker_context = ocaml_ci_dev; uri = Some "ocaml.ci.dev:8100"}];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64];
         make_docker
@@ -146,7 +146,7 @@ module Tarides = struct
             make_deployment
               ~branch:"live-engine"
               ~target:"ocurrent/ocaml-ci-gitlab-service:live"
-              [{name = "ocaml-ci_gitlab"; docker_context = Some ocaml_ci_dev}];
+              [{name = "ocaml-ci_gitlab"; docker_context = ocaml_ci_dev; uri = Some "ocaml.ci.dev:8200"}];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64];
         make_docker
@@ -155,11 +155,11 @@ module Tarides = struct
             make_deployment
               ~branch:"live-www"
               ~target:"ocurrent/ocaml-ci-web:live"
-              [{name = "ocaml-ci_web"; docker_context = Some ocaml_ci_dev}];
+              [{name = "ocaml-ci_web"; docker_context = ocaml_ci_dev; uri = Some "ocaml.ci.dev"}];
             make_deployment
               ~branch:"staging-www"
               ~target:"ocurrent/ocaml-ci-web:staging"
-              [{name = "test-www"; docker_context = Some ocaml_ci_dev}];
+              [{name = "test-www"; docker_context = ocaml_ci_dev; uri = None}];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64];
       ];
@@ -212,7 +212,7 @@ module Tarides = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/multicore-ci:live"
-              [{name = "infra_multicore-ci"; docker_context = Some ci4_ocamllabs_io}];
+              [{name = "infra_multicore-ci"; docker_context = ci4_ocamllabs_io; uri = Some "ocaml-multicore.ci.dev:8100"}];
           ];
         make_docker
           "Dockerfile.web"
@@ -220,7 +220,7 @@ module Tarides = struct
             make_deployment
               ~branch:"live-web"
               ~target:"ocurrent/multicore-ci-web:live"
-              [{name = "infra_multicore-ci-web"; docker_context = Some ci4_ocamllabs_io}];
+              [{name = "infra_multicore-ci-web"; docker_context = ci4_ocamllabs_io; uri = Some "ocaml-multicore.ci.dev"}];
           ];
       ];
       ocurrent, "ocurrent.org", [
@@ -230,7 +230,7 @@ module Tarides = struct
             make_deployment
               ~branch:"live-engine"
               ~target:"ocurrent/ocurrent.org:live-engine"
-              [{name = "ocurrent_org_watcher"; docker_context = Some ci3_ocamllabs_io}];
+              [{name = "ocurrent_org_watcher"; docker_context = ci3_ocamllabs_io; uri = Some "watcher.ci.dev"}];
           ];
       ];
       ocaml_bench, "sandmark-nightly", [
@@ -240,7 +240,7 @@ module Tarides = struct
             make_deployment
               ~branch:"main"
               ~target:"ocurrent/sandmark-nightly:live"
-              [{name = "sandmark_sandmark"; docker_context = Some ci3_ocamllabs_io}];
+              [{name = "sandmark_sandmark"; docker_context = ci3_ocamllabs_io; uri = Some "sandmark.tarides.com"}];
           ]
           ~options:include_git;
       ];
@@ -271,7 +271,7 @@ module Tarides = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/multicoretests-ci:live"
-              [{name = "infra_multicoretests-ci"; docker_context = Some ci4_ocamllabs_io }];
+              [{name = "infra_multicoretests-ci"; docker_context = ci4_ocamllabs_io; uri = Some "ocaml-multicoretests.ci.dev:8100" }];
           ];
       ];
       ocurrent, "ocurrent-observer", [
@@ -333,15 +333,16 @@ module Ocaml_org = struct
     "github:tmcgilchrist";
   ]
 
-  (* The docker context for the services, which mostly (but not always)
-     corresponds with the URL whence it is served *)
-  let v3b_ocaml_org = "v3b.ocaml.org"
-  let v3c_ocaml_org = "v3c.ocaml.org"
-  let docs_ci_ocaml_org = "docs.ci.ocaml.org"
-  let staging_docs_ci_ocaml_org = "staging.docs.ci.ocaml.org"
-  let opam_ci_ocaml_org = "opam.ci.ocaml.org"
-  let check_ci_ocaml_org = "check.ci.ocaml.org"
-  let get_dune_build = "get.dune.build"
+  (* The docker context for the services *)
+  let default = Cluster.docker_module None
+  let v3b_ocaml_org = Cluster.docker_module (Some "v3b.ocaml.org")
+  let v3c_ocaml_org = Cluster.docker_module (Some "v3c.ocaml.org")
+  let ci3_ocamllabs_io = Cluster.docker_module (Some "ci3.ocamllabs.io")
+  let docs_ci_ocaml_org = Cluster.docker_module (Some "docs.ci.ocaml.org")
+  let staging_docs_ci_ocaml_org = Cluster.docker_module (Some "staging.docs.ci.ocaml.org")
+  let opam_ci_ocaml_org = Cluster.docker_module (Some "opam.ci.ocaml.org")
+  let check_ci_ocaml_org = Cluster.docker_module (Some "check.ci.ocaml.org")
+  let get_dune_build = Cluster.docker_module (Some "get.dune.build")
 
   (* This is a list of GitHub repositories to monitor.
     For each one, it lists the builds that are made from that repository.
@@ -360,7 +361,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"live-ocaml-org"
               ~target:"ocurrent/ci.ocamllabs.io-deployer:live-ocaml-org"
-              [{name = "infra_deployer"; docker_context = None}];
+              [{name = "infra_deployer"; docker_context = default; uri = Some "deploy.ci.ocaml.org"}];
           ];
       ];
       ocaml, "ocaml.org", [
@@ -371,7 +372,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"main"
               ~target:"ocurrent/v3.ocaml.org-server:live"
-              [{name = "infra_www"; docker_context = Some v3b_ocaml_org}]
+              [{name = "infra_www"; docker_context = v3b_ocaml_org; uri = Some "ocaml.org"}]
           ]
           ~options:include_git;
         (* Staging branch for ocaml.org website. *)
@@ -381,7 +382,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"staging"
               ~target:"ocurrent/v3.ocaml.org-server:staging"
-              [{name = "infra_www"; docker_context = Some v3c_ocaml_org}]
+              [{name = "infra_www"; docker_context = v3c_ocaml_org; uri = Some "staging.ocaml.org"}]
           ]
           ~options:include_git
       ];
@@ -393,7 +394,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/base-images:live"
-              [{name = "base-images_builder"; docker_context = Some v3c_ocaml_org}];
+              [{name = "base-images_builder"; docker_context = ci3_ocamllabs_io; uri = Some "images.ci.ocaml.org"}];
           ];
       ];
       ocurrent, "ocaml-docs-ci", [
@@ -403,7 +404,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/docs-ci:live"
-              [{name = "infra_docs-ci"; docker_context = Some docs_ci_ocaml_org}];
+              [{name = "infra_docs-ci"; docker_context = docs_ci_ocaml_org; uri = Some "docs.ci.ocaml.org"}];
           ];
         make_docker
           "docker/init/Dockerfile"
@@ -411,7 +412,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/docs-ci-init:live"
-              [{name = "infra_init"; docker_context = Some docs_ci_ocaml_org }];
+              [{name = "infra_init"; docker_context = docs_ci_ocaml_org; uri = None }];
           ];
         make_docker
           "docker/storage/Dockerfile"
@@ -419,7 +420,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/docs-ci-storage-server:live"
-              [{name = "infra_storage-server"; docker_context = Some docs_ci_ocaml_org }];
+              [{name = "infra_storage-server"; docker_context = docs_ci_ocaml_org; uri = None }];
           ];
         make_docker
           "Dockerfile"
@@ -427,7 +428,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"staging"
               ~target:"ocurrent/docs-ci:staging"
-              [{name = "infra_docs-ci"; docker_context = Some staging_docs_ci_ocaml_org}];
+              [{name = "infra_docs-ci"; docker_context = staging_docs_ci_ocaml_org; uri = Some "staging.docs.ci.ocamllabs.io"}];
           ];
         make_docker
           "docker/init/Dockerfile"
@@ -435,7 +436,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"staging"
               ~target:"ocurrent/docs-ci-init:staging"
-              [{name = "infra_init"; docker_context = Some staging_docs_ci_ocaml_org}];
+              [{name = "infra_init"; docker_context = staging_docs_ci_ocaml_org; uri = None}];
           ];
         make_docker
           "docker/storage/Dockerfile"
@@ -443,7 +444,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"staging"
               ~target:"ocurrent/docs-ci-storage-server:staging"
-              [{name = "infra_storage-server"; docker_context = Some staging_docs_ci_ocaml_org}];
+              [{name = "infra_storage-server"; docker_context = staging_docs_ci_ocaml_org; uri = None}];
           ];
       ];
       ocurrent, "opam-health-check", [
@@ -453,8 +454,8 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/opam-health-check:live"
-              [ {name = "infra_opam-health-check"; docker_context = Some check_ci_ocaml_org}
-              ; {name = "infra_opam-health-check-freebsd"; docker_context = Some check_ci_ocaml_org}];
+              [ {name = "infra_opam-health-check"; docker_context = check_ci_ocaml_org; uri = Some "check.ci.ocaml.org"}
+              ; {name = "infra_opam-health-check-freebsd"; docker_context = check_ci_ocaml_org; uri = Some "freebsd.check.ci.dev"}];
           ];
       ];
       ocurrent, "opam-repo-ci", [
@@ -464,7 +465,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/opam-repo-ci:live"
-              [{name = "opam-repo-ci_opam-repo-ci"; docker_context = Some opam_ci_ocaml_org }];
+              [{name = "opam-repo-ci_opam-repo-ci"; docker_context = opam_ci_ocaml_org; uri = Some "opam-repo.ci.ocaml.org" }];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64];
         make_docker
@@ -473,7 +474,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"live-web"
               ~target:"ocurrent/opam-repo-ci-web:live"
-              [{name = "opam-repo-ci_opam-repo-ci-web"; docker_context = Some opam_ci_ocaml_org }];
+              [{name = "opam-repo-ci_opam-repo-ci-web"; docker_context = opam_ci_ocaml_org; uri = Some "opam.ci.ocaml.org" }];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64];
       ];
@@ -484,7 +485,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"main"
               ~target:"ocurrent/dune-binary-distribution:live"
-              [{name = "infra_www"; docker_context = Some get_dune_build}]
+              [{name = "infra_www"; docker_context = get_dune_build; uri = Some "get.dune.build"}]
           ]
       ];
     ]
@@ -528,7 +529,7 @@ module Ocaml_org = struct
     pipelines, additional_build_args
 
   let watch_ocaml_org = "watch.ocaml.org"
-  module Watch_docker = Current_docker.Make(struct let docker_context = Some watch_ocaml_org end)
+  module Watch_docker = (val Cluster.docker_module (Some watch_ocaml_org))
 
   let v ?app ?notify:channel ?filter ~sched ~staging_auth () =
     (* [web_ui collapse_value] is a URL back to the deployment service, for links
@@ -601,9 +602,8 @@ module Mirage = struct
       ];
     ]
 
-  (* The docker context for the services, which mostly (but not always)
-     corresponds with the URL whence it is served *)
-  let ci_mirage_org = "ci.mirageos.org"
+  (* The docker context for the services *)
+  let ci_mirage_org = Cluster.docker_module (Some "ci.mirageos.org")
 
   let services ?app () : service list =
     (* GitHub organisations to monitor. *)
@@ -616,7 +616,7 @@ module Mirage = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/mirage-ci:live"
-              [{name = "infra_mirage-ci"; docker_context = Some ci_mirage_org }]
+              [{name = "infra_mirage-ci"; docker_context = ci_mirage_org; uri = Some "ci.mirageos.org" }]
           ]
           ~options:(include_git |> build_kit)
       ];
@@ -627,7 +627,7 @@ module Mirage = struct
             make_deployment
               ~branch:"live-mirage"
               ~target:"ocurrent/deploy.mirageos.org:live"
-              [{name = "infra_deployer"; docker_context = Some ci_mirage_org }]
+              [{name = "infra_deployer"; docker_context = ci_mirage_org; uri = Some "deploy.mirageos.org" }]
           ];
       ];
       ocurrent, "caddy-rfc2136", [
@@ -637,7 +637,7 @@ module Mirage = struct
             make_deployment
               ~branch:"master"
               ~target:"ocurrent/caddy-rfc2136:live"
-              [{name = "infra_caddy"; docker_context = Some ci_mirage_org }]
+              [{name = "infra_caddy"; docker_context = ci_mirage_org; uri = None }]
           ];
       ];
     ]
