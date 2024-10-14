@@ -394,7 +394,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/base-images:live"
-              [{name = "base-images_builder"; docker_context = ci3_ocamllabs_io; uri = Some "images.ci.ocaml.org"}];
+              [{name = "base-images_builder"; docker_context = v3c_ocaml_org; uri = Some "images.ci.ocaml.org"}];
           ];
       ];
       ocurrent, "ocaml-docs-ci", [
