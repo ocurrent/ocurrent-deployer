@@ -26,24 +26,6 @@ end
 
 let push_repo = "ocurrentbuilder/staging"
 
-(* Strings here represent the docker context to use. *)
-module Ci3_docker = Current_docker.Default
-module Ci4_docker = Current_docker.Make(struct let docker_context = Some "ci4.ocamllabs.io" end)
-module Docs_docker = Current_docker.Make(struct let docker_context = Some "docs.ci.ocaml.org" end)
-module Staging_docs_docker = Current_docker.Make(struct let docker_context = Some "staging.docs.ci.ocamllabs.io" end)
-module Ci_docker = Current_docker.Make(struct let docker_context = Some "ocaml.ci.dev" end)
-module Opamrepo_docker = Current_docker.Make(struct let docker_context = Some "opam.ci.ocaml.org" end)
-module Check_docker = Current_docker.Make(struct let docker_context = Some "check.ci.ocaml.org" end)
-module Watch_docker = Current_docker.Make(struct let docker_context = Some "watch.ocaml.org" end)
-module Ocamlorg_docker = Current_docker.Make(struct let docker_context = Some "ocaml-www1" end)
-module Cimirage_docker = Current_docker.Make(struct let docker_context = Some "ci.mirageos.org" end)
-module Ocamlorg_images = Current_docker.Make(struct let docker_context = Some "ci3.ocamllabs.io" end)
-module Docker_aws = Current_docker.Make(struct let docker_context = Some "awsecs" end)
-module V3b_docker = Current_docker.Make(struct let docker_context = Some "v3b.ocaml.org" end)
-module V3c_docker = Current_docker.Make(struct let docker_context = Some "v3c.ocaml.org" end)
-module Dune_binary_docker = Current_docker.Make(struct let docker_context = Some "get.dune.build" end)
-module Deploycamlorg_docker = Current_docker.Default
-
 type build_info = {
   sched : Current_ocluster.t;
   dockerfile : [`Contents of string Current.t | `Path of string];
@@ -51,27 +33,11 @@ type build_info = {
   archs : Arch.t list;
 }
 
-type service = [
-(* Services on deploy.ci.dev *)
-  | `Ci of string
-  | `Opamrepo of string
-  | `Check of string
-  | `Ci3 of string
-  | `Ci4 of string
-  | `Docs of string
-  | `Staging_docs of string
-
-  (* Services on deploy.mirageos.org *)
-  | `Cimirage of string
-
-  (* Services on deploy.ci.ocaml.org. *)
-  | `Ocamlorg_deployer of string             (* OCurrent deployer @ deploy.ci.ocaml.org *)
-  | `Ocamlorg_images of string               (* Base Image builder @ images.ci.ocaml.org *)
-  | `OCamlorg_v3b of string                  (* OCaml website @ v3b.ocaml.org aka www.ocaml.org *)
-  | `OCamlorg_v3c of string                  (* Staging OCaml website @ staging.ocaml.org *)
-  | `Dune_binary_distribution of string      (* Dune binary distribution website *)
-  | `Aws_ecs of Aws.t                        (* Amazon Web Services - Elastic Container Service *)
-] [@@deriving show]
+type service = {
+  name : string;
+  docker_context : (module Current_docker.S.DOCKER);
+  uri : string option;
+}
 
 type deploy_info = {
   hub_id : Cluster_api.Docker.Image_id.t;
@@ -141,7 +107,8 @@ let name info = Cluster_api.Docker.Image_id.to_string info.hub_id
 
 let no_schedule = Current_cache.Schedule.v ()
 
-let pull_and_serve (module D : Current_docker.S.DOCKER) ~name op repo_id =
+let pull_and_serve op repo_id {docker_context; name; _} =
+  let module D = (val docker_context) in
   let image =
     Current.component "pull" |>
     let> repo_id in
@@ -168,27 +135,6 @@ let build_and_push ?level ?label ?cache_hint t ~push_target ~pool ~src ~options 
   and> src in
   Current_ocluster.Raw.build_and_push ?level ?cache_hint t ~push_target ~pool ~src ~options dockerfile
 
-let pull_and_serve multi_hash = function
-  (* deploy.ci.dev *)
-  | `Ci3 name -> pull_and_serve (module Ci3_docker) ~name `Service multi_hash
-  | `Ci4 name -> pull_and_serve (module Ci4_docker) ~name `Service multi_hash
-  | `Docs name -> pull_and_serve (module Docs_docker) ~name `Service multi_hash
-  | `Staging_docs name -> pull_and_serve (module Staging_docs_docker) ~name `Service multi_hash
-  | `Ci name -> pull_and_serve (module Ci_docker) ~name `Service multi_hash
-  | `Opamrepo name -> pull_and_serve (module Opamrepo_docker) ~name `Service multi_hash
-  | `Check name -> pull_and_serve (module Check_docker) ~name `Service multi_hash
-  (* deploy.mirageos.org *)
-  | `Cimirage name -> pull_and_serve (module Cimirage_docker) ~name `Service multi_hash
-  (* ocaml.org *)
-  | `Ocamlorg_deployer name -> pull_and_serve (module Deploycamlorg_docker) ~name `Service multi_hash
-  | `Ocamlorg_images name -> pull_and_serve (module Ocamlorg_images) ~name `Service multi_hash
-  | `OCamlorg_v3b name -> pull_and_serve (module V3b_docker) ~name `Service multi_hash
-  | `OCamlorg_v3c name -> pull_and_serve (module V3c_docker) ~name `Service multi_hash
-  | `Dune_binary_distribution name -> pull_and_serve (module Dune_binary_docker) ~name `Service multi_hash
-  | `Aws_ecs project ->
-    let contents = Aws.compose project in
-    pull_and_serve (module Docker_aws) ~name:(project.name ^ "-" ^ project.branch) (`Compose_cli contents) multi_hash
-
 let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(additional_build_args=Current.return []) src =
   let src = Current.map (fun x -> [x]) src in
   let image_label = Cluster_api.Docker.Image_id.repo hub_id in
@@ -213,5 +159,5 @@ let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(addition
     | [] -> Current.ignore_value multi_hash
     | services ->
       services
-      |> List.map (pull_and_serve multi_hash)
+      |> List.map (pull_and_serve `Service multi_hash)
       |> Current.all
