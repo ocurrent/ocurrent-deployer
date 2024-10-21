@@ -503,7 +503,7 @@ module Ocaml_org = struct
               make_deployment
                 ~branch:"staging"
                 ~target:"ocurrent/dune-binary-distribution:staging"
-                [{name = "infra_www"; docker_context = get_dune_build; uri = Some "staging-preview.dune.build"}]
+                [{name = "infra_staging"; docker_context = get_dune_build; uri = Some "staging-preview.dune.build"}]
             ]
         ];
     ]
