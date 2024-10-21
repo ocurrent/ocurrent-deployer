@@ -494,9 +494,19 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"main"
               ~target:"ocurrent/dune-binary-distribution:live"
-              [{name = "infra_www"; docker_context = get_dune_build; uri = Some "get.dune.build"}]
+              [{name = "infra_www"; docker_context = get_dune_build; uri = Some "preview.dune.build"}]
           ]
       ];
+      ocaml_dune, "binary-distribution", [
+          make_docker
+            "Dockerfile"
+            [
+              make_deployment
+                ~branch:"staging"
+                ~target:"ocurrent/dune-binary-distribution:staging"
+                [{name = "infra_staging"; docker_context = get_dune_build; uri = Some "staging-preview.dune.build"}]
+            ]
+        ];
     ]
 
   let opam_repository ?app () =
