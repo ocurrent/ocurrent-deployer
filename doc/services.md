@@ -190,11 +190,14 @@ For a given service, the specified Dockerfile is pulled from the specified branc
   - services:
     - `infra_www` @ <https://preview.dune.build>
 
+
+### [ocaml-dune/binary-distribution](https://github.com/ocaml-dune/binary-distribution)
+
 - `Dockerfile` on arches: x86_64
   - branch: [`staging`](https://github.com/ocaml-dune/binary-distribution/tree/staging)
   - registered image: [`ocurrent/dune-binary-distribution:staging`](https://hub.docker.com/r/ocurrent/dune-binary-distribution)
   - services:
-    - `infra_www` @ <https://preview.dune.build>
+    - `infra_staging` @ <https://staging-preview.dune.build>
 
 
 ## Mirage Docker services
