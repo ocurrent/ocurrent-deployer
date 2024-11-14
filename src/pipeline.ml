@@ -374,14 +374,23 @@ module Ocaml_org = struct
           ];
       ];
       ocaml, "ocaml.org", [
-        (* New V3 ocaml.org website. *)
+        (* production ocaml.org website instances *)
         make_docker
           "Dockerfile"
           [
             make_deployment
               ~branch:"main"
               ~target:"ocurrent/v3.ocaml.org-server:live"
-              [{name = "infra_www"; docker_context = v3b_ocaml_org; uri = Some "ocaml.org"}]
+              [{name = "infra_www1"; docker_context = v3b_ocaml_org; uri = Some "ocaml.org"}]
+          ]
+          ~options:include_git;
+        make_docker
+          "Dockerfile"
+          [
+            make_deployment
+              ~branch:"main"
+              ~target:"ocurrent/v3.ocaml.org-server:live"
+              [{name = "infra_www2"; docker_context = v3b_ocaml_org; uri = Some "ocaml.org"}]
           ]
           ~options:include_git;
         (* Staging branch for ocaml.org website. *)
