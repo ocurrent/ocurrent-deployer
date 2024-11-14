@@ -100,7 +100,8 @@ For a given service, the specified Dockerfile is pulled from the specified branc
   - branch: [`main`](https://github.com/ocaml/ocaml.org/tree/main)
   - registered image: [`ocurrent/v3.ocaml.org-server:live`](https://hub.docker.com/r/ocurrent/v3.ocaml.org-server)
   - services:
-    - `infra_www` @ <https://ocaml.org>
+    - `infra_www1` @ <https://ocaml.org>
+    - `infra_www2` @ <https://ocaml.org>
 
 - `Dockerfile` on arches: x86_64
   - branch: [`staging`](https://github.com/ocaml/ocaml.org/tree/staging)
