@@ -164,10 +164,6 @@ module Tarides = struct
               ~branch:"live-www"
               ~target:"ocurrent/ocaml-ci-web:live"
               [{name = "ocaml-ci_web"; docker_context = ocaml_ci_dev; uri = Some "ocaml.ci.dev"}];
-            make_deployment
-              ~branch:"staging-www"
-              ~target:"ocurrent/ocaml-ci-web:staging"
-              [{name = "test-www"; docker_context = ocaml_ci_dev; uri = None}];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64]
           ~options:{ defaults with buildkit = true };
