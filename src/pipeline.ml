@@ -155,7 +155,8 @@ module Tarides = struct
               ~target:"ocurrent/ocaml-ci-gitlab-service:live"
               [{name = "ocaml-ci_gitlab"; docker_context = ocaml_ci_dev; uri = Some "ocaml.ci.dev:8200"}];
           ]
-          ~archs:[`Linux_x86_64; `Linux_arm64];
+          ~archs:[`Linux_x86_64; `Linux_arm64]
+          ~options:{ defaults with buildkit = true };
         make_docker
           "Dockerfile.web"
           [
@@ -168,7 +169,8 @@ module Tarides = struct
               ~target:"ocurrent/ocaml-ci-web:staging"
               [{name = "test-www"; docker_context = ocaml_ci_dev; uri = None}];
           ]
-          ~archs:[`Linux_x86_64; `Linux_arm64];
+          ~archs:[`Linux_x86_64; `Linux_arm64]
+          ~options:{ defaults with buildkit = true };
       ];
       ocurrent, "ocluster", [
         make_docker
