@@ -95,10 +95,6 @@ let filter_list filter items =
 
 let defaults = Cluster_api.Docker.Spec.defaults
 
-let include_git (v : Cluster_api.Docker.Spec.options) = { v with include_git = true }
-
-let build_kit (v : Cluster_api.Docker.Spec.options) = { v with buildkit = true }
-
 module Tarides = struct
   let base_url = Uri.of_string "https://deploy.ci.dev/"
 
@@ -149,8 +145,8 @@ module Tarides = struct
               ~target:"ocurrent/ocaml-ci-service:live"
               [{name = "ocaml-ci_ci"; docker_context = ocaml_ci_dev; uri = Some "ocaml.ci.dev:8100"}];
           ]
-          ~options:(defaults |> include_git |> build_kit)
-          ~archs:[`Linux_x86_64; `Linux_arm64];
+          ~archs:[`Linux_x86_64; `Linux_arm64]
+          ~options:{ defaults with include_git = true; buildkit = true };
         make_docker
           "Dockerfile.gitlab"
           [
@@ -184,7 +180,7 @@ module Tarides = struct
               [];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64]
-          ~options:(defaults |> include_git);
+          ~options:{ defaults with include_git = true };
         make_docker
           "Dockerfile.worker"
           [
@@ -194,7 +190,7 @@ module Tarides = struct
               [];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64; `Linux_ppc64; `Linux_s390x; `Linux_riscv64]
-          ~options:(defaults |> include_git |> fun v ->  { v with build_args =  ["--ulimit stack=1000000000:1000000000"]});
+          ~options:{ defaults with include_git = true; build_args =  ["--ulimit stack=1000000000:1000000000"] };
         make_docker
           "Dockerfile.worker.alpine"
           [
@@ -203,7 +199,8 @@ module Tarides = struct
               ~target:"ocurrent/ocluster-worker:alpine"
               [];
           ]
-          ~archs:[`Linux_x86_64; `Linux_arm64] ~options:(defaults |> include_git);
+          ~archs:[`Linux_x86_64; `Linux_arm64]
+          ~options:{ defaults with include_git = true };
       ];
       ocurrent, "clarke", [
         make_docker
@@ -214,7 +211,8 @@ module Tarides = struct
               ~target:"ocurrent/clarke:live"
               [];
           ]
-          ~archs:[`Linux_x86_64; `Linux_arm64] ~options:(defaults |> include_git);
+          ~archs:[`Linux_x86_64; `Linux_arm64]
+          ~options:{ defaults with include_git = true };
       ];
       ocurrent, "ocaml-multicore-ci", [
         make_docker
@@ -253,7 +251,7 @@ module Tarides = struct
               ~target:"ocurrent/sandmark-nightly:live"
               [{name = "sandmark_sandmark"; docker_context = ci3_ocamllabs_io; uri = Some "sandmark.tarides.com"}];
           ]
-          ~options:(defaults |> include_git);
+          ~options:{ defaults with include_git = true };
       ];
       ocurrent, "solver-service", [
         make_docker
@@ -264,7 +262,8 @@ module Tarides = struct
               ~target:"ocurrent/solver-service:live"
               [];
           ]
-          ~archs:[`Linux_x86_64; `Linux_arm64] ~options:(defaults |> include_git);
+          ~archs:[`Linux_x86_64; `Linux_arm64]
+          ~options:{ defaults with include_git = true };
         make_docker
           "Dockerfile"
           [
@@ -273,7 +272,8 @@ module Tarides = struct
               ~target:"ocurrent/solver-service:staging"
               [];
           ]
-          ~archs:[`Linux_x86_64; `Linux_arm64] ~options:(defaults |> include_git);
+          ~archs:[`Linux_x86_64; `Linux_arm64]
+          ~options:{ defaults with include_git = true };
       ];
       ocurrent, "multicoretests-ci", [
         make_docker
@@ -294,7 +294,8 @@ module Tarides = struct
               ~target:"ocurrent/ocurrent-observer:live"
               [];
           ]
-          ~archs:[`Linux_riscv64] ~options:(defaults |> include_git);
+          ~archs:[`Linux_riscv64]
+          ~options:{ defaults with include_git = true };
       ];
       ocurrent, "ocurrent-configurator", [
         make_docker
@@ -305,7 +306,8 @@ module Tarides = struct
               ~target:"ocurrent/ocurrent-configurator:live"
               [];
           ]
-          ~archs:[`Linux_riscv64] ~options:(defaults |> include_git);
+          ~archs:[`Linux_riscv64]
+          ~options:{ defaults with include_git = true };
       ];
     ]
 
@@ -387,7 +389,7 @@ module Ocaml_org = struct
               [{name = "infra_www1"; docker_context = v3b_ocaml_org; uri = Some "ocaml.org"};
               {name = "infra_www2"; docker_context = v3b_ocaml_org; uri = Some "ocaml.org"}]
           ]
-          ~options:(defaults |> include_git);
+          ~options:{ defaults with include_git = true };
         (* Staging branch for ocaml.org website. *)
         make_docker
           "Dockerfile"
@@ -397,7 +399,7 @@ module Ocaml_org = struct
               ~target:"ocurrent/v3.ocaml.org-server:staging"
               [{name = "infra_www"; docker_context = v3c_ocaml_org; uri = Some "staging.ocaml.org"}]
           ]
-          ~options:(defaults |> include_git)
+          ~options:{ defaults with include_git = true };
       ];
       ocurrent, "docker-base-images", [
         (* Docker base images @ images.ci.ocaml.org *)
@@ -643,7 +645,7 @@ module Mirage = struct
               ~target:"ocurrent/mirage-ci:live"
               [{name = "infra_mirage-ci"; docker_context = ci_mirage_org; uri = Some "ci.mirageos.org" }]
           ]
-          ~options:(defaults |> include_git |> build_kit)
+          ~options:{ defaults with include_git = true; buildkit = true };
       ];
       ocurrent, "ocurrent-deployer", [
         make_docker
