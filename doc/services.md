@@ -165,6 +165,7 @@ For a given service, the specified Dockerfile is pulled from the specified branc
   - registered image: [`ocurrent/opam-health-check:live`](https://hub.docker.com/r/ocurrent/opam-health-check)
   - services:
     - `infra_opam-health-check` @ <https://check.ci.ocaml.org>
+    - `infra_opam-health-check-windows` @ <https://windows.check.ci.dev>
     - `infra_opam-health-check-freebsd` @ <https://freebsd.check.ci.dev>
 
 
