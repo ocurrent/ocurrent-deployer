@@ -34,11 +34,6 @@ For a given service, the specified Dockerfile is pulled from the specified branc
   - services:
     - `ocaml-ci_web` @ <https://ocaml.ci.dev>
 
-  - branch: [`staging-www`](https://github.com/ocurrent/ocaml-ci/tree/staging-www)
-  - registered image: [`ocurrent/ocaml-ci-web:staging`](https://hub.docker.com/r/ocurrent/ocaml-ci-web)
-  - services:
-    - `test-www`
-
 
 ### [ocurrent/ocaml-multicore-ci](https://github.com/ocurrent/ocaml-multicore-ci)
 
