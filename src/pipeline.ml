@@ -350,7 +350,7 @@ module Ocaml_org = struct
   let v3b_ocaml_org = docker_context "v3b.ocaml.org"
   let v3c_ocaml_org = docker_context "v3c.ocaml.org"
   let docs_ci_ocaml_org = docker_context "docs.ci.ocaml.org"
-  let staging_docs_ci_ocaml_org = docker_context "staging.docs.ci.ocaml.org"
+  let staging_docs_ci_ocamllabs_io = docker_context "staging.docs.ci.ocamllabs.io"
   let opam_ci_ocaml_org = docker_context "opam.ci.ocaml.org"
   let check_ci_ocaml_org = docker_context "check.ci.ocaml.org"
   let get_dune_build = docker_context "get.dune.build"
@@ -441,7 +441,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"staging"
               ~target:"ocurrent/docs-ci:staging"
-              [{name = "infra_docs-ci"; docker_context = staging_docs_ci_ocaml_org; uri = Some "staging.docs.ci.ocamllabs.io"}];
+              [{name = "infra_docs-ci"; docker_context = staging_docs_ci_ocamllabs_io; uri = Some "staging.docs.ci.ocamllabs.io"}];
           ];
         make_docker
           "docker/init/Dockerfile"
@@ -449,7 +449,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"staging"
               ~target:"ocurrent/docs-ci-init:staging"
-              [{name = "infra_init"; docker_context = staging_docs_ci_ocaml_org; uri = None}];
+              [{name = "infra_init"; docker_context = staging_docs_ci_ocamllabs_io; uri = None}];
           ];
         make_docker
           "docker/storage/Dockerfile"
@@ -457,7 +457,7 @@ module Ocaml_org = struct
             make_deployment
               ~branch:"staging"
               ~target:"ocurrent/docs-ci-storage-server:staging"
-              [{name = "infra_storage-server"; docker_context = staging_docs_ci_ocaml_org; uri = None}];
+              [{name = "infra_storage-server"; docker_context = staging_docs_ci_ocamllabs_io; uri = None}];
           ];
       ];
       ocurrent, "opam-health-check", [
