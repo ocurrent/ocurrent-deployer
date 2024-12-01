@@ -10,7 +10,6 @@
  (synopsis "Deploy other OCurrent pipelines and services")
  (depends
   (ocaml (>= 4.14))
-  ; Provided by git submodules
   (current (>= 0.6.4))
   current_web
   current_git
@@ -19,7 +18,7 @@
   current_slack
   current_ssh
   ocluster-api
-  ; Opam dependencies
+  (current_ocluster (>= 0.3.0))
   (prometheus-app (>= 1.2))
   capnp-rpc-unix
   fmt
