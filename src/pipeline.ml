@@ -387,7 +387,7 @@ module Ocaml_org = struct
               [{name = "infra_www1"; docker_context = v3b_ocaml_org; uri = Some "ocaml.org"};
               {name = "infra_www2"; docker_context = v3b_ocaml_org; uri = Some "ocaml.org"}]
           ]
-          ~options:{ defaults with include_git = true };
+          ~options:{ defaults with include_git = true; buildkit = true };
         (* Staging branch for ocaml.org website. *)
         make_docker
           "Dockerfile"
@@ -397,7 +397,7 @@ module Ocaml_org = struct
               ~target:"ocurrent/v3.ocaml.org-server:staging"
               [{name = "infra_www"; docker_context = v3c_ocaml_org; uri = Some "staging.ocaml.org"}]
           ]
-          ~options:{ defaults with include_git = true };
+          ~options:{ defaults with include_git = true; buildkit = true };
       ];
       ocurrent, "docker-base-images", [
         (* Docker base images @ images.ci.ocaml.org *)
