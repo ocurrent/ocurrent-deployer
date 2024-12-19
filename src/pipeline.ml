@@ -408,7 +408,8 @@ module Ocaml_org = struct
               ~branch:"live"
               ~target:"ocurrent/base-images:live"
               [{name = "base-images_builder"; docker_context = ci3_ocamllabs_io; uri = Some "images.ci.ocaml.org"}];
-          ];
+          ]
+          ~options:{ defaults with buildkit = true };
       ];
       ocurrent, "ocaml-docs-ci", [
         make_docker
