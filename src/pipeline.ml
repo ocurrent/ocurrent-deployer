@@ -33,7 +33,9 @@ type docker = {
   options : Cluster_api.Docker.Spec.options;
 }
 
-let make_docker ?(archs=[`Linux_x86_64]) ?(options=Cluster_api.Docker.Spec.defaults) dockerfile targets =
+let defaults = { Cluster_api.Docker.Spec.defaults with buildkit = true }
+
+let make_docker ?(archs=[`Linux_x86_64]) ?(options=defaults) dockerfile targets =
   { dockerfile; targets; archs; options }
 
 type service = Build.org * string * docker list
@@ -93,8 +95,6 @@ let filter_list filter items =
     items |> List.filter @@ fun (org, name, _) ->
     filter { Current_github.Repo_id.owner = Build.account org; name }
 
-let defaults = Cluster_api.Docker.Spec.defaults
-
 module Tarides = struct
   let base_url = Uri.of_string "https://deploy.ci.dev/"
 
@@ -146,7 +146,7 @@ module Tarides = struct
               [{name = "ocaml-ci_ci"; docker_context = ocaml_ci_dev; uri = Some "ocaml.ci.dev:8100"}];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64]
-          ~options:{ defaults with include_git = true; buildkit = true };
+          ~options:{ defaults with include_git = true };
         make_docker
           "Dockerfile.gitlab"
           [
@@ -156,7 +156,7 @@ module Tarides = struct
               [{name = "ocaml-ci_gitlab"; docker_context = ocaml_ci_dev; uri = Some "ocaml.ci.dev:8200"}];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64]
-          ~options:{ defaults with buildkit = true };
+          ~options:defaults;
         make_docker
           "Dockerfile.web"
           [
@@ -166,7 +166,7 @@ module Tarides = struct
               [{name = "ocaml-ci_web"; docker_context = ocaml_ci_dev; uri = Some "ocaml.ci.dev"}];
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64]
-          ~options:{ defaults with buildkit = true };
+          ~options:defaults;
       ];
       ocurrent, "ocluster", [
         make_docker
@@ -374,7 +374,8 @@ module Ocaml_org = struct
               ~branch:"live-ocaml-org"
               ~target:"ocurrent/ci.ocamllabs.io-deployer:live-ocaml-org"
               [{name = "infra_deployer"; docker_context = default_docker_context; uri = Some "deploy.ci.ocaml.org"}];
-          ];
+          ]
+          ~options:defaults;
       ];
       ocaml, "ocaml.org", [
         (* production ocaml.org website instances *)
@@ -409,7 +410,7 @@ module Ocaml_org = struct
               ~target:"ocurrent/base-images:live"
               [{name = "base-images_builder"; docker_context = ci3_ocamllabs_io; uri = Some "images.ci.ocaml.org"}];
           ]
-          ~options:{ defaults with buildkit = true };
+          ~options:defaults;
       ];
       ocurrent, "ocaml-docs-ci", [
         make_docker
@@ -644,7 +645,7 @@ module Mirage = struct
               ~target:"ocurrent/mirage-ci:live"
               [{name = "infra_mirage-ci"; docker_context = ci_mirage_org; uri = Some "ci.mirageos.org" }]
           ]
-          ~options:{ defaults with include_git = true; buildkit = true };
+          ~options:{ defaults with include_git = true };
       ];
       ocurrent, "ocurrent-deployer", [
         make_docker
