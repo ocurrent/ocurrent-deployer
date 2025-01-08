@@ -19,6 +19,7 @@ COPY --chown=opam --link deployer.opam /src/
 # WORKDIR must be after COPY to avoid perms problems
 WORKDIR /src
 RUN opam pin -yn add .
+RUN opam pin -yn add "git+https://github.com/mtelvers/ocurrent#docker-login"
 RUN --mount=type=cache,target=/home/opam/.opam/download-cache,sharing=locked,uid=1000,gid=1000 \
     opam install -y --deps-only .
 ADD --chown=opam . .
