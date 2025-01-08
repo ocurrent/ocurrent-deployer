@@ -35,21 +35,6 @@ For a given service, the specified Dockerfile is pulled from the specified branc
     - `ocaml-ci_web` @ <https://ocaml.ci.dev>
 
 
-### [ocurrent/ocaml-multicore-ci](https://github.com/ocurrent/ocaml-multicore-ci)
-
-- `Dockerfile` on arches: x86_64
-  - branch: [`live`](https://github.com/ocurrent/ocaml-multicore-ci/tree/live)
-  - registered image: [`ocurrent/multicore-ci:live`](https://hub.docker.com/r/ocurrent/multicore-ci)
-  - services:
-    - `infra_multicore-ci` @ <https://ocaml-multicore.ci.dev:8100>
-
-- `Dockerfile.web` on arches: x86_64
-  - branch: [`live-web`](https://github.com/ocurrent/ocaml-multicore-ci/tree/live-web)
-  - registered image: [`ocurrent/multicore-ci-web:live`](https://hub.docker.com/r/ocurrent/multicore-ci-web)
-  - services:
-    - `infra_multicore-ci-web` @ <https://ocaml-multicore.ci.dev>
-
-
 ### [ocurrent/ocurrent.org](https://github.com/ocurrent/ocurrent.org)
 
 - `Dockerfile` on arches: x86_64
