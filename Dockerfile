@@ -1,22 +1,59 @@
-FROM ocaml/opam:debian-12-ocaml-4.14@sha256:06d58a5cb1ab7875e8d94848102be43f6492e95320e8e9a9ecb9167654d0ee3f AS build
-RUN sudo apt-get update && sudo apt-get install libffi-dev libev-dev m4 pkg-config libsqlite3-dev libgmp-dev libssl-dev capnproto graphviz -y --no-install-recommends
-RUN cd ~/opam-repository && git fetch -q origin master && git reset --hard 99bc90ff813af4d02cb0627f6b3e5a8c84e2e04a && opam update
-COPY --chown=opam deployer.opam /src/
+# syntax=docker/dockerfile:1
+FROM ocaml/opam:debian-12-ocaml-4.14@sha256:31a40cd0c0b36aba5d92710b5fcb977e07263aa4a84481238a73c477d59b001b AS build
+RUN sudo ln -sf /usr/bin/opam-2.3 /usr/bin/opam && opam init --reinit -ni
+RUN sudo rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' | sudo tee /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    sudo apt update && sudo apt-get --no-install-recommends install -y \
+    capnproto \
+    graphviz \
+    libev-dev \
+    libffi-dev \
+    libgmp-dev \
+    libsqlite3-dev \
+    libssl-dev \
+    m4 \
+    pkg-config
+RUN cd ~/opam-repository && git fetch -q origin master && git reset --hard 631e587f169807aaf233a49289573c1bb7c174b7 && opam update
+COPY --chown=opam --link deployer.opam /src/
 # WORKDIR must be after COPY to avoid perms problems
 WORKDIR /src
 RUN opam pin -yn add .
-RUN opam install -y --deps-only .
+RUN --mount=type=cache,target=/home/opam/.opam/download-cache,sharing=locked,uid=1000,gid=1000 \
+    opam install -y --deps-only .
 ADD --chown=opam . .
-RUN opam config exec -- dune build ./_build/install/default/bin/ocurrent-deployer
+RUN opam exec -- dune build ./_build/install/default/bin/ocurrent-deployer
 
 FROM debian:12
-RUN apt-get update && apt-get install libffi-dev libev4 openssh-client curl gnupg2 dumb-init git graphviz libsqlite3-dev ca-certificates netbase rsync awscli -y --no-install-recommends
+RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt update && apt-get --no-install-recommends install -y \
+    awscli \
+    ca-certificates \
+    curl \
+    dumb-init \
+    git \
+    gnupg2 \
+    graphviz \
+    libev4 \
+    libsqlite3-dev \
+    netbase \
+    openssh-client \
+    rsync \
+    libffi-dev
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
-RUN echo 'deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable' >> /etc/apt/sources.list
-RUN apt-get update && apt-get install docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin -y --no-install-recommends
+RUN echo 'deb https://download.docker.com/linux/debian bookworm stable' >> /etc/apt/sources.list
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt update && apt-get --no-install-recommends install -y \
+    docker-buildx-plugin \
+    docker-ce \
+    docker-ce-cli \
+    docker-compose-plugin
 WORKDIR /var/lib/ocurrent
 ENTRYPOINT ["dumb-init", "/usr/local/bin/ocurrent-deployer"]
-COPY create-config.sh create-config.sh
+COPY --link create-config.sh .
 RUN ./create-config.sh
 RUN docker context use default
-COPY --from=build /src/_build/install/default/bin/ocurrent-deployer /usr/local/bin/
+COPY --from=build --link /src/_build/install/default/bin/ocurrent-deployer /usr/local/bin/
