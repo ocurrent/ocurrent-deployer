@@ -212,24 +212,6 @@ module Tarides = struct
           ~archs:[`Linux_x86_64; `Linux_arm64]
           ~options:{ defaults with include_git = true };
       ];
-      ocurrent, "ocaml-multicore-ci", [
-        make_docker
-          "Dockerfile"
-          [
-            make_deployment
-              ~branch:"live"
-              ~target:"ocurrent/multicore-ci:live"
-              [{name = "infra_multicore-ci"; docker_context = ci4_ocamllabs_io; uri = Some "ocaml-multicore.ci.dev:8100"}];
-          ];
-        make_docker
-          "Dockerfile.web"
-          [
-            make_deployment
-              ~branch:"live-web"
-              ~target:"ocurrent/multicore-ci-web:live"
-              [{name = "infra_multicore-ci-web"; docker_context = ci4_ocamllabs_io; uri = Some "ocaml-multicore.ci.dev"}];
-          ];
-      ];
       ocurrent, "ocurrent.org", [
         make_docker
           "Dockerfile"
