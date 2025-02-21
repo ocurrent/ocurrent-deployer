@@ -146,6 +146,7 @@ For a given service, the specified Dockerfile is pulled from the specified branc
   - services:
     - `infra_opam-health-check` @ <https://check.ci.ocaml.org>
     - `infra_opam-health-check-windows` @ <https://windows.check.ci.dev>
+    - `infra_opam-health-check-dune` @ <https://dune.check.ci.dev>
     - `infra_opam-health-check-freebsd` @ <https://freebsd.check.ci.dev>
 
 

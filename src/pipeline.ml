@@ -453,6 +453,7 @@ module Ocaml_org = struct
               ~target:"ocurrent/opam-health-check:live"
               [ {name = "infra_opam-health-check"; docker_context = check_ci_ocaml_org; uri = Some "check.ci.ocaml.org"}
               ; {name = "infra_opam-health-check-windows"; docker_context = check_ci_ocaml_org; uri = Some "windows.check.ci.dev"}
+              ; {name = "infra_opam-health-check-dune"; docker_context = check_ci_ocaml_org; uri = Some "dune.check.ci.dev"}
               ; {name = "infra_opam-health-check-freebsd"; docker_context = check_ci_ocaml_org; uri = Some "freebsd.check.ci.dev"}];
           ];
       ];
