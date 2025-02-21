@@ -2,9 +2,9 @@
 
 open Current.Syntax
 
-let host = "registry.ci.dev"
+let server = "registry.ci.dev"
 
-module Docker = Current_docker.Make(struct let docker_context = Some host end)
+module Docker = Current_docker.Make(struct let docker_context = Some server end)
 
 let pool = Current.Pool.create ~label:"registry-build-pool" 1
 
@@ -24,7 +24,7 @@ type deploy_info = {
 }
 
 let auth () = match Build.get_auth () with
-  | Some (user, pass) -> Some (user ^ "@" ^ host, pass)
+  | Some (user, pass) -> Some (user, pass)
   | None -> None
 
 let build_image { dockerfile; timeout } additional_build_args src =
@@ -59,6 +59,7 @@ let pull_and_serve (module D : Current_docker.S.DOCKER) ~name repo_id =
     let> repo_id in
     Current_docker.Raw.pull repo_id
     ?auth:(auth ())
+    ~server
     ~docker_context:D.docker_context
     ~schedule:no_schedule
     |> Current.Primitive.map_result (Result.map (fun raw_image ->
@@ -69,9 +70,9 @@ let pull_and_serve (module D : Current_docker.S.DOCKER) ~name repo_id =
 
 let deploy build_info { tag; services } ?(additional_build_args=Current.return []) src =
   let image = build_image build_info additional_build_args src in
-  let tag = host ^ "/" ^ tag in
+  let tag = server ^ "/" ^ tag in
   Metrics.Build.inc_deployments "dockerregistry" tag;
-  let repo_id = Docker.push ~tag image ?auth:(auth ()) in
+  let repo_id = Docker.push ~tag image ?auth:(auth ()) ~server in
   Current.all (
     List.map (fun service ->
       match service with
