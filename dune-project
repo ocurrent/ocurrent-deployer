@@ -4,7 +4,7 @@
 (formatting disabled)
 (source (github ocurrent/ocurrent-deployer))
 (authors "Thomas Leonard <talex5@gmail.com>" "Tim McGilchrist <timmcgil@gmail.com>" "Mark Elvers <mark.elvers@tunbury.org>" "Antonin Décimo <antonin@tarides.com>" "Anil Madhavapeddy <anil@recoil.org>" "Navin Keswani <navin@novemberkilo.com>" "Lucas Pluvinage <lucas@tarides.com>" "David Allsopp <david.allsopp@metastack.com>" "Alpha DIALLO <moyodiallo@gmail.com>" "Etienne MARAIS <etienne@maiste.fr>" "Gargi Sharma <gs051095@gmail.com>" "Hannes Mehnert <hannes@mehnert.org>" "Cuihtlauac ALVARADO <cuihtmlauac@tarides.com>" "Patrick Ferris <patrick@sirref.org>" "Puneeth Chaganti <punchagan@muse-amuse.in>")
-(maintainers "Alpha DIALLO <alpha@tarides.com>" "Tim McGilchrist <timmcgil@gmail.com>")
+(maintainers "Mark Elvers <mark.elvers@tunbury.org>")
 (package
  (name deployer)
  (synopsis "Deploy other OCurrent pipelines and services")
@@ -14,7 +14,7 @@
   current_web
   current_git
   current_github
-  current_docker
+  (current_docker (>= 0.7.0))
   current_slack
   current_ssh
   ocluster-api
