@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
-FROM ocaml/opam:debian-12-ocaml-4.14@sha256:31a40cd0c0b36aba5d92710b5fcb977e07263aa4a84481238a73c477d59b001b AS build
+FROM ocaml/opam:debian-12-ocaml-4.14 AS build
 RUN sudo ln -sf /usr/bin/opam-2.3 /usr/bin/opam && opam init --reinit -ni
+RUN opam option --global 'archive-mirrors+="https://opam.ocaml.org/cache"'
 RUN sudo rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' | sudo tee /etc/apt/apt.conf.d/keep-cache
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -14,7 +15,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libssl-dev \
     m4 \
     pkg-config
-RUN cd ~/opam-repository && git fetch -q origin master && git reset --hard 631e587f169807aaf233a49289573c1bb7c174b7 && opam update
+RUN cd ~/opam-repository && git fetch -q origin master && git reset --hard a4ff4b0b6803cb31deb09240efdad753f95d0058 && opam update
 COPY --chown=opam --link deployer.opam /src/
 # WORKDIR must be after COPY to avoid perms problems
 WORKDIR /src
