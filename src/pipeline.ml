@@ -114,7 +114,6 @@ module Tarides = struct
 
   (* The docker context for the services *)
   let ocaml_ci_dev = docker_context "ocaml.ci.dev"
-  let ci4_ocamllabs_io = docker_context "ci4.ocamllabs.io"
   let ci3_ocamllabs_io = docker_context "ci3.ocamllabs.io"
 
   (* This is a list of GitHub repositories to monitor.
@@ -254,16 +253,6 @@ module Tarides = struct
           ]
           ~archs:[`Linux_x86_64; `Linux_arm64]
           ~options:{ defaults with include_git = true };
-      ];
-      ocurrent, "multicoretests-ci", [
-        make_docker
-          "Dockerfile"
-          [
-            make_deployment
-              ~branch:"live"
-              ~target:"ocurrent/multicoretests-ci:live"
-              [{name = "infra_multicoretests-ci"; docker_context = ci4_ocamllabs_io; uri = Some "ocaml-multicoretests.ci.dev:8100" }];
-          ];
       ];
       ocurrent, "ocurrent-observer", [
         make_docker
