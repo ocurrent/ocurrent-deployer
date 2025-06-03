@@ -53,15 +53,6 @@ For a given service, the specified Dockerfile is pulled from the specified branc
     - `sandmark_sandmark` @ <https://sandmark.tarides.com>
 
 
-### [ocurrent/multicoretests-ci](https://github.com/ocurrent/multicoretests-ci)
-
-- `Dockerfile` on arches: x86_64
-  - branch: [`live`](https://github.com/ocurrent/multicoretests-ci/tree/live)
-  - registered image: [`ocurrent/multicoretests-ci:live`](https://hub.docker.com/r/ocurrent/multicoretests-ci)
-  - services:
-    - `infra_multicoretests-ci` @ <https://ocaml-multicoretests.ci.dev:8100>
-
-
 ## OCaml Org services
 <https://deploy.ci.ocaml.org>
 
