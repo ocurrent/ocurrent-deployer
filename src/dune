@@ -59,7 +59,6 @@
   build
   cluster
   packet_unikernel
-  docker_registry
   metrics
   access)
  (preprocess

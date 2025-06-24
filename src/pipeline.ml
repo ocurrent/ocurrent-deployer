@@ -15,7 +15,6 @@ let or_fail = function
   | Error (`Msg m) -> failwith m
 
 module Build_unikernel = Build.Make(Packet_unikernel)
-module Build_registry = Build.Make(Docker_registry)
 module Cluster_build = Build.Make(Cluster)
 
 type deployment = {
@@ -81,11 +80,6 @@ let docker ~sched ~push_auth { dockerfile; targets; archs; options } =
                 }
       )
   in
-  (build_info, deploys)
-
-let docker_registry timeout dockerfile targets =
-  let build_info = { Docker_registry.dockerfile; timeout } in
-  let deploys = List.map (fun (branch, tag, services) -> branch, { Docker_registry.tag; services }) targets in
   (build_info, deploys)
 
 let filter_list filter items =
@@ -334,6 +328,8 @@ module Ocaml_org = struct
   let docs_ci_ocaml_org = docker_context "docs.ci.ocaml.org"
   let staging_docs_ci_ocamllabs_io = docker_context "staging.docs.ci.ocamllabs.io"
   let opam_ci_ocaml_org = docker_context "opam.ci.ocaml.org"
+  let opam_4_ocaml_org = docker_context "opam-4.ocaml.org"
+  let opam_5_ocaml_org = docker_context "opam-5.ocaml.org"
   let check_ci_ocaml_org = docker_context "check.ci.ocaml.org"
   let get_dune_build = docker_context "get.dune.build"
   let ci3_ocamllabs_io = docker_context "ci3.ocamllabs.io"
@@ -502,13 +498,24 @@ module Ocaml_org = struct
   let opam_repository ?app () =
     (* GitHub organisations to monitor. *)
     let ocaml_opam = Build.org ?app ~account:"ocaml-opam" 23690708 in
-    let pipelines =
+    let pipelines : service list =
       [
         ocaml_opam, "opam2web", [
-          docker_registry (Duration.of_min 360) "Dockerfile"
-            ["live", "opam.ocaml.org:live", [`Ocamlorg_opam4 "infra_opam_live"; `Ocamlorg_opam5 "infra_opam_live"];
-              "live-staging", "opam.ocaml.org:staging", [`Ocamlorg_opam4 "infra_opam_staging"; `Ocamlorg_opam5 "infra_opam_staging"]]
-        ];
+          make_docker
+            "Dockerfile"
+            [
+              make_deployment
+                ~branch:"live"
+                ~target:"ocurrent/opam.ocaml.org:live"
+                [ { name = "infra_opam_live"; docker_context = opam_4_ocaml_org; uri = Some "opam.ocaml.org" }
+                ; { name = "infra_opam_live"; docker_context = opam_5_ocaml_org;  uri = Some "staging.opam.ocaml.org"}];
+              make_deployment
+                ~branch:"live-staging"
+                  ~target:"ocurrent/opam.ocaml.org:staging"
+                [ { name = "infra_opam_staging"; docker_context = opam_4_ocaml_org; uri = Some "opam.ocaml.org" }
+                ; { name = "infra_opam_staging"; docker_context = opam_5_ocaml_org;  uri = Some "staging.opam.ocaml.org"} ];
+            ];
+        ]
       ]
     in
     let head_of repo id =
@@ -547,9 +554,12 @@ module Ocaml_org = struct
     let docker_registry_pipelines =
       let pipelines, args = opam_repository ?app () in
       pipelines
+      |> List.map (fun (org, name, deployments) ->
+        let deployments = List.map (docker ~sched ~push_auth:staging_auth) deployments in
+        (org, name, deployments))
       |> filter_list filter
       |> List.map (fun (org, name, builds) ->
-          Build_registry.repo ?channel ~additional_build_args:args ~web_ui ~org ~name builds)
+          Cluster_build.repo ?channel ~additional_build_args:args ~web_ui ~org ~name builds)
     in
     let services_pipelines =
       services ?app ()
