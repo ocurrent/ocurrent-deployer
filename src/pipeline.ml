@@ -566,10 +566,6 @@ module Ocaml_org = struct
       |> List.map (fun (org, name, builds) ->
           Cluster_build.repo ?channel ~web_ui ~org ~name builds)
     in
-    let tarsnap =
-      let monthly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 30) () in
-      Current_ssh.run ~schedule:monthly watch_ocaml_org ~key:"tarsnap" (Current.return ["./tarsnap-backup.sh"])
-    in
     let peertube =
       let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) () in
       let image = Watch_docker.pull ~schedule:weekly "chocobozzz/peertube:production-bookworm" in
@@ -578,7 +574,7 @@ module Ocaml_org = struct
     Current.all (
       docker_registry_pipelines
       @ services_pipelines
-      @ [tarsnap; peertube])
+      @ [peertube])
 
   let deployer = {pipeline = v; admins}
 end
