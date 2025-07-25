@@ -484,6 +484,8 @@ module Ocaml_org = struct
         ];
     ]
 
+  module Opam4_docker = (val opam_4_ocaml_org)
+
   let opam_repository ?app () =
     (* GitHub organisations to monitor. *)
     let ocaml_opam = Build.org ?app ~account:"ocaml-opam" 23690708 in
@@ -507,6 +509,8 @@ module Ocaml_org = struct
         ]
       ]
     in
+    let four_hourly = Current_cache.Schedule.v ~valid_for:(Duration.of_hour 4) ()
+    in
     let head_of repo id =
       match Build.api ocaml_opam with
       | Some api ->
@@ -524,11 +528,14 @@ module Ocaml_org = struct
         head_of { Github.Repo_id.owner = "ocaml"; name = "platform-blog" } @@ `Ref "refs/heads/master"
       and+ opam_commit =
         head_of { Github.Repo_id.owner = "ocaml"; name = "opam" } @@ `Ref "refs/heads/master"
+      and+ opam_archive_sha =
+        Opam4_docker.pull ~schedule:four_hourly "ocaml/opam:archive"
       in
       [
         "OPAM_REPO_GIT_SHA=" ^ Current_git.Commit_id.hash opam_repository_commit;
         "BLOG_GIT_SHA=" ^ Current_git.Commit_id.hash platform_blog_commit;
-        "OPAM_GIT_SHA=" ^ Current_git.Commit_id.hash opam_commit
+        "OPAM_GIT_SHA=" ^ Current_git.Commit_id.hash opam_commit;
+        "OPAM_ARCHIVE_SHA=" ^ Opam4_docker.Image.hash opam_archive_sha
       ]
     in
     pipelines, additional_build_args
@@ -559,10 +566,6 @@ module Ocaml_org = struct
       |> List.map (fun (org, name, builds) ->
           Cluster_build.repo ?channel ~web_ui ~org ~name builds)
     in
-    let tarsnap =
-      let monthly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 30) () in
-      Current_ssh.run ~schedule:monthly watch_ocaml_org ~key:"tarsnap" (Current.return ["./tarsnap-backup.sh"])
-    in
     let peertube =
       let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) () in
       let image = Watch_docker.pull ~schedule:weekly "chocobozzz/peertube:production-bookworm" in
@@ -571,7 +574,7 @@ module Ocaml_org = struct
     Current.all (
       docker_registry_pipelines
       @ services_pipelines
-      @ [tarsnap; peertube])
+      @ [peertube])
 
   let deployer = {pipeline = v; admins}
 end
