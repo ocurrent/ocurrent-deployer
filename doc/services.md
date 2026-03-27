@@ -192,15 +192,6 @@ For a given service, the specified Dockerfile is pulled from the specified branc
   - branch: [`live-mirage`](https://github.com/ocurrent/ocurrent-deployer/tree/live-mirage)
   - registered image: [`ocurrent/deploy.mirageos.org:live`](https://hub.docker.com/r/ocurrent/deploy.mirageos.org)
   - services:
-    - `infra_deployer` @ <https://deploy.mirageos.org>
-
-
-### [ocurrent/caddy-rfc2136](https://github.com/ocurrent/caddy-rfc2136)
-
-- `Dockerfile` on arches: x86_64
-  - branch: [`master`](https://github.com/ocurrent/caddy-rfc2136/tree/master)
-  - registered image: [`ocurrent/caddy-rfc2136:live`](https://hub.docker.com/r/ocurrent/caddy-rfc2136)
-  - services:
-    - `infra_caddy`
+    - `infra_mirage-deployer` @ <https://deploy.mirageos.org>
 
 
