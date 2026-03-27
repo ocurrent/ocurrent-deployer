@@ -615,7 +615,7 @@ module Mirage = struct
     ]
 
   (* The docker context for the services *)
-  let ci_mirage_org = docker_context "ci.mirageos.org"
+  let chives_caelum_ci_dev = docker_context "chives.caelum.ci.dev"
 
   let services ?app () : service list =
     (* GitHub organisations to monitor. *)
@@ -628,7 +628,7 @@ module Mirage = struct
             make_deployment
               ~branch:"live"
               ~target:"ocurrent/mirage-ci:live"
-              [{name = "infra_mirage-ci"; docker_context = ci_mirage_org; uri = Some "ci.mirageos.org" }]
+              [{name = "infra_mirage-ci"; docker_context = chives_caelum_ci_dev; uri = Some "ci.mirageos.org" }]
           ]
           ~options:{ defaults with include_git = true };
       ];
@@ -639,17 +639,7 @@ module Mirage = struct
             make_deployment
               ~branch:"live-mirage"
               ~target:"ocurrent/deploy.mirageos.org:live"
-              [{name = "infra_deployer"; docker_context = ci_mirage_org; uri = Some "deploy.mirageos.org" }]
-          ];
-      ];
-      ocurrent, "caddy-rfc2136", [
-        make_docker
-          "Dockerfile"
-          [
-            make_deployment
-              ~branch:"master"
-              ~target:"ocurrent/caddy-rfc2136:live"
-              [{name = "infra_caddy"; docker_context = ci_mirage_org; uri = None }]
+              [{name = "infra_mirage-deployer"; docker_context = chives_caelum_ci_dev; uri = Some "deploy.mirageos.org" }]
           ];
       ];
     ]
