@@ -79,3 +79,67 @@ module Make(Docker : Current_docker.S.DOCKER) = struct
     let docker_context = Docker.docker_context in
     Deploy.set Op.No_context { Op.Key.name; ssh_host; docker_context } (Docker.Image.hash image |> Raw.Image.of_hash)
 end
+
+(* Deploy a unikernel from a registry image using crane (no Docker daemon needed) *)
+module Registry_op = struct
+  type t = No_context
+
+  let id = "mirage-deploy-registry"
+
+  module Key = struct
+    type t = {
+      name : string;
+      ssh_host : string;
+    } [@@deriving to_yojson]
+
+    let digest t = Yojson.Safe.to_string (to_yojson t)
+  end
+
+  module Value = Current.String
+
+  module Outcome = Current.Unit
+
+  let re_valid_name = Str.regexp "^[A-Za-z][-0-9A-Za-z_]*$"
+
+  let validate_name name =
+    if not (Str.string_match re_valid_name name 0) then
+      Fmt.failwith "Invalid unikernel name %S" name
+
+  let redeploy ~ssh_host name =
+    let cmd = ["ssh"; ssh_host; "mirage-redeploy"; name] in
+    ("", Array.of_list cmd)
+
+  let crane_export image tmp_path =
+    let cmd = [| "sh"; "-c";
+      Printf.sprintf "crane export %s - | tar xf - --to-stdout unikernel.hvt > %s"
+        (Filename.quote image) (Filename.quote tmp_path) |] in
+    ("", cmd)
+
+  let rsync src dst =
+    let cmd = [| "rsync"; "-vi"; src; dst |] in
+    ("", cmd)
+
+  let publish No_context job { Key.name; ssh_host } repo_id =
+    Current.Job.log job "Deploy %s -> %s" repo_id name;
+    validate_name name;
+    Current.Job.start job ~level:Current.Level.Dangerous >>= fun () ->
+    with_tmp ~prefix:"ocurrent-deployer-" ~suffix:".hvt" @@ fun tmp_path ->
+    (* Extract unikernel from registry image using crane: *)
+    Current.Process.exec ~cancellable:true ~job (crane_export repo_id tmp_path) >>!= fun () ->
+    (* rsync to remote host: *)
+    let remote_path = Printf.sprintf "%s:/srv/unikernels/%s.hvt" ssh_host name in
+    Current.Process.exec ~cancellable:true ~job (rsync tmp_path remote_path) >>!= fun () ->
+    (* Restart remote service: *)
+    Current.Process.exec ~cancellable:true ~job (redeploy ~ssh_host name)
+
+  let pp f (key, _v) = Fmt.pf f "@[<v2>deploy %s@]" key.Key.name
+
+  let auto_cancel = true
+end
+
+module Registry_deploy = Current_cache.Output(Registry_op)
+
+let deploy_from_registry ~name ~ssh_host repo_id =
+  Current.component "deploy %s" name |>
+  let> repo_id in
+  Registry_deploy.set Registry_op.No_context { Registry_op.Key.name; ssh_host } repo_id

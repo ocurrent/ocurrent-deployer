@@ -52,6 +52,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     docker-ce \
     docker-ce-cli \
     docker-compose-plugin
+RUN curl -sL https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz | tar xzf - -C /usr/local/bin crane
 WORKDIR /var/lib/ocurrent
 ENTRYPOINT ["dumb-init", "/usr/local/bin/ocurrent-deployer"]
 COPY --link create-config.sh .
