@@ -41,7 +41,7 @@ For a given service, the specified Dockerfile is pulled from the specified branc
   - branch: [`live-engine`](https://github.com/ocurrent/ocurrent.org/tree/live-engine)
   - registered image: [`ocurrent/ocurrent.org:live-engine`](https://hub.docker.com/r/ocurrent/ocurrent.org)
   - services:
-    - `ocurrent_org_watcher` @ <https://watcher.ci.dev>
+    - `infra_watcher` @ <https://watcher.ci.dev>
 
 
 ### [ocaml-bench/sandmark-nightly](https://github.com/ocaml-bench/sandmark-nightly)
@@ -50,7 +50,7 @@ For a given service, the specified Dockerfile is pulled from the specified branc
   - branch: [`main`](https://github.com/ocaml-bench/sandmark-nightly/tree/main)
   - registered image: [`ocurrent/sandmark-nightly:live`](https://hub.docker.com/r/ocurrent/sandmark-nightly)
   - services:
-    - `sandmark_sandmark` @ <https://sandmark.tarides.com>
+    - `infra_sandmark` @ <https://sandmark.tarides.com>
 
 
 ## OCaml Org services

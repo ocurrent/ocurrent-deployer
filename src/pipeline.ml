@@ -108,7 +108,7 @@ module Tarides = struct
 
   (* The docker context for the services *)
   let ocaml_ci_dev = docker_context "ocaml.ci.dev"
-  let ci3_ocamllabs_io = docker_context "ci3.ocamllabs.io"
+  let chives_caelum_ci_dev = docker_context "chives.caelum.ci.dev"
 
   (* This is a list of GitHub repositories to monitor.
     For each one, it lists the builds that are made from that repository.
@@ -212,7 +212,7 @@ module Tarides = struct
             make_deployment
               ~branch:"live-engine"
               ~target:"ocurrent/ocurrent.org:live-engine"
-              [{name = "ocurrent_org_watcher"; docker_context = ci3_ocamllabs_io; uri = Some "watcher.ci.dev"}];
+              [{name = "infra_watcher"; docker_context = chives_caelum_ci_dev; uri = Some "watcher.ci.dev"}];
           ];
       ];
       ocaml_bench, "sandmark-nightly", [
@@ -222,7 +222,7 @@ module Tarides = struct
             make_deployment
               ~branch:"main"
               ~target:"ocurrent/sandmark-nightly:live"
-              [{name = "sandmark_sandmark"; docker_context = ci3_ocamllabs_io; uri = Some "sandmark.tarides.com"}];
+              [{name = "infra_sandmark"; docker_context = chives_caelum_ci_dev; uri = Some "sandmark.tarides.com"}];
           ]
           ~options:{ defaults with include_git = true };
       ];
