@@ -596,21 +596,21 @@ module Mirage = struct
     "github:cuihtlauac";
   ]
 
-  let unikernel dockerfile ~target args services =
-    let build_info = { Packet_unikernel.dockerfile; target; args } in
+  let unikernel ~sched dockerfile ~target args services =
+    let build_info = { Packet_unikernel.sched; dockerfile; target; args } in
     let deploys =
       services
       |> List.map (fun (branch, service) -> branch, { Packet_unikernel.service }) in
     (build_info, deploys)
 
-  let unikernel_services ?app () =
+  let unikernel_services ~sched ?app () =
     (* GitHub organisations to monitor. *)
     let mirage = Build.org ?app ~account:"mirage" 7175142 in
     [
       mirage, "mirage-www", [
-        unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["master", "www"];
-        unikernel "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
-        unikernel "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["next", "next"];
+        unikernel ~sched "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["master", "www"];
+        unikernel ~sched "Dockerfile" ~target:"xen" ["EXTRA_FLAGS=--tls=true"] [];     (* (no deployments) *)
+        unikernel ~sched "Dockerfile" ~target:"hvt" ["EXTRA_FLAGS=--tls=true --metrics --separate-networks"] ["next", "next"];
       ];
     ]
 
@@ -658,7 +658,7 @@ module Mirage = struct
       |> List.map build_docker
     in
     Current.all @@
-      ((List.map build_unikernel @@ unikernel_services ?app ())
+      ((List.map build_unikernel @@ unikernel_services ~sched:(Current_ocluster.v ?push_auth:staging_auth sched) ?app ())
       @ docker_services)
 
   let deployer = {pipeline = v; admins}

@@ -1,8 +1,11 @@
-(** Mirage unikernels running on packet.net *)
+(** Mirage unikernels built via OCluster and deployed to packet.net *)
 
-module Docker = Current_docker.Default
+open Current.Syntax
+
+let push_repo = "ocurrentbuilder/staging"
 
 type build_info = {
+  sched : Current_ocluster.t;
   dockerfile : string;
   target : string;
   args : string list;
@@ -15,38 +18,34 @@ type deploy_info = {
 type service_info =
   Build.org * string * (build_info * (string * deploy_info) list) list
 
-let build_image { dockerfile; target; args } src =
-  let src = Current_git.fetch src in
-  let args = ("TARGET=" ^ target) :: args in
-  let build_args = List.map (fun x -> ["--build-arg"; x]) args |> List.concat in
-  let dockerfile = Current.return (`File (Fpath.v dockerfile)) in
-  Docker.build (`Git src)
-    ~build_args
-    ~dockerfile
-    ~label:target
-    ~pull:true
-    ~timeout:Build.timeout
+let build_and_push { sched; dockerfile; target; args } src =
+  let src = Current.map (fun x -> [x]) src in
+  let options = Current.return {
+    Cluster_api.Docker.Spec.defaults with
+    build_args = ("TARGET=" ^ target) :: args;
+  } in
+  let tag = Printf.sprintf "live-mirage-%s" target in
+  let push_target = Cluster_api.Docker.Image_id.v ~repo:push_repo ~tag in
+  let pool = "linux-x86_64" in
+  Current.component "build %s@,%s" target pool |>
+  let> options
+  and> src in
+  let cache_hint = "mirage-www-" ^ target in
+  Current_ocluster.Raw.build_and_push sched ~cache_hint ~pool ~src ~options ~push_target
+    (`Path dockerfile)
 
 let build info ?additional_build_args:_ repo src =
-Metrics.Build.inc_builds "packetunikernel" repo;
-Current.ignore_value (build_image info src)
+  Metrics.Build.inc_builds "packetunikernel" repo;
+  Current.ignore_value (build_and_push info src)
 
 let name { service } = service
 
 (* Deployment *)
 
-module Mirage_m1_a = Mirage.Make(Docker)
-
 let mirage_host_ssh = "root@147.75.84.37"
 
 let deploy build_info { service } ?additional_build_args:_ src =
-  let image = build_image build_info src in
-  (* We tag the image to prevent docker prune from removing it.
-     Otherwise, if we later deploy a new (bad) version and need to roll back quickly,
-     we may find the old version isn't around any longer. *)
+  let repo_id = build_and_push build_info src in
   let tag = "mirage-" ^ service in
   Metrics.Build.inc_deployments "packetunikernel" tag;
-  Current.all [
-    Docker.tag ~tag image;
-    Mirage_m1_a.deploy ~name:service ~ssh_host:mirage_host_ssh image;
-  ]
+  Mirage.deploy_from_registry ~name:service ~ssh_host:mirage_host_ssh repo_id
