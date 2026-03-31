@@ -35,15 +35,6 @@ For a given service, the specified Dockerfile is pulled from the specified branc
     - `ocaml-ci_web` @ <https://ocaml.ci.dev>
 
 
-### [ocurrent/ocurrent.org](https://github.com/ocurrent/ocurrent.org)
-
-- `Dockerfile` on arches: x86_64
-  - branch: [`live-engine`](https://github.com/ocurrent/ocurrent.org/tree/live-engine)
-  - registered image: [`ocurrent/ocurrent.org:live-engine`](https://hub.docker.com/r/ocurrent/ocurrent.org)
-  - services:
-    - `infra_watcher` @ <https://watcher.ci.dev>
-
-
 ### [ocaml-bench/sandmark-nightly](https://github.com/ocaml-bench/sandmark-nightly)
 
 - `Dockerfile` on arches: x86_64

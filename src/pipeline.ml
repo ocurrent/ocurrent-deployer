@@ -205,16 +205,6 @@ module Tarides = struct
           ~archs:[`Linux_x86_64; `Linux_arm64]
           ~options:{ defaults with include_git = true };
       ];
-      ocurrent, "ocurrent.org", [
-        make_docker
-          "Dockerfile"
-          [
-            make_deployment
-              ~branch:"live-engine"
-              ~target:"ocurrent/ocurrent.org:live-engine"
-              [{name = "infra_watcher"; docker_context = chives_caelum_ci_dev; uri = Some "watcher.ci.dev"}];
-          ];
-      ];
       ocaml_bench, "sandmark-nightly", [
         make_docker
           "Dockerfile"
