@@ -11,7 +11,7 @@ For a given service, the specified Dockerfile is pulled from the specified branc
   - branch: [`live-ci3`](https://github.com/ocurrent/ocurrent-deployer/tree/live-ci3)
   - registered image: [`ocurrent/ci.ocamllabs.io-deployer:live-ci3`](https://hub.docker.com/r/ocurrent/ci.ocamllabs.io-deployer)
   - services:
-    - `deployer_deployer` @ <https://deploy.ci.dev>
+    - `infra_tarides-deployer` @ <https://deploy.ci.dev>
 
 
 ### [ocurrent/ocaml-ci](https://github.com/ocurrent/ocaml-ci)

@@ -126,7 +126,7 @@ module Tarides = struct
             make_deployment
               ~branch:"live-ci3"
               ~target:"ocurrent/ci.ocamllabs.io-deployer:live-ci3"
-              [{name = "deployer_deployer"; docker_context = default_docker_context; uri = Some "deploy.ci.dev"}];
+              [{name = "infra_tarides-deployer"; docker_context = chives_caelum_ci_dev; uri = Some "deploy.ci.dev"}];
           ]
       ];
       ocurrent, "ocaml-ci", [
