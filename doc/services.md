@@ -22,12 +22,6 @@ For a given service, the specified Dockerfile is pulled from the specified branc
   - services:
     - `ocaml-ci_ci` @ <https://ocaml.ci.dev:8100>
 
-- `Dockerfile.gitlab` on arches: x86_64, arm64
-  - branch: [`live-engine`](https://github.com/ocurrent/ocaml-ci/tree/live-engine)
-  - registered image: [`ocurrent/ocaml-ci-gitlab-service:live`](https://hub.docker.com/r/ocurrent/ocaml-ci-gitlab-service)
-  - services:
-    - `ocaml-ci_gitlab` @ <https://ocaml.ci.dev:8200>
-
 - `Dockerfile.web` on arches: x86_64, arm64
   - branch: [`live-www`](https://github.com/ocurrent/ocaml-ci/tree/live-www)
   - registered image: [`ocurrent/ocaml-ci-web:live`](https://hub.docker.com/r/ocurrent/ocaml-ci-web)

@@ -141,16 +141,6 @@ module Tarides = struct
           ~archs:[`Linux_x86_64; `Linux_arm64]
           ~options:{ defaults with include_git = true };
         make_docker
-          "Dockerfile.gitlab"
-          [
-            make_deployment
-              ~branch:"live-engine"
-              ~target:"ocurrent/ocaml-ci-gitlab-service:live"
-              [{name = "ocaml-ci_gitlab"; docker_context = ocaml_ci_dev; uri = Some "ocaml.ci.dev:8200"}];
-          ]
-          ~archs:[`Linux_x86_64; `Linux_arm64]
-          ~options:defaults;
-        make_docker
           "Dockerfile.web"
           [
             make_deployment
