@@ -21,9 +21,17 @@ type deployment = {
   branch : string;
   target : string; (* The docker tag of the image that the branch is built to *)
   services : Cluster.service list;
+  compose : Cluster.compose option;
 }
 
-let make_deployment ~branch ~target services = { branch; target; services; }
+let make_deployment ~branch ~target services = { branch; target; services; compose = None }
+
+(* A Docker Compose v2 deployment: build [branch] (pushing it as [target]),
+   then run [docker compose up] on [docker_context] using the repo's
+   [docker-compose.yml], pinning [image_name] to the freshly-built digest. *)
+let make_compose_deployment ~branch ~target ~docker_context ~project_name ~image_name ?path () =
+  { branch; target; services = [];
+    compose = Some { Cluster.compose_context = docker_context; project_name; image_name; compose_path = path } }
 
 type docker = {
   dockerfile : string;
@@ -73,10 +81,11 @@ let docker ~sched ~push_auth { dockerfile; targets; archs; options } =
   let build_info = { Cluster.sched; dockerfile = `Path dockerfile; options; archs } in
   let deploys =
     targets
-    |> List.map (fun { branch; target; services } ->
+    |> List.map (fun { branch; target; services; compose } ->
         branch, { Cluster.
                   hub_id = Cluster_api.Docker.Image_id.of_string target |> or_fail;
-                  services
+                  services;
+                  compose
                 }
       )
   in
@@ -109,6 +118,7 @@ module Tarides = struct
   (* The docker context for the services *)
   let ocaml_ci_dev = docker_context "ocaml.ci.dev"
   let chives_caelum_ci_dev = docker_context "chives.caelum.ci.dev"
+  let dill_caelum_ci_dev = docker_context "dill.caelum.ci.dev"
 
   (* This is a list of GitHub repositories to monitor.
     For each one, it lists the builds that are made from that repository.
@@ -119,6 +129,22 @@ module Tarides = struct
     let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
     let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
     [
+      (* Build the dill branch of ocurrent/ocaml-docs-ci and deploy it to
+         dill.caelum.ci.dev via Docker Compose v2, pinning the daemon image
+         in the repo's docker-compose.yml to the freshly-built digest. *)
+      ocurrent, "ocaml-docs-ci", [
+        make_docker
+          "Dockerfile"
+          [
+            make_compose_deployment
+              ~branch:"dill"
+              ~target:"ocurrent/ocaml-docs-ci:live"
+              ~docker_context:dill_caelum_ci_dev
+              ~project_name:"ocaml-docs-ci"
+              ~image_name:"ocurrent/ocaml-docs-ci:live"
+              ();
+          ];
+      ];
       ocurrent, "ocurrent-deployer", [
         make_docker
           "Dockerfile"

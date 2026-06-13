@@ -39,9 +39,20 @@ type service = {
   uri : string option;
 }
 
+(* A Docker Compose v2 deployment: after the image is built and pushed, run
+   [docker compose up] on [compose_context], using the [docker-compose.yml]
+   from the build source and pinning [image_name] to the freshly-built digest. *)
+type compose = {
+  compose_context : (module Current_docker.S.DOCKER);
+  project_name : string;
+  image_name : string;        (* the [image:] reference in docker-compose.yml to pin *)
+  compose_path : Fpath.t option;
+}
+
 type deploy_info = {
   hub_id : Cluster_api.Docker.Image_id.t;
   services : service list;
+  compose : compose option;
 }
 
 let show_service (org, name, builds) =
@@ -135,7 +146,8 @@ let build_and_push ?level ?label ?cache_hint t ~push_target ~pool ~src ~options 
   and> src in
   Current_ocluster.Raw.build_and_push ?level ?cache_hint t ~push_target ~pool ~src ~options dockerfile
 
-let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(additional_build_args=Current.return []) src =
+let deploy { sched; dockerfile; options; archs } { hub_id; services; compose } ?(additional_build_args=Current.return []) src =
+  let commit_id = src in
   let src = Current.map (fun x -> [x]) src in
   let image_label = Cluster_api.Docker.Image_id.repo hub_id in
   Metrics.Build.inc_deployments "cluster" image_label;
@@ -155,9 +167,28 @@ let deploy { sched; dockerfile; options; archs } { hub_id; services } ?(addition
   | None -> Current.all (Current.fail "No auth configured; can't push final image" :: List.map Current.ignore_value images)
   | Some auth ->
     let multi_hash = Current_docker.push_manifest ~auth images ~tag:(Cluster_api.Docker.Image_id.to_string hub_id) in
-    match services with
+    let service_deploys = List.map (pull_and_serve `Service multi_hash) services in
+    let compose_deploys =
+      match compose with
+      | None -> []
+      | Some { compose_context; project_name; image_name; compose_path } ->
+        let module D = (val compose_context : Current_docker.S.DOCKER) in
+        (* Pull the freshly-pushed manifest on the target host to resolve it to
+           a pinned image reference, then run [docker compose up] there with the
+           [docker-compose.yml] checked out from the build source. *)
+        let image =
+          Current.component "pull" |>
+          let> repo_id = multi_hash in
+          Current_docker.Raw.pull repo_id ?auth:(Build.get_auth ()) ~docker_context:D.docker_context ~schedule:no_schedule
+        in
+        let commit = Current_git.fetch commit_id in
+        [ Current_compose_v2.compose_v2
+            ~docker_context:D.docker_context
+            ~project_name
+            ?path:compose_path
+            ~repos:[ (image_name, image) ]
+            (`Git commit) ]
+    in
+    match service_deploys @ compose_deploys with
     | [] -> Current.ignore_value multi_hash
-    | services ->
-      services
-      |> List.map (pull_and_serve `Service multi_hash)
-      |> Current.all
+    | deploys -> Current.all deploys

@@ -1,0 +1,19 @@
+(library
+ (name current_compose_v2)
+ (public_name deployer.compose_v2)
+ (libraries
+  astring
+  bos
+  current
+  current.cache
+  current.term
+  current_git
+  current_docker
+  fmt
+  fpath
+  logs
+  lwt
+  lwt.unix
+  ppx_deriving_yojson.runtime)
+ (preprocess
+  (pps ppx_deriving.std ppx_deriving_yojson)))

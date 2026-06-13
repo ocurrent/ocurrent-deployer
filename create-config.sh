@@ -4,6 +4,7 @@
 docker context create "ci3.ocamllabs.io" --description "Ci3 - Tarides" --docker "host=ssh://root@ci3.ocamllabs.io"
 docker context create "ci4.ocamllabs.io" --description "Ci4 - Tarides" --docker "host=ssh://root@ci4.ocamllabs.io"
 docker context create "chives.caelum.ci.dev" --description "Ci - Mirage" --docker "host=ssh://root@chives.caelum.ci.dev"
+docker context create "dill.caelum.ci.dev" --description "ocaml-docs-ci - dill.caelum.ci.dev" --docker "host=ssh://root@dill.caelum.ci.dev"
 docker context create "ci.ocamllabs.io" --description "Toxis - Tarides" --docker "host=ssh://root@ci.ocamllabs.io"
 docker context create "deploy.ci.ocaml.org" --description "OCaml - deploy.ci.ocaml.org" --docker "host=ssh://root@deploy.ci.ocaml.org"
 docker context create "dev1.ocamllabs.io" --description "OCaml - opam-repo-ci" --docker "host=ssh://root@dev1.ocamllabs.io"
@@ -31,6 +32,7 @@ for host in \
   ci3.ocamllabs.io \
   ci4.ocamllabs.io \
   chives.caelum.ci.dev \
+  dill.caelum.ci.dev \
   ci.ocamllabs.io \
   deploy.ci.ocaml.org \
   dev1.ocamllabs.io \
