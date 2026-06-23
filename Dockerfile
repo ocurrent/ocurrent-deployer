@@ -16,6 +16,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     m4 \
     pkg-config
 RUN cd ~/opam-repository && git fetch -q origin master && git reset --hard 7103cbf7d886d93402af1c852db818b4a3fba7ec && opam update
+RUN opam option --global solver=builtin-0install
 COPY --chown=opam --link deployer.opam /src/
 # WORKDIR must be after COPY to avoid perms problems
 WORKDIR /src
