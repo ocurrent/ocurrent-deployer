@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libssl-dev \
     m4 \
     pkg-config
-RUN cd ~/opam-repository && git fetch -q origin master && git reset --hard 7103cbf7d886d93402af1c852db818b4a3fba7ec && opam update
+RUN cd ~/opam-repository && git fetch -q origin master && git reset --hard b7773e2175e3ba6fbca47e183f7d342b18f24b37 && opam update
 RUN opam option --global solver=builtin-0install
 COPY --chown=opam --link deployer.opam /src/
 # WORKDIR must be after COPY to avoid perms problems
