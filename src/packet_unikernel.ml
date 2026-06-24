@@ -42,7 +42,7 @@ let name { service } = service
 
 (* Deployment *)
 
-let mirage_host_ssh = "root@147.75.84.37"
+let mirage_host_ssh = "root@dopey.caelum.ci.dev"
 
 let deploy build_info { service } ?additional_build_args:_ src =
   let repo_id = build_and_push build_info src in
