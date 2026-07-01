@@ -45,7 +45,7 @@ for host in \
   ocaml.ci.dev \
   check.ci.ocaml.org \
   128.232.124.216 \
-  147.75.84.37 ; do
+  dopey.caelum.ci.dev ; do
   ssh-keyscan -H -t ecdsa-sha2-nistp256 $host >> ~/.ssh/known_hosts
 done
 chmod 700 ~/.ssh
