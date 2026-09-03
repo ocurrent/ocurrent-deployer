@@ -20,12 +20,12 @@ let read_channel_uri path =
 
 let main () config mode app slack auth staging_password_file ((deployer : Pipeline.deployer), sched) prometheus_config =
   let vat = Capnp_rpc_unix.client_only_vat () in
-  let channel = read_channel_uri slack in
+  let channel = Option.map read_channel_uri slack in
   let staging_auth = staging_password_file |> Option.map (fun path -> staging_user, read_first_line path) in
   let authn = Option.map Current_github.Auth.make_login_uri auth in
   let webhook_secret = Current_github.App.webhook_secret app in
   let sched = Current_ocluster.Connection.create (Capnp_rpc_unix.Vat.import_exn vat sched) in
-  let engine = Current.Engine.create ~config (fun () -> deployer.pipeline ~app ~notify:channel ~sched ~staging_auth ()) in
+  let engine = Current.Engine.create ~config (fun () -> deployer.pipeline ~app ?notify:channel ~sched ~staging_auth ()) in
   let has_role =
     if auth = None then
       Current_web.Site.allow_all
@@ -52,10 +52,11 @@ let main () config mode app slack auth staging_password_file ((deployer : Pipeli
 open Cmdliner
 
 let slack =
-  Arg.required @@
+  Arg.value @@
   Arg.opt Arg.(some file) None @@
   Arg.info
-    ~doc:"A file containing the URI of the endpoint for status updates."
+    ~doc:"A file containing the URI of the endpoint for status updates. If \
+          omitted, no Slack notifications are sent."
     ~docv:"URI-FILE"
     ["slack"]
 

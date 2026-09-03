@@ -2,6 +2,7 @@ type deployment = {
   branch : string;
   target : string;
   services : Cluster.service list;
+  compose : Cluster.compose option;
 }
 
 type docker = {

@@ -3,3 +3,6 @@ _build
 *.install
 /var/
 _opam/
+
+# Local secrets — never commit
+/secrets/

@@ -35,6 +35,7 @@
   current_git
   current_github
   current_docker
+  current_compose_v2
   current_ocluster
   current_slack
   current_web
