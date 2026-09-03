@@ -27,5 +27,8 @@
   logs
   (lwt (>= 5.6.1))
   (cmdliner (>= 1.1.0))
+  astring
+  bos
+  fpath
   (alcotest (and (>= 1.0.0) :with-test))
   (alcotest-lwt (and (>= 1.0.1) :with-test))))

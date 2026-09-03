@@ -78,40 +78,14 @@ For a given service, the specified Dockerfile is pulled from the specified branc
 ### [ocurrent/ocaml-docs-ci](https://github.com/ocurrent/ocaml-docs-ci)
 
 - `Dockerfile` on arches: x86_64
-  - branch: [`live`](https://github.com/ocurrent/ocaml-docs-ci/tree/live)
-  - registered image: [`ocurrent/docs-ci:live`](https://hub.docker.com/r/ocurrent/docs-ci)
-  - services:
-    - `infra_docs-ci` @ <https://docs.ci.ocaml.org>
-
-- `docker/init/Dockerfile` on arches: x86_64
-  - branch: [`live`](https://github.com/ocurrent/ocaml-docs-ci/tree/live)
-  - registered image: [`ocurrent/docs-ci-init:live`](https://hub.docker.com/r/ocurrent/docs-ci-init)
-  - services:
-    - `infra_init`
-
-- `docker/storage/Dockerfile` on arches: x86_64
-  - branch: [`live`](https://github.com/ocurrent/ocaml-docs-ci/tree/live)
-  - registered image: [`ocurrent/docs-ci-storage-server:live`](https://hub.docker.com/r/ocurrent/docs-ci-storage-server)
-  - services:
-    - `infra_storage-server`
+  - branch: [`dill`](https://github.com/ocurrent/ocaml-docs-ci/tree/dill)
+  - registered image: [`ocurrent/ocaml-docs-ci:live`](https://hub.docker.com/r/ocurrent/ocaml-docs-ci)
+  - compose project: `ocaml-docs-ci` on `dill.caelum.ci.dev` (`docker-compose.yml`, pinning `ocurrent/ocaml-docs-ci:live`)
 
 - `Dockerfile` on arches: x86_64
-  - branch: [`staging`](https://github.com/ocurrent/ocaml-docs-ci/tree/staging)
-  - registered image: [`ocurrent/docs-ci:staging`](https://hub.docker.com/r/ocurrent/docs-ci)
-  - services:
-    - `infra_docs-ci` @ <https://staging.docs.ci.ocamllabs.io>
-
-- `docker/init/Dockerfile` on arches: x86_64
-  - branch: [`staging`](https://github.com/ocurrent/ocaml-docs-ci/tree/staging)
-  - registered image: [`ocurrent/docs-ci-init:staging`](https://hub.docker.com/r/ocurrent/docs-ci-init)
-  - services:
-    - `infra_init`
-
-- `docker/storage/Dockerfile` on arches: x86_64
-  - branch: [`staging`](https://github.com/ocurrent/ocaml-docs-ci/tree/staging)
-  - registered image: [`ocurrent/docs-ci-storage-server:staging`](https://hub.docker.com/r/ocurrent/docs-ci-storage-server)
-  - services:
-    - `infra_storage-server`
+  - branch: [`sage`](https://github.com/ocurrent/ocaml-docs-ci/tree/sage)
+  - registered image: [`ocurrent/ocaml-docs-ci:staging`](https://hub.docker.com/r/ocurrent/ocaml-docs-ci)
+  - compose project: `ocaml-docs-ci` on `sage.caelum.ci.dev` (`docker-compose.yml`, pinning `ocurrent/ocaml-docs-ci:staging`)
 
 
 ### [ocurrent/opam-health-check](https://github.com/ocurrent/opam-health-check)
