@@ -118,7 +118,6 @@ module Tarides = struct
   (* The docker context for the services *)
   let ocaml_ci_dev = docker_context "ocaml.ci.dev"
   let chives_caelum_ci_dev = docker_context "chives.caelum.ci.dev"
-  let dill_caelum_ci_dev = docker_context "dill.caelum.ci.dev"
 
   (* This is a list of GitHub repositories to monitor.
     For each one, it lists the builds that are made from that repository.
@@ -129,22 +128,6 @@ module Tarides = struct
     let ocurrent = Build.org ?app ~account:"ocurrent" 12497518 in
     let ocaml_bench = Build.org ?app ~account:"ocaml-bench" 19839896 in
     [
-      (* Build the dill branch of ocurrent/ocaml-docs-ci and deploy it to
-         dill.caelum.ci.dev via Docker Compose v2, pinning the daemon image
-         in the repo's docker-compose.yml to the freshly-built digest. *)
-      ocurrent, "ocaml-docs-ci", [
-        make_docker
-          "Dockerfile"
-          [
-            make_compose_deployment
-              ~branch:"dill"
-              ~target:"ocurrent/ocaml-docs-ci:live"
-              ~docker_context:dill_caelum_ci_dev
-              ~project_name:"ocaml-docs-ci"
-              ~image_name:"ocurrent/ocaml-docs-ci:live"
-              ();
-          ];
-      ];
       ocurrent, "ocurrent-deployer", [
         make_docker
           "Dockerfile"
@@ -320,14 +303,14 @@ module Ocaml_org = struct
   (* The docker context for the services *)
   let v3b_ocaml_org = docker_context "v3b.ocaml.org"
   let v3c_ocaml_org = docker_context "v3c.ocaml.org"
-  let docs_ci_ocaml_org = docker_context "docs.ci.ocaml.org"
-  let staging_docs_ci_ocamllabs_io = docker_context "staging.docs.ci.ocamllabs.io"
   let opam_ci_ocaml_org = docker_context "opam.ci.ocaml.org"
   let opam_4_ocaml_org = docker_context "opam-4.ocaml.org"
   let opam_5_ocaml_org = docker_context "opam-5.ocaml.org"
   let check_ci_ocaml_org = docker_context "check.ci.ocaml.org"
   let get_dune_build = docker_context "get.dune.build"
   let chives_caelum_ci_dev = docker_context "chives.caelum.ci.dev"
+  let dill_caelum_ci_dev = docker_context "dill.caelum.ci.dev"
+  let sage_caelum_ci_dev = docker_context "sage.caelum.ci.dev"
 
   (* This is a list of GitHub repositories to monitor.
     For each one, it lists the builds that are made from that repository.
@@ -385,54 +368,31 @@ module Ocaml_org = struct
           ]
           ~options:defaults;
       ];
+      (* Build the dill/sage branch of ocurrent/ocaml-docs-ci and deploy it to
+         dill/sage.caelum.ci.dev via Docker Compose v2, pinning the daemon image
+         in the repo's docker-compose.yml to the freshly-built digest. *)
       ocurrent, "ocaml-docs-ci", [
         make_docker
           "Dockerfile"
           [
-            make_deployment
-              ~branch:"live"
-              ~target:"ocurrent/docs-ci:live"
-              [{name = "infra_docs-ci"; docker_context = docs_ci_ocaml_org; uri = Some "docs.ci.ocaml.org"}];
-          ];
-        make_docker
-          "docker/init/Dockerfile"
-          [
-            make_deployment
-              ~branch:"live"
-              ~target:"ocurrent/docs-ci-init:live"
-              [{name = "infra_init"; docker_context = docs_ci_ocaml_org; uri = None }];
-          ];
-        make_docker
-          "docker/storage/Dockerfile"
-          [
-            make_deployment
-              ~branch:"live"
-              ~target:"ocurrent/docs-ci-storage-server:live"
-              [{name = "infra_storage-server"; docker_context = docs_ci_ocaml_org; uri = None }];
+            make_compose_deployment
+              ~branch:"dill"
+              ~target:"ocurrent/ocaml-docs-ci:live"
+              ~docker_context:dill_caelum_ci_dev
+              ~project_name:"ocaml-docs-ci"
+              ~image_name:"ocurrent/ocaml-docs-ci:live"
+              ();
           ];
         make_docker
           "Dockerfile"
           [
-            make_deployment
-              ~branch:"staging"
-              ~target:"ocurrent/docs-ci:staging"
-              [{name = "infra_docs-ci"; docker_context = staging_docs_ci_ocamllabs_io; uri = Some "staging.docs.ci.ocamllabs.io"}];
-          ];
-        make_docker
-          "docker/init/Dockerfile"
-          [
-            make_deployment
-              ~branch:"staging"
-              ~target:"ocurrent/docs-ci-init:staging"
-              [{name = "infra_init"; docker_context = staging_docs_ci_ocamllabs_io; uri = None}];
-          ];
-        make_docker
-          "docker/storage/Dockerfile"
-          [
-            make_deployment
-              ~branch:"staging"
-              ~target:"ocurrent/docs-ci-storage-server:staging"
-              [{name = "infra_storage-server"; docker_context = staging_docs_ci_ocamllabs_io; uri = None}];
+            make_compose_deployment
+              ~branch:"sage"
+              ~target:"ocurrent/ocaml-docs-ci:staging"
+              ~docker_context:sage_caelum_ci_dev
+              ~project_name:"ocaml-docs-ci"
+              ~image_name:"ocurrent/ocaml-docs-ci:staging"
+              ();
           ];
       ];
       ocurrent, "opam-health-check", [
