@@ -1,9 +1,10 @@
 open Deployer
 
+let is_deployment (t : Pipeline.deployment) =
+  t.services <> [] || t.compose <> None
+
 let has_deployments t =
-  List.exists
-    (fun t -> t.Pipeline.services != [])
-    t.Pipeline.targets
+  List.exists is_deployment t.Pipeline.targets
 
 let show_archs archs =
   String.concat ", " @@ List.map Cluster.Arch.to_string archs
@@ -33,6 +34,20 @@ let show_services services =
     )
   |> String.concat "\n"
 
+let show_compose ({compose_context; project_name; image_name; compose_path} : Cluster.compose) =
+  let module D = (val compose_context : Current_docker.S.DOCKER) in
+  let host = Option.value D.docker_context ~default:"default" in
+  let path = Option.map Fpath.to_string compose_path |> Option.value ~default:"docker-compose.yml" in
+  Printf.sprintf "  - compose project: `%s` on `%s` (`%s`, pinning `%s`)" project_name host path image_name
+
+let show_deploys (t : Pipeline.deployment) =
+  match t.services, t.compose with
+  | [], None -> ""
+  | services, None -> Printf.sprintf "  - services:\n%s\n" (show_services services)
+  | [], Some compose -> Printf.sprintf "%s\n" (show_compose compose)
+  | services, Some compose ->
+    Printf.sprintf "  - services:\n%s\n%s\n" (show_services services) (show_compose compose)
+
 let show_docker ~org ~name t =
   if not (has_deployments t) then []
   else
@@ -43,11 +58,11 @@ let show_docker ~org ~name t =
       List.map
         (fun t ->
           Printf.sprintf
-            "  - branch: [`%s`](%s)\n  - registered image: %s\n  - services:\n%s\n"
+            "  - branch: [`%s`](%s)\n  - registered image: %s\n%s"
             t.Pipeline.branch
             (show_github_link ~org ~name t.branch)
             (show_docker_hub_link t.target)
-            (show_services t.services))
+            (show_deploys t))
         t.targets
     in
     header :: deployments
